@@ -156,9 +156,9 @@ object sysPrimitive(int number, object * arguments)
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_Begin();
 #elif TARGET_DEVICE == DEVICE_M5STICKC
-        _bg = TFT_BLACK;
-        _fg = TFT_WHITE;
-        // m5display_init();
+#ifndef TEST_M5STICK
+        m5StickInit();
+#endif
 #endif
         break;
 

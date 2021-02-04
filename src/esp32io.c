@@ -26,7 +26,31 @@
 
 static const char *ESP_TAG = "ESP32";
 
-#define TEST_M5STICK
+#if TARGET_DEVICE == DEVICE_M5STICKC
+
+void m5StickInit()
+{
+    // Initialize M5StickC
+    // This initializes the event loop, power, button and display
+    m5stickc_config_t m5config = M5STICKC_CONFIG_DEFAULT();
+    m5config.power.lcd_backlight_level = 3; // Set starting backlight level
+    m5_init(&m5config);
+ 
+    font_rotate = 0;
+    text_wrap = 0;
+    font_transparent = 0;
+    font_forceFixed = 0;
+    gray_scale = 0;
+    TFT_setGammaCurve(DEFAULT_GAMMA_CURVE);
+    TFT_setRotation(LANDSCAPE);
+    TFT_setFont(DEFAULT_FONT, NULL);
+    TFT_resetclipwin();
+    _bg = TFT_BLACK;
+    _fg = TFT_WHITE;
+    TFT_fillScreen(_bg);
+}
+
+#endif // DEVICE_M5STICKC
 
 #ifdef TEST_M5STICK
 
@@ -71,33 +95,17 @@ void my_m5_event_handler(void * handler_arg, esp_event_base_t base, int32_t id, 
 
 void m5StickTask(void* arg)
 {
-    // Initialize M5StickC
-    // This initializes the event loop, power, button and display
-    m5stickc_config_t m5config = M5STICKC_CONFIG_DEFAULT();
-    m5config.power.lcd_backlight_level = 3; // Set starting backlight level
-    m5_init(&m5config);
+    char backlight_str[6];
 
+    m5StickInit();
+    
     // Register for button events
     esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, my_m5_event_handler, NULL);
     esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, my_m5_event_handler, NULL);
     esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, my_m5_event_handler, NULL);
     esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, my_m5_event_handler, NULL);
 
-    font_rotate = 0;
-    text_wrap = 0;
-    font_transparent = 0;
-    font_forceFixed = 0;
-    gray_scale = 0;
-    TFT_setGammaCurve(DEFAULT_GAMMA_CURVE);
-    TFT_setRotation(LANDSCAPE);
-    TFT_setFont(DEFAULT_FONT, NULL);
-    TFT_resetclipwin();
-    TFT_fillScreen(TFT_WHITE);
-    _bg = TFT_BLACK;
-    _fg = TFT_WHITE;
-    char backlight_str[6];
     vTaskDelay(3000/portTICK_PERIOD_MS);
-
     // ESP_LOGD(TAG, "Turning backlight off");
     m5display_off();
     vTaskDelay(3000/portTICK_PERIOD_MS);
@@ -161,6 +169,7 @@ void app_main(void)
     esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
 
 
+#ifdef TEST_M5STICK
     ESP_LOGI(ESP_TAG, "Starting M5StickC Test\n");
     xTaskCreate(
         m5StickTask, /* Task function. */
@@ -169,6 +178,7 @@ void app_main(void)
         NULL, /* parameter of the task */
         1, /* priority of the task */
         NULL); /* Task handle to keep track of created task */
+#endif
 
     ESP_LOGI(ESP_TAG, "Fresh free heap size: %d", esp_get_free_heap_size());
 
