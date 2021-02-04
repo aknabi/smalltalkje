@@ -2,6 +2,7 @@
     "files.associations": {
         "m5led.h": "c",
         "esp_system.h": "c",
-        "gpio.h": "c"
+        "gpio.h": "c",
+        "target.h": "c"
     }
 }
