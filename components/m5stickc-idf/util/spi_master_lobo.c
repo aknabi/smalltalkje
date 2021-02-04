@@ -65,7 +65,7 @@ Main driver's function is 'spi_lobo_transfer_data()'
 #include "soc/spi_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc_cntl_reg.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_log.h"

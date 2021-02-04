@@ -104,6 +104,7 @@ void app_main(void)
 
     // Test buttons
     TFT_fillScreen(TFT_WHITE);
+    ESP_LOGE(TAG, "Button test start");
     TFT_print("Press or hold button", CENTER, (M5DISPLAY_HEIGHT-24)/2);
 
     m5display_timeout(15000);
