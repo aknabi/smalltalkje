@@ -7,9 +7,11 @@ Little Smalltalk version 3
 Written by Tim Budd, Oregon State University, July 1988
 
 Using an M5StickC library for esp-idf from Pablo Bacho
+
 https://github.com/pablobacho/m5stickc-idf-example
 
 Using an SSD1306 I2C OLED driver written by Limor Fried/Ladyada for Adafruit Industries.
+
 https://simple-circuit.com/  
 
 
