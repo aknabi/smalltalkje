@@ -1,6 +1,14 @@
 # ESP32-smalltalk
 Little Smalltalk for ESP32 with SSD1306 OLED and M5StickC support
 
+Based on:
+
+Little Smalltalk version 3
+Written by Tim Budd, Oregon State University, July 1988
+
+Using an M5StickC library for esp-idf from Pablo Bacho
+---
+
 This is a very early project. Right now builds in VisualStudio Code wiht PlatformIO plugin the and runs (on the Mac at least).
 
 Publishing so that folks can take a look. 
