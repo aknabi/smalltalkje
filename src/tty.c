@@ -16,8 +16,17 @@
 #include "target.h"
 #include "names.h"
 
+#include "build.h"
+
 #ifdef TARGET_ESP32
+
+#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
 #include "ssd1306_oled.h"
+#elif TARGET_DEVICE == DEVICE_M5STICKC
+#include "tft.h"
+#endif
+
+
 #endif
 
 #define getIntArg(i) intValue(arguments[i])
@@ -144,17 +153,32 @@ object sysPrimitive(int number, object * arguments)
 
     /* prim 153 initializes the OLED display. Must be called before displaying */
     case 3:
+#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_Begin();
+#elif TARGET_DEVICE == DEVICE_M5STICKC
+        _bg = TFT_BLACK;
+        _fg = TFT_WHITE;
+        // m5display_init();
+#endif
         break;
 
     // prim 154 Clear the display
     case 4:
+#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_ClearDisplay();
+#elif TARGET_DEVICE == DEVICE_M5STICKC
+        TFT_fillScreen(TFT_YELLOW);
+#endif
         break;
 
     // Prim 155 Render the buffer to the display
     case 5:
+#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_Display();
+#elif TARGET_DEVICE == DEVICE_M5STICKC
+        // M5StickC doesn't have offscren render
+#endif
+
         break;
 
     // Prim 156 Display the string at the x,y location passed in
@@ -162,11 +186,18 @@ object sysPrimitive(int number, object * arguments)
         checkIntArg(1)
         checkIntArg(2)
 
+#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_DrawText(
             getIntArg(1), 
             getIntArg(2), 
             charPtr(arguments[0]),
             1);
+#elif TARGET_DEVICE == DEVICE_M5STICKC
+        TFT_resetclipwin();
+        TFT_setFont(DEFAULT_FONT, NULL);
+        TFT_print(charPtr(arguments[0]), getIntArg(1), getIntArg(2));
+#endif
+
 
         /* Set GPIO PIN in first argument to value in second argument */
         // gpio_set_level(intValue(arguments[0]), intValue(arguments[1]));
@@ -184,6 +215,7 @@ object sysPrimitive(int number, object * arguments)
 	        sysError("non boolean argument", "isFilled");
         }
 
+#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         if (arguments[4] == trueobj) {
             SSD1306_FillRect(
                 getIntArg(0), 
@@ -198,6 +230,23 @@ object sysPrimitive(int number, object * arguments)
                 getIntArg(2), 
                 getIntArg(3));
         }
+#elif TARGET_DEVICE == DEVICE_M5STICKC
+        if (arguments[4] == trueobj) {
+            TFT_fillRect(
+                getIntArg(0),
+                getIntArg(1),
+                getIntArg(2),
+                getIntArg(3),
+                TFT_WHITE);
+        } else {
+            TFT_drawRect(
+                getIntArg(0),
+                getIntArg(1),
+                getIntArg(2),
+                getIntArg(3),
+                TFT_WHITE);
+        }
+#endif
 
         break;
 
@@ -211,6 +260,7 @@ object sysPrimitive(int number, object * arguments)
 	        sysError("non boolean argument", "isFilled");
         }
 
+#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         if (arguments[4] == trueobj) {
             SSD1306_FillCircle(
                 getIntArg(0), 
@@ -223,6 +273,22 @@ object sysPrimitive(int number, object * arguments)
                 getIntArg(1), 
                 getIntArg(2));
         }
+#elif TARGET_DEVICE == DEVICE_M5STICKC
+        if (arguments[4] == trueobj) {
+            TFT_fillCircle(
+                getIntArg(0),
+                getIntArg(1),
+                getIntArg(2),
+                TFT_WHITE);
+        } else {
+            TFT_drawCircle(
+                getIntArg(0),
+                getIntArg(1),
+                getIntArg(2),
+                TFT_WHITE);
+        }
+#endif
+
         break;
 
 #endif

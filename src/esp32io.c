@@ -35,17 +35,17 @@ void my_m5_event_handler(void * handler_arg, esp_event_base_t base, int32_t id, 
         switch(id) {
             case M5BUTTON_BUTTON_CLICK_EVENT:
                 TFT_resetclipwin();
-                TFT_fillScreen(TFT_WHITE);
+                TFT_fillScreen(_bg);
                 TFT_print("Click A!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
                 vTaskDelay(1000/portTICK_PERIOD_MS);
-                TFT_fillScreen(TFT_WHITE);
+                TFT_fillScreen(_bg);
             break;
             case M5BUTTON_BUTTON_HOLD_EVENT:
                 TFT_resetclipwin();
-                TFT_fillScreen(TFT_WHITE);
+                TFT_fillScreen(_bg);
                 TFT_print("Hold A!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
                 vTaskDelay(1000/portTICK_PERIOD_MS);
-                TFT_fillScreen(TFT_WHITE);
+                TFT_fillScreen(_bg);
             break;
         }
     }
@@ -53,17 +53,17 @@ void my_m5_event_handler(void * handler_arg, esp_event_base_t base, int32_t id, 
         switch(id) {
             case M5BUTTON_BUTTON_CLICK_EVENT:
                 TFT_resetclipwin();
-                TFT_fillScreen(TFT_WHITE);
+                TFT_fillScreen(_bg);
                 TFT_print("Click B!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
                 vTaskDelay(1000/portTICK_PERIOD_MS);
-                TFT_fillScreen(TFT_WHITE);
+                TFT_fillScreen(_bg);
             break;
             case M5BUTTON_BUTTON_HOLD_EVENT:
                 TFT_resetclipwin();
-                TFT_fillScreen(TFT_WHITE);
+                TFT_fillScreen(_bg);
                 TFT_print("Hold B!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
                 vTaskDelay(1000/portTICK_PERIOD_MS);
-                TFT_fillScreen(TFT_WHITE);
+                TFT_fillScreen(_bg);
             break;
         }
     }
@@ -93,8 +93,8 @@ void m5StickTask(void* arg)
     TFT_setFont(DEFAULT_FONT, NULL);
     TFT_resetclipwin();
     TFT_fillScreen(TFT_WHITE);
-    _bg = TFT_WHITE;
-    _fg = TFT_MAGENTA;
+    _bg = TFT_BLACK;
+    _fg = TFT_WHITE;
     char backlight_str[6];
     vTaskDelay(3000/portTICK_PERIOD_MS);
 
@@ -108,7 +108,7 @@ void m5StickTask(void* arg)
     // Backlight level test
     for(uint8_t i=7; i>0; --i) {
         m5display_set_backlight_level(i);
-        TFT_fillScreen(TFT_WHITE);
+        TFT_fillScreen(_bg);
         sprintf(backlight_str, "%d", i);
         TFT_print("Backlight test", CENTER, (M5DISPLAY_HEIGHT-24)/2 +12);
         TFT_print(backlight_str, CENTER, (M5DISPLAY_HEIGHT-24)/2 -12);
@@ -117,7 +117,7 @@ void m5StickTask(void* arg)
     }
     for(uint8_t i=0; i<=7; ++i) {
         m5display_set_backlight_level(i);
-        TFT_fillScreen(TFT_WHITE);
+        TFT_fillScreen(_bg);
         sprintf(backlight_str, "%d", i);
         TFT_print("Backlight test", CENTER, (M5DISPLAY_HEIGHT-24)/2 +12);
         TFT_print(backlight_str, CENTER, (M5DISPLAY_HEIGHT-24)/2 -12);
@@ -126,7 +126,7 @@ void m5StickTask(void* arg)
     }
 
     // Test buttons
-    TFT_fillScreen(TFT_WHITE);
+    TFT_fillScreen(_bg);
     // ESP_LOGE(TAG, "Button test start");
     TFT_print("Press or hold button", CENTER, (M5DISPLAY_HEIGHT-24)/2);
 
