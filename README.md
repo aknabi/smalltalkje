@@ -1,7 +1,7 @@
 # ESP32-smalltalk
 Little Smalltalk for ESP32 with SSD1306 OLED and M5StickC support
 
-This is a very early project. Right now builds in PlatformIO and runs.
+This is a very early project. Right now builds in VisualStudio Code wiht PlatformIO plugin the and runs (on the Mac at least).
 
 Publishing so that folks can take a look. 
 
