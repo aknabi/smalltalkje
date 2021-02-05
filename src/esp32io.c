@@ -7,7 +7,6 @@
 #include "freertos/task.h"
 
 #include "esp_err.h"
-#include "esp_log.h"
 #include "esp_spiffs.h"
 
 #include "esp_vfs_dev.h"
@@ -20,16 +19,46 @@
 
 #include "m5stickc.h"
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#include "esp_log.h"
+
 #endif // TARGET_ESP32
 
 #ifdef TARGET_ESP32
 
 static const char *ESP_TAG = "ESP32";
 
+
 #if TARGET_DEVICE == DEVICE_M5STICKC
+
+void m5ButtonHandlerInit(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
+    if(base == m5button_a.esp_event_base) {
+        switch(id) {
+            case M5BUTTON_BUTTON_CLICK_EVENT:
+                runButtonHandler();
+                break;
+            case M5BUTTON_BUTTON_HOLD_EVENT:
+                break;
+        }
+    }
+    if(base == m5button_b.esp_event_base) {
+        switch(id) {
+            case M5BUTTON_BUTTON_CLICK_EVENT:
+                break;
+            case M5BUTTON_BUTTON_HOLD_EVENT:
+            break;
+        }
+    }
+}
+
+// To ensure we don't init M5StickC twice... causes big issues
+bool isM5InitCalled = false;
 
 void m5StickInit()
 {
+    if (isM5InitCalled) return;
+    isM5InitCalled = true;
+
     // Initialize M5StickC
     // This initializes the event loop, power, button and display
     m5stickc_config_t m5config = M5STICKC_CONFIG_DEFAULT();
@@ -48,6 +77,13 @@ void m5StickInit()
     _bg = TFT_BLACK;
     _fg = TFT_WHITE;
     TFT_fillScreen(_bg);
+
+    // Register for button events
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5ButtonHandlerInit, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5ButtonHandlerInit, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5ButtonHandlerInit, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5ButtonHandlerInit, NULL);
+
 }
 
 #endif // DEVICE_M5STICKC
@@ -251,7 +287,7 @@ void setupObjectData()
         //delay(10000);
         // abort();
     } else {
-        ESP_LOGE(ESP_TAG, "Mapped Objects Partition to address %d", objectData);
+        // ESP_LOGE(ESP_TAG, "Mapped Objects Partition to address %d", objectData);
     }
 
 }

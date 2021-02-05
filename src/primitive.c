@@ -688,3 +688,15 @@ object *arguments;
 
     return (returnedObject);
 }
+
+#if TARGET_DEVICE == DEVICE_M5STICKC
+
+void runButtonHandler() {
+    object buttonHandler;
+    buttonHandler = globalSymbol("buttonHandler");
+    if (buttonHandler != (object *) 0) {
+        unaryPrims(9, buttonHandler);
+    }
+}
+
+#endif

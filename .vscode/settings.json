@@ -3,6 +3,7 @@
         "m5led.h": "c",
         "esp_system.h": "c",
         "gpio.h": "c",
-        "target.h": "c"
+        "target.h": "c",
+        "esp_spiffs.h": "c"
     }
 }

@@ -2,22 +2,188 @@
 #include "target.h"
 
 #ifdef TARGET_ESP32
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include "esp_err.h"
-#include "esp_log.h"
 #include "esp_spiffs.h"
 
 #include "esp_vfs_dev.h"
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
 
+#include "esp_system.h"
+#include "nvs_flash.h"
+#include "driver/gpio.h"
+
+#include "m5stickc.h"
+
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#include "esp_log.h"
+
 #endif // TARGET_ESP32
 
 #ifdef TARGET_ESP32
 
 static const char *ESP_TAG = "ESP32";
+
+
+#if TARGET_DEVICE == DEVICE_M5STICKC
+
+void m5ButtonHandlerInit(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
+    if(base == m5button_a.esp_event_base) {
+        switch(id) {
+            case M5BUTTON_BUTTON_CLICK_EVENT:
+                runButtonHandler();
+                break;
+            case M5BUTTON_BUTTON_HOLD_EVENT:
+                break;
+        }
+    }
+    if(base == m5button_b.esp_event_base) {
+        switch(id) {
+            case M5BUTTON_BUTTON_CLICK_EVENT:
+                break;
+            case M5BUTTON_BUTTON_HOLD_EVENT:
+            break;
+        }
+    }
+}
+
+// To ensure we don't init M5StickC twice... causes big issues
+bool isM5InitCalled = false;
+
+void m5StickInit()
+{
+    if (isM5InitCalled) return;
+    isM5InitCalled = true;
+
+    // Initialize M5StickC
+    // This initializes the event loop, power, button and display
+    m5stickc_config_t m5config = M5STICKC_CONFIG_DEFAULT();
+    m5config.power.lcd_backlight_level = 3; // Set starting backlight level
+    m5_init(&m5config);
+ 
+    font_rotate = 0;
+    text_wrap = 0;
+    font_transparent = 0;
+    font_forceFixed = 0;
+    gray_scale = 0;
+    TFT_setGammaCurve(DEFAULT_GAMMA_CURVE);
+    TFT_setRotation(LANDSCAPE);
+    TFT_setFont(DEFAULT_FONT, NULL);
+    TFT_resetclipwin();
+    _bg = TFT_BLACK;
+    _fg = TFT_WHITE;
+    TFT_fillScreen(_bg);
+
+    // Register for button events
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5ButtonHandlerInit, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5ButtonHandlerInit, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5ButtonHandlerInit, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5ButtonHandlerInit, NULL);
+
+}
+
+#endif // DEVICE_M5STICKC
+
+#ifdef TEST_M5STICK
+
+void my_m5_event_handler(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
+    if(base == m5button_a.esp_event_base) {
+        switch(id) {
+            case M5BUTTON_BUTTON_CLICK_EVENT:
+                TFT_resetclipwin();
+                TFT_fillScreen(_bg);
+                TFT_print("Click A!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
+                vTaskDelay(1000/portTICK_PERIOD_MS);
+                TFT_fillScreen(_bg);
+            break;
+            case M5BUTTON_BUTTON_HOLD_EVENT:
+                TFT_resetclipwin();
+                TFT_fillScreen(_bg);
+                TFT_print("Hold A!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
+                vTaskDelay(1000/portTICK_PERIOD_MS);
+                TFT_fillScreen(_bg);
+            break;
+        }
+    }
+    if(base == m5button_b.esp_event_base) {
+        switch(id) {
+            case M5BUTTON_BUTTON_CLICK_EVENT:
+                TFT_resetclipwin();
+                TFT_fillScreen(_bg);
+                TFT_print("Click B!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
+                vTaskDelay(1000/portTICK_PERIOD_MS);
+                TFT_fillScreen(_bg);
+            break;
+            case M5BUTTON_BUTTON_HOLD_EVENT:
+                TFT_resetclipwin();
+                TFT_fillScreen(_bg);
+                TFT_print("Hold B!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
+                vTaskDelay(1000/portTICK_PERIOD_MS);
+                TFT_fillScreen(_bg);
+            break;
+        }
+    }
+}
+
+void m5StickTask(void* arg)
+{
+    char backlight_str[6];
+
+    m5StickInit();
+    
+    // Register for button events
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, my_m5_event_handler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, my_m5_event_handler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, my_m5_event_handler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, my_m5_event_handler, NULL);
+
+    vTaskDelay(3000/portTICK_PERIOD_MS);
+    // ESP_LOGD(TAG, "Turning backlight off");
+    m5display_off();
+    vTaskDelay(3000/portTICK_PERIOD_MS);
+    // ESP_LOGD(TAG, "Turning backlight on");
+    m5display_on();
+    vTaskDelay(1000/portTICK_PERIOD_MS);
+
+    // Backlight level test
+    for(uint8_t i=7; i>0; --i) {
+        m5display_set_backlight_level(i);
+        TFT_fillScreen(_bg);
+        sprintf(backlight_str, "%d", i);
+        TFT_print("Backlight test", CENTER, (M5DISPLAY_HEIGHT-24)/2 +12);
+        TFT_print(backlight_str, CENTER, (M5DISPLAY_HEIGHT-24)/2 -12);
+        // ESP_LOGE(TAG, "Backlight: %d", i);
+        vTaskDelay(250/portTICK_PERIOD_MS);
+    }
+    for(uint8_t i=0; i<=7; ++i) {
+        m5display_set_backlight_level(i);
+        TFT_fillScreen(_bg);
+        sprintf(backlight_str, "%d", i);
+        TFT_print("Backlight test", CENTER, (M5DISPLAY_HEIGHT-24)/2 +12);
+        TFT_print(backlight_str, CENTER, (M5DISPLAY_HEIGHT-24)/2 -12);
+        // ESP_LOGE(TAG, "Backlight: %d", i);
+        vTaskDelay(250/portTICK_PERIOD_MS);
+    }
+
+    // Test buttons
+    TFT_fillScreen(_bg);
+    // ESP_LOGE(TAG, "Button test start");
+    TFT_print("Press or hold button", CENTER, (M5DISPLAY_HEIGHT-24)/2);
+
+    m5display_timeout(15000);
+
+    while(true) {
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+    }
+
+   vTaskDelete( NULL );
+}
+
+#endif // TEST_M5STICK
 
 void app_main(void)
 {
@@ -37,6 +203,18 @@ void app_main(void)
     esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
     esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+
+
+#ifdef TEST_M5STICK
+    ESP_LOGI(ESP_TAG, "Starting M5StickC Test\n");
+    xTaskCreate(
+        m5StickTask, /* Task function. */
+        "m5StickC", /* name of task. */
+        4096, /* Stack size of task */
+        NULL, /* parameter of the task */
+        1, /* priority of the task */
+        NULL); /* Task handle to keep track of created task */
+#endif
 
     ESP_LOGI(ESP_TAG, "Fresh free heap size: %d", esp_get_free_heap_size());
 
@@ -109,7 +287,7 @@ void setupObjectData()
         //delay(10000);
         // abort();
     } else {
-        ESP_LOGI(ESP_TAG, "Mapped Objects Partition to address %d", objectData);
+        // ESP_LOGE(ESP_TAG, "Mapped Objects Partition to address %d", objectData);
     }
 
 }

@@ -120,16 +120,14 @@ Methods UndefinedObject 'initial image'
 		false <- False new.
 		smalltalk <- Smalltalk new.
 		files <- Array new: 15.
-		stdin <- File new; name: 'stdin'; mode: 'r'; open.
-		stdout <- File new; name: 'stdout'; mode: 'w'; open.
-		stderr <- File new; name: 'stderr'; mode: 'w'; open.
-		editor <- 'vi'.
+		self createStdFiles.
 		" create a dictionary of classes "
 		classes <- Dictionary new.
 		symbols binaryDo: [:x :y | 
 			(y class == Class)
 				ifTrue: [ classes at: x put: y ] ].
 		scheduler <- Scheduler new.
+		self setupButtonHandler.
 		" create the initial system process "
 		" note the delayed recursive call "
 		aBlock <- [ files do: [:f | f notNil ifTrue: [ f open ]].
@@ -137,6 +135,18 @@ Methods UndefinedObject 'initial image'
 				   scheduler run ].
 		echoInput <- true.
 		systemProcess <- aBlock newProcess.
+|
+	setupButtonHandler | aBlock |
+		aBlock <- [ 'Smalltalk says button pressed' print. buttonHandler <-  aBlock newProcess ].
+		buttonHandler <- aBlock newProcess.
+|
+	createStdFiles
+		"Create stdin, stdout, stderr"
+		files <- Array new: 15.
+		stdin <- File new; name: 'stdin'; mode: 'r'; open.
+		stdout <- File new; name: 'stdout'; mode: 'w'; open.
+		stderr <- File new; name: 'stderr'; mode: 'w'; open.
+		editor <- 'vi'.
 |
 	initialize
 		" initialize the initial object image "
