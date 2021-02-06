@@ -372,7 +372,7 @@ void writeObjectDataPartition()
 
     fclose(fpObjData);
     // remove("/spiffs/objectData"); 
-    ESP_LOGI(ESP_TAG, "Done writing objects partition. Hit any key to restart");
+    ESP_LOGI(ESP_TAG, "Done writing objects partition. Hit any key to start smalltalk");
     fgetc(stdin);
     // esp_restart();
 }

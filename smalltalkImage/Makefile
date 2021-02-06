@@ -10,7 +10,7 @@ default:
 	@cd source && $(CC) memory.o names.o news.o interp.o primitive.o filein.o lex.o parser.o unixio.o initial.o tty.o -o ../buildImage $(LIBS)
 #	@cd bootstrap && ../buildImage basic.st mag.st collect.st file.st mult.st tty.st
 #	@mv bootstrap/systemImage .
-	./buildImage basic.st mag.st collect.st file.st mult.st oled.st tty.st
+	./buildImage basic.st mag.st collect.st file.st mult.st oled.st m5StickC.st tty.st
 #	@cp ./systemImage ../spiffs_image/systemImage
 #	@cp ./objectTable ../spiffs_image/objectTable
 #	@cp ./objectData ../spiffs_image/objectData
@@ -21,7 +21,7 @@ default:
 	@echo Done. "Upload files in parent directory with: cd ..; pio run -t uploadfs"
 
 image:
-	./buildImage basic.st mag.st collect.st file.st mult.st oled.st tty.st
+	./buildImage basic.st mag.st collect.st file.st mult.st oled.st m5StickC.st tty.st
 	rm -f ../spiffs_image/systemImage
 	@mv ./systemImage ../spiffs_image/systemImage
 

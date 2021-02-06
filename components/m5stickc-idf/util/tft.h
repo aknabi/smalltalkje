@@ -34,6 +34,15 @@ typedef struct {
 	color_t     color;
 } Font;
 
+//==========================================================================================
+// ==== Added for Smalltalk ===================================================================
+//==========================================================================================
+typedef struct {
+	color_t 	backgroundColor;
+	color_t 	foregroundColor;
+	Font 	    font;
+} paint_t;
+
 
 //==========================================================================================
 // ==== Global variables ===================================================================
@@ -58,6 +67,11 @@ extern int	TFT_Y;					// Y position of the next character after TFT_print() func
 
 extern uint32_t tp_calx;			// touch screen X calibration constant
 extern uint32_t tp_caly;			// touch screen Y calibration constant
+
+// Added for Smalltalk
+// Current paint to provide font and color defaults for graphics calls
+extern paint_t  current_paint;
+
 // =========================================================================================
 
 
