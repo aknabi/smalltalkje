@@ -10,7 +10,7 @@
  * that will simply write the object data file to a
  * data partition and stop
 */
-// #define WRITE_OBJECT_PARTITION
+#define WRITE_OBJECT_PARTITION
 
 
 // Define device as ESP32 dev board with a SSD1306 I2C OLED

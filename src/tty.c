@@ -20,6 +20,8 @@
 
 #ifdef TARGET_ESP32
 
+#include "driver/gpio.h"
+
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
 #include "ssd1306_oled.h"
 #elif TARGET_DEVICE == DEVICE_M5STICKC
@@ -167,7 +169,7 @@ object sysPrimitive(int number, object * arguments)
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_ClearDisplay();
 #elif TARGET_DEVICE == DEVICE_M5STICKC
-        TFT_fillScreen(TFT_YELLOW);
+        TFT_fillScreen(current_paint.backgroundColor);
 #endif
         break;
 
@@ -246,8 +248,6 @@ object sysPrimitive(int number, object * arguments)
                 getIntArg(3),
                 TFT_WHITE);
         }
-#endif
-
         break;
 
     // Prim 158 circleX: x y: y radius: r isFilled: aBoolean
@@ -291,6 +291,34 @@ object sysPrimitive(int number, object * arguments)
 
         break;
 
+#endif
+
+    // Prim 159 set GPIO pin in first arg to mode in second arg
+    case 9:
+        checkIntArg(0)
+        checkIntArg(1)
+
+        gpio_mode_t gpioMode;
+        gpio_pad_select_gpio(getIntArg(0));
+
+        switch(getIntArg(1)) {
+            case 0: gpioMode = GPIO_MODE_DISABLE; break; // disable input and output
+            case 1: gpioMode = GPIO_MODE_INPUT; break; // input only
+            case 2: gpioMode = GPIO_MODE_OUTPUT; break; // output only mode
+            case 3: gpioMode = GPIO_MODE_OUTPUT_OD; break; // output only with open-drain mode
+            case 4: gpioMode = GPIO_MODE_INPUT_OUTPUT_OD; break; // output and input with open-drain mode
+            case 5: gpioMode = GPIO_MODE_INPUT_OUTPUT; break; // output and input mode
+            default: gpioMode = GPIO_MODE_OUTPUT; break;
+        }
+        gpio_set_direction(getIntArg(0), gpioMode);
+        break;
+
+    // Prim 160 set GPIO pin in first arg to value in second arg
+    case 10:
+        checkIntArg(0)
+        checkIntArg(1)
+        gpio_set_level(getIntArg(0), getIntArg(1));
+        break;
 #endif
 
     default:
