@@ -56,10 +56,8 @@ Methods Class 'all'
 ]
 Methods Smalltalk 'all'
 	getPrompt: aString
-		stdout printNoReturn: aString.
-		"input <- <124>"
-		"^ input"
-		^ stdin getString
+		input <- <124 aString>.
+		^ input
 |
 	inquire: aString	| response |
 		response <- self getPrompt: aString.
@@ -101,15 +99,11 @@ Methods Smalltalk 'doit'
 Methods Scheduler 'get commands'
 	initialize	| string |
 		<2>.
-		string <- smalltalk getPrompt: '>	'.
-		"string <- '3.4 + 5.6'."
-		"echoInput <- true."
+		string <- smalltalk getPrompt: 'smalltalk> '.
 		string isNil
 			ifTrue: [ notdone <- false ]
 			ifFalse: [ (string size > 0)
 				ifTrue: [ 
-					echoInput ifTrue:
-						[ string print ].
 					" [ 'This is from an OS Task' print ] newProcess forkTask. "
 					[ string value print ] fork ] ]
 ]
@@ -133,7 +127,6 @@ Methods UndefinedObject 'initial image'
 		aBlock <- [ files do: [:f | f notNil ifTrue: [ f open ]].
 				   systemProcess <- aBlock newProcess.
 				   scheduler run ].
-		echoInput <- true.
 		systemProcess <- aBlock newProcess.
 |
 	setupButtonHandler | aBlock |
