@@ -25,12 +25,7 @@
 #include "esp_log.h"
 #include "esp_spiffs.h"
 
-#include "esp_system.h"
-#include "esp_console.h"
-#include "esp_vfs_dev.h"
 #include "driver/uart.h"
-#include "esp_vfs.h"
-#include "linenoise/linenoise.h"
 
 #endif // TARGET_ESP32
 
@@ -72,17 +67,6 @@ static int fr(FILE * fp, char *p, int s)
 	}
     return r;
 }
-
-/*
-noreturn initFileSystem()
-{
-    initSPIFFSPartition("storage", "/spiffs");
-    // initSPIFFSPartition("objects", "/objects");
-#ifndef WRITE_OBJECT_PARTITION 
-    setupObjectData();
-#endif
-}
-*/
 
 noreturn imageRead(FILE * fp)
 {
