@@ -17,12 +17,21 @@
 #include "names.h"
 
 #ifdef TARGET_ESP32
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_spiffs.h"
+
+#include "esp_system.h"
+#include "esp_console.h"
+#include "esp_vfs_dev.h"
+#include "driver/uart.h"
+#include "esp_vfs.h"
+#include "linenoise/linenoise.h"
+
 #endif // TARGET_ESP32
 
 static const char *TAG = "UNIXIO";
@@ -374,6 +383,60 @@ noreturn imageWrite(FILE * fp)
 /* we assume this is initialized to NULL */
 static FILE *fp[MAXFILES];
 
+// Functions to support command line input
+
+#ifdef TARGET_ESP32
+
+char *readLine(uart_port_t uart) {
+	static char line[256];
+	int size;
+	char *ptr = line;
+	while(1) {
+		size = uart_read_bytes(UART_NUM_1, (unsigned char *)ptr, 1, portMAX_DELAY);
+		if (size == 1) {
+			if (*ptr == '\n') {
+				*ptr = 0;
+				return line;
+			}
+			ptr++;
+		} // End of read a character
+	} // End of loop
+} // End of readLine
+
+#endif
+
+object getInputLine(char* prompt)
+{
+    char *line;
+    char *p;
+
+    size_t bufsize = 80;
+    size_t characters;
+	int	bufIndex = 0;
+	char buffer[bufsize];
+
+	fputs(prompt, stdout);
+
+	int c = 0;
+	while (c != 0x0A) {
+        c = fgetc(stdin);
+		if (c == 0x08) {
+			if (bufIndex > 0) {
+				bufIndex--;
+				fputc(0x8, stdout);
+				fputc(0x20, stdout);
+			}
+		} else if (c != 0x0D) {
+			buffer[bufIndex++] = c;
+		}
+		fputc(c, stdout);
+        fflush(stdout);
+    }
+	buffer[bufIndex] = 0;
+	return newStString(buffer);
+}
+
+
 object ioPrimitive(int number, object * arguments)
 {
     int i, j;
@@ -417,37 +480,8 @@ object ioPrimitive(int number, object * arguments)
 			fileIn(fp[i], true);
 		break;
 
-    case 4:			/* get character from EPS32 console */
-#ifdef TARGET_ESP32
-
-		printf("In Primitive 124\n");
-		buffer[j] = '\0';
-		while (1) {
-			// printf("uart_rx_one_char\n");
-			STATUS s = uart_rx_one_char(&myChar);
-			// printf("DONE uart_rx_one_char\n");
-			printf("%c", myChar);
-		 	if (s == OK) {
-				if (myChar == '\n') {
-					if (buffer[j] != '\\') {
-			 			buffer[j++] = '\0';
-						break;
-					} else {
-						buffer[j--] = '\0';
-					}
-				}
-			 	buffer[j++] = myChar;
-		 	}
-	    	/* else we loop again */
-		    vTaskDelay(200 / portTICK_PERIOD_MS);
-		}
-
-#else // TARGET_ESP32
-		sysError("file operation not implemented yet", "");
-		// linenoiseEdit(*buffer, 1024, ">");
-#endif // TARGET_ESP32
-
-		returnedObject = newStString(buffer);
+    case 4:			/* get a input line from the console */
+		returnedObject = getInputLine(charPtr(arguments[0]));
 		break;
 
     case 5:			/* get string */

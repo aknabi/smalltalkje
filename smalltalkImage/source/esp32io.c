@@ -22,6 +22,10 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
 
+#include "driver/uart.h"
+#include "linenoise/linenoise.h"
+#include <esp_console.h>
+
 #endif // TARGET_ESP32
 
 #ifdef TARGET_ESP32
@@ -185,25 +189,43 @@ void m5StickTask(void* arg)
 
 #endif // TEST_M5STICK
 
-void app_main(void)
+void init_console(void)
 {
-     /* Install UART driver for interrupt-driven reads and writes */
-    ESP_ERROR_CHECK( uart_driver_install(0,
-            256, 0, 0, NULL, 0) );
+    /* Drain stdout before reconfiguring it */
+    fflush(stdout);
+    fsync(fileno(stdout));
 
+    /* Disable buffering on stdin */
+    setvbuf(stdin, NULL, _IONBF, 0);
+
+    // /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
+    // esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
+    // /* Move the caret to the beginning of the next line on '\n' */
+    // esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+
+    /* Configure UART. Note that REF_TICK is used so that the baud rate remains
+     * correct while APB frequency is changing in light sleep mode.
+     */
+    const uart_config_t uart_config = {
+            .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
+            .data_bits = UART_DATA_8_BITS,
+            .parity = UART_PARITY_DISABLE,
+            .stop_bits = UART_STOP_BITS_1,
+            .source_clk = UART_SCLK_REF_TICK,
+    };
+
+    /* Install UART driver for interrupt-driven reads and writes */
+    ESP_ERROR_CHECK( uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM,
+            256, 0, 0, NULL, 0) );
+    ESP_ERROR_CHECK( uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config) );
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(0);
+    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+}
 
-    /* Disable buffering on stdin and stdout */
-    setvbuf(stdin, NULL, _IONBF, 0);
-    setvbuf(stdout, NULL, _IONBF, 0);
-
-    /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
-    /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
-
+void app_main(void)
+{
+	init_console();
 
 #ifdef TEST_M5STICK
     ESP_LOGI(ESP_TAG, "Starting M5StickC Test\n");
