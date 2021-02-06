@@ -24,12 +24,16 @@ noreturn startup()
 {
     initFileSystem();
  
+ #ifdef TARGET_ESP32
  #ifdef WRITE_OBJECT_PARTITION
     writeObjectDataPartition();
- #else
+ //#else
+     setupObjectData();
+#endif
+#endif
      TT_LOG_INFO(TAG, "Pre-smalltalk start free heap size: %d", GET_FREE_HEAP_SIZE() );
     launchSmalltalk();
- #endif //WRITE_OBJECT_PARTITION
+ // #endif //WRITE_OBJECT_PARTITION
 }
 
 FILEP openFile(STR filename, STR mode)

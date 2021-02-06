@@ -68,17 +68,6 @@ static int fr(FILE * fp, char *p, int s)
     return r;
 }
 
-/*
-noreturn initFileSystem()
-{
-    initSPIFFSPartition("storage", "/spiffs");
-    // initSPIFFSPartition("objects", "/objects");
-#ifndef WRITE_OBJECT_PARTITION 
-    setupObjectData();
-#endif
-}
-*/
-
 noreturn imageRead(FILE * fp)
 {
     short i, size;

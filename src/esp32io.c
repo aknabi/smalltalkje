@@ -252,9 +252,9 @@ void initFileSystem()
 {
     initSPIFFSPartition("storage", "/spiffs");
     // initSPIFFSPartition("objects", "/objects");
-#ifndef WRITE_OBJECT_PARTITION 
-    setupObjectData();
-#endif
+// #ifndef WRITE_OBJECT_PARTITION 
+    // setupObjectData();
+// #endif
 }
 
 void initSPIFFSPartition(char *partitionName, char *basePath)
@@ -326,8 +326,18 @@ void writeObjectDataPartition()
    	fpObjData = fopen(pOD, "r");
 	if (fpObjData == NULL) {
 		sysError("cannot open object data", pOD);
-		exit(1);
+        return;
 	}
+
+    int c;
+    ESP_LOGI(ESP_TAG, "Write objects partition? (Y/y) >");
+    c = fgetc(stdin);
+    fputc(c, stdout);
+    fputs("\n", stdout);
+    if ( c != 89 && c != 121) {
+        ESP_LOGI(ESP_TAG, "Okay, skipping objects partition... Launch Smalltalk");
+        return;
+    }
 
     const esp_partition_t* part;
     part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "objects");
@@ -361,9 +371,12 @@ void writeObjectDataPartition()
     }
 
     fclose(fpObjData);
-    ESP_LOGI(ESP_TAG, "Done writing objects partition");
-
+    // remove("/spiffs/objectData"); 
+    ESP_LOGI(ESP_TAG, "Done writing objects partition. Hit any key to restart");
+    fgetc(stdin);
+    // esp_restart();
 }
+
 #endif // WRITE_OBJECT_PARTITION
 
 void eraseObjectDataPartition(esp_partition_t* part)
