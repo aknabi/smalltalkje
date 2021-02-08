@@ -18,6 +18,7 @@
 #include "driver/gpio.h"
 
 #include "m5stickc.h"
+#include "memory.h"
 
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
@@ -35,24 +36,47 @@ static const char *ESP_TAG = "ESP32";
 
 #if TARGET_DEVICE == DEVICE_M5STICKC
 
-void m5ButtonHandlerInit(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
+extern object buttonProcesses[4];
+
+void m5ButtonHandler(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
+    object buttonProcess = nilobj;
+    char* doItString= "x 'Big button has been pressed' print";
+
     if(base == m5button_a.esp_event_base) {
         switch(id) {
             case M5BUTTON_BUTTON_CLICK_EVENT:
-                runButtonHandler();
+                buttonProcess = buttonProcesses[0];
+                doItString= "x [m5 event: #BigButtonClicked] value";
+                // buttonProcesses[0] = nilobj;
                 break;
             case M5BUTTON_BUTTON_HOLD_EVENT:
+                buttonProcess = buttonProcesses[1];
+                doItString= "x [m5 event: #BigButtonClicked] value";
+                // buttonProcesses[1] = nilobj;
                 break;
         }
-    }
-    if(base == m5button_b.esp_event_base) {
+    } else if(base == m5button_b.esp_event_base) {
         switch(id) {
             case M5BUTTON_BUTTON_CLICK_EVENT:
+                buttonProcess = buttonProcesses[2];
+                doItString= "x 'Little button has been pressed' print";
+                // buttonProcesses[2] = nilobj;
                 break;
             case M5BUTTON_BUTTON_HOLD_EVENT:
-            break;
+                buttonProcess = buttonProcesses[3];
+                doItString= "x ['Litte button has been held' print] value";
+                // buttonProcesses[3] = nilobj;
+                break;
         }
     }
+    doIt(doItString);
+    // if (buttonProcess == nilobj) {
+    //     fprintf(stderr, "<%s>: %s\n", "m5ButtonHandler", "buttonProcess is nil");
+    // } else {
+    //     fprintf(stderr, "<%s>: %s obj id: %d\n", "m5ButtonHandler", "buttonProcess a process", buttonProcess);
+    //     runBlock(buttonProcess);
+    //     // runSmalltalkProcess(buttonProcess);
+    // }
 }
 
 // To ensure we don't init M5StickC twice... causes big issues
@@ -83,10 +107,10 @@ void m5StickInit()
     TFT_fillScreen(_bg);
 
     // Register for button events
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5ButtonHandlerInit, NULL);
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5ButtonHandlerInit, NULL);
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5ButtonHandlerInit, NULL);
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5ButtonHandlerInit, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5ButtonHandler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5ButtonHandler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5ButtonHandler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5ButtonHandler, NULL);
 
 }
 
@@ -94,7 +118,7 @@ void m5StickInit()
 
 #ifdef TEST_M5STICK
 
-void my_m5_event_handler(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
+void m5_event_handler(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
     if(base == m5button_a.esp_event_base) {
         switch(id) {
             case M5BUTTON_BUTTON_CLICK_EVENT:
@@ -140,10 +164,10 @@ void m5StickTask(void* arg)
     m5StickInit();
     
     // Register for button events
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, my_m5_event_handler, NULL);
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, my_m5_event_handler, NULL);
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, my_m5_event_handler, NULL);
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, my_m5_event_handler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5_event_handler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5_event_handler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5_event_handler, NULL);
+    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5_event_handler, NULL);
 
     vTaskDelay(3000/portTICK_PERIOD_MS);
     // ESP_LOGD(TAG, "Turning backlight off");

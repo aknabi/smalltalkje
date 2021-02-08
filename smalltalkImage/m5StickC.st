@@ -28,6 +28,37 @@ Methods M5StickC 'all'
 |
 	display
 		^ display
+|
+    delayTaskFor: milliseconds
+        <152 milliseconds>
+|
+    blinkLED
+        self ledOff; ledOn; delayTaskFor: 1000; ledOff.
+|
+    when: anEventSymbol do: aBlock | eventNum process |
+        eventNum <- self eventNumberFor: anEventSymbol.
+        eventNum notNil
+            ifTrue: [ 
+                "Create the process to run when clicked. Wrap that in a block to reset the process when done"
+                "buttonHandler <- self wrapHandlerBlock: aBlock event: eventNum."
+                "buttonHandler <- aBlock newProcess."
+                <181 1 eventNum aBlock> ]
+|
+    event: aSymbol
+        [aSymbol = #BigButtonClicked]
+            ifTrue: ['event big button click' print].
+        ^self asString print
+|
+    wrapHandlerBlock: aBlock event: eventNum
+        ^[ aBlock fork. buttonHandler <- self wrapHandlerBlock: aBlock event: eventNum. <181 1 eventNum buttonHandler> ] newProcess
+|
+    eventNumberFor: anEventSymbol
+        (Switch new key: anEventSymbol)
+            ifMatch: #BigButtonClicked do: [^1];
+            ifMatch: #BigButtonLongPressed do: [^2];
+            ifMatch: #LittleButtonClicked do: [^3];
+            ifMatch: #LittleButtonLongPressed do: [^4];
+            else: [^nil]
 ]
 Methods Color 'all'
 	new

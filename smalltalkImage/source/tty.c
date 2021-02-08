@@ -44,14 +44,14 @@ extern boolean parseok;
 /* report a fatal system error */
 noreturn sysError(char *s1, char *s2)
 {
-    ignore fprintf(stderr, "%s\n%s\n", s1, s2);
+    ignore fprintf(stderr, "Error <%s>: %s\n", s1, s2);
     ignore abort();
 }
 
 /* report a nonfatal system error */
 noreturn sysWarn(char *s1, char *s2)
 {
-    ignore fprintf(stderr, "%s\n%s\n", s1, s2);
+    ignore fprintf(stderr, "Warning <%s>: %s\n", s1, s2);
 }
 
 void compilWarn(char *selector, char *str1, char *str2)
@@ -86,6 +86,24 @@ extern object processStack;
 extern int linkPointer;
 
 int counter = 0;
+
+object buttonProcesses[4] = {nilobj, nilobj, nilobj, nilobj};
+
+void addButtonHandlerProcess(object* arguments) {
+    sysWarn("start adding handler...", "addButtonHandlerProcess");
+    checkIntArg(1);
+    object handerProcess = arguments[2];
+    if (getIntArg(1) > 3) return;
+    sysWarn("now adding handler...", "addButtonHandlerProcess");
+    fprintf(stderr, "Button object handler process: %d", handerProcess );
+    buttonProcesses[getIntArg(1) - 1] = handerProcess;
+    // Store a ref to the button handler process outside of Smalltalk
+    // incr(handerProcess);
+}
+
+typedef void (*primFunc_t)(object*);
+
+primFunc_t m5PrimitiveFunctions[] = { &addButtonHandlerProcess };
 
 void runTask(void *process)
 {
@@ -149,7 +167,7 @@ object sysPrimitive(int number, object * arguments)
 
     case 2:         /* prim 152 delays the current OS task with a ST process for a given number of milliseconds */
         checkIntArg(0)
-        vTaskDelay( intValue(arguments[0]) );
+        vTaskDelay( intValue(arguments[0]) / portTICK_PERIOD_MS );
         // We'd like to return the handle in order to manage the process.
         break;
 
@@ -319,6 +337,18 @@ object sysPrimitive(int number, object * arguments)
         checkIntArg(1)
         gpio_set_level(getIntArg(0), getIntArg(1));
         break;
+
+    // Prim 181 M5 functions. First arg is function number, second and third are arguments to the function
+    case 31:
+    	sysWarn("in primitive 181", "sysPrimitive");
+        checkIntArg(0);
+        int funcIndex = getIntArg(0) - 1;
+        if (funcIndex != 0) break;
+    	sysWarn("181 register prim function", "sysPrimitive");
+        primFunc_t m5Func = m5PrimitiveFunctions[funcIndex];
+        m5Func(arguments);
+        break;
+
 #endif
 
     default:

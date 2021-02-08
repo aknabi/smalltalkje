@@ -286,7 +286,7 @@ noreturn setDummyObjFlags() {
 			|| dummyObject.cl == stringClass 
 			|| dummyObject.cl == blockClass 
 			|| dummyObject.cl == symbolClass) {
-		fprintf(stderr, "Matched class: %d\n", dummyObject.cl);
+		// fprintf(stderr, "Matched class: %d\n", dummyObject.cl);
 		dummyObject.flags = DUMMY_OBJ_FLAG_ROM;
 	} else {
 		dummyObject.flags = 0;

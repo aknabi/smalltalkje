@@ -689,14 +689,91 @@ object *arguments;
     return (returnedObject);
 }
 
-#if TARGET_DEVICE == DEVICE_M5STICKC
+void doIt(text)
+char *text;
+{
+    object process, stack, method;
 
-void runButtonHandler() {
-    object buttonHandler;
-    buttonHandler = globalSymbol("buttonHandler");
-    if (buttonHandler != (object *) 0) {
-        unaryPrims(9, buttonHandler);
-    }
+    method = newMethod();
+    incr(method);
+    setInstanceVariables(nilobj);
+    ignore parse(method, text, false);
+
+    process = allocObject(processSize);
+    incr(process);
+    stack = newArray(50);
+    incr(stack);
+
+    /* make a process */
+    basicAtPut(process, stackInProcess, stack);
+    basicAtPut(process, stackTopInProcess, newInteger(10));
+    basicAtPut(process, linkPtrInProcess, newInteger(2));
+
+    /* put argument on stack */
+    basicAtPut(stack, 1, nilobj);	/* argument */
+    /* now make a linkage area in stack */
+    basicAtPut(stack, 2, nilobj);	/* previous link */
+    basicAtPut(stack, 3, nilobj);	/* context object (nil = stack) */
+    basicAtPut(stack, 4, newInteger(1));	/* return point */
+    basicAtPut(stack, 5, method);	/* method */
+    basicAtPut(stack, 6, newInteger(1));	/* byte offset */
+
+    /* now go execute it */
+	unaryPrims(9, process);
+    // while (execute(process, 15000))
+	// fprintf(stderr, "..");
 }
 
-#endif
+void runBlock(object aBlock)
+{
+    object process, stack;
+
+	// object method;
+    // method = newMethod();
+    // incr(method);
+    // setInstanceVariables(nilobj);
+    // ignore parse(method, text, false);
+
+    process = allocObject(processSize);
+	setClass(process, globalSymbol("Process"));
+    incr(process);
+    stack = newArray(50);
+    incr(stack);
+
+    /* make a process */
+    basicAtPut(process, stackInProcess, stack);
+    basicAtPut(process, stackTopInProcess, newInteger(10));
+    basicAtPut(process, linkPtrInProcess, newInteger(2));
+
+    /* put argument on stack */
+    basicAtPut(stack, 1, nilobj);	/* argument */
+    /* now make a linkage area in stack */
+    basicAtPut(stack, 2, nilobj);	/* previous link */
+    basicAtPut(stack, 3, basicAt(aBlock, contextInBlock));	/* context object (nil = stack) */
+    basicAtPut(stack, 4, newInteger(1));	/* return point */
+    basicAtPut(stack, 5, nilobj);	/* method */
+    basicAtPut(stack, 6, basicAt(aBlock, bytecountPositionInBlock));	/* byte offset */ 
+    basicAtPut(stack, 6, newInteger(1));	/* byte offset */ 
+
+	fprintf(stderr, "<%s>: %s\n", "runBlock", "trying to run new process" );
+
+    /* now go execute it */
+	unaryPrims(9, process);
+	// while (execute(process, 15000))
+}
+
+
+
+void runSmalltalkProcess(object processToRun) {
+	// object buttonHandler;
+	// buttonHandler = globalSymbol("buttonHandler");
+    if (processToRun != nilobj) {
+        unaryPrims(9, processToRun);
+	} else {
+		fprintf(stderr, "<%s>: %s\n", "runSmalltalkProcess", "trying to run nil process" );
+	}
+}
+
+void runSmalltalkProcessNamed(char *processName) {
+	runSmalltalkProcess( globalSymbol(processName) );
+}
