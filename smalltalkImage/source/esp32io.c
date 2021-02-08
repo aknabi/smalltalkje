@@ -69,6 +69,7 @@ void m5ButtonHandler(void * handler_arg, esp_event_base_t base, int32_t id, void
                 break;
         }
     }
+    // forkEval("x [:str | str print] value", newStString("Hello"));
     doIt(doItString);
     // if (buttonProcess == nilobj) {
     //     fprintf(stderr, "<%s>: %s\n", "m5ButtonHandler", "buttonProcess is nil");

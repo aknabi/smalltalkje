@@ -60,6 +60,10 @@ Methods M5StickC 'all'
             ifMatch: #LittleButtonLongPressed do: [^4];
             else: [^nil]
 ]
+Methods String 'execute'
+    evalWith: arg
+        <20 self>
+]
 Methods Color 'all'
 	new
 		^super new black

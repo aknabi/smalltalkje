@@ -31,6 +31,13 @@
 #include "memory.h"
 #include "names.h"
 
+#ifdef TARGET_ESP32
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#endif
+
 extern object processStack;
 extern int linkPointer;
 
@@ -88,6 +95,10 @@ int number;
     return (returnedObject);
 }
 
+object blockToExecute;
+extern void doIt(char* evalText, object arg);
+extern void runBlock(object block, object arg);
+
 static int unaryPrims(number, firstarg)
 int number;
 object firstarg;
@@ -122,6 +133,16 @@ object firstarg;
 
     case 4:			/* debugging print */
 	fprintf(stderr, "primitive 14 %s\n", charPtr(firstarg));
+	break;
+
+    case 5:			/* Store block to exec */
+	fprintf(stderr, "primitive 15 store block to execute %d\n", firstarg);
+	blockToExecute = firstarg;
+	break;
+
+    case 6:			/* Execute string */
+	fprintf(stderr, "primitive 16 execute string %s\n", charPtr(firstarg));
+	doIt(charPtr(firstarg), nilobj);
 	break;
 
     case 8:			/* change return point - block return */
@@ -190,6 +211,22 @@ object firstarg, secondarg;
 
     returnedObject = firstarg;
     switch (number) {
+	
+    case 0:			/* prim 20 Execute string with arg */
+	if (getClass(firstarg) == globalSymbol("String")) {
+		fprintf(stderr, "primitive 20 execute string %s\n", charPtr(firstarg));
+		doIt(charPtr(firstarg), secondarg);
+	} else if (getClass(firstarg) == globalSymbol("Block")) {
+		fprintf(stderr, "primitive 20 first argument with a block\n");
+		runBlock(firstarg, secondarg);
+	} else {
+		fprintf(stderr, "primitive 20 first argument might be a process\n");
+		// returnedObject = falseobj;
+		unaryPrims(9, firstarg);
+	}
+
+	break;
+
     case 1:			/* object identity test */
 	if (firstarg == secondarg)
 	    returnedObject = trueobj;
@@ -689,8 +726,7 @@ object *arguments;
     return (returnedObject);
 }
 
-void doIt(text)
-char *text;
+void doIt(char* text, object arg)
 {
     object process, stack, method;
 
@@ -710,7 +746,8 @@ char *text;
     basicAtPut(process, linkPtrInProcess, newInteger(2));
 
     /* put argument on stack */
-    basicAtPut(stack, 1, nilobj);	/* argument */
+    basicAtPut(stack, 1, arg);	/* argument */
+
     /* now make a linkage area in stack */
     basicAtPut(stack, 2, nilobj);	/* previous link */
     basicAtPut(stack, 3, nilobj);	/* context object (nil = stack) */
@@ -718,15 +755,48 @@ char *text;
     basicAtPut(stack, 5, method);	/* method */
     basicAtPut(stack, 6, newInteger(1));	/* byte offset */
 
+	fprintf(stderr, "eval: %s\n", "doIt", text );
+
     /* now go execute it */
 	unaryPrims(9, process);
     // while (execute(process, 15000))
 	// fprintf(stderr, "..");
 }
 
-void runBlock(object aBlock)
+#ifdef TARGET_ESP32
+
+object evalArg = nilobj;
+
+void evalTask(void* evalText, object arg)
 {
-    object process, stack;
+	doIt(evalText, arg);
+	vTaskDelete( NULL );
+}
+
+void forkEval(char* evalText, object arg)
+{
+	evalArg = arg;
+    xTaskCreate(
+        evalTask, /* Task function. */
+        "evalTask", /* name of task. */
+        8096, /* Stack size of task */
+        evalText, /* parameter of the task (the Smalltalk exec string to run) */
+        1, /* priority of the task */
+        NULL); /* Task handle to keep track of created task */
+}
+
+#else
+
+void forkEval(char* evalText, object arg)
+{
+	doIt(evalText, arg);
+}
+
+#endif
+
+void runBlock(object aBlock, object arg)
+{
+    object process, stack, argArray;
 
 	// object method;
     // method = newMethod();
@@ -739,30 +809,31 @@ void runBlock(object aBlock)
     incr(process);
     stack = newArray(50);
     incr(stack);
+    argArray = newArray(1);
+    incr(stack);
+    basicAtPut(argArray, 1, arg);
 
     /* make a process */
     basicAtPut(process, stackInProcess, stack);
     basicAtPut(process, stackTopInProcess, newInteger(10));
     basicAtPut(process, linkPtrInProcess, newInteger(2));
 
+	basicAtPut(basicAt(aBlock, contextInBlock), temporariesInContext, argArray);
+
     /* put argument on stack */
     basicAtPut(stack, 1, nilobj);	/* argument */
+
     /* now make a linkage area in stack */
     basicAtPut(stack, 2, nilobj);	/* previous link */
-    basicAtPut(stack, 3, basicAt(aBlock, contextInBlock));	/* context object (nil = stack) */
+   	basicAtPut(stack, 3, basicAt(aBlock, contextInBlock));	/* context object (nil = stack) */
     basicAtPut(stack, 4, newInteger(1));	/* return point */
     basicAtPut(stack, 5, nilobj);	/* method */
     basicAtPut(stack, 6, basicAt(aBlock, bytecountPositionInBlock));	/* byte offset */ 
-    basicAtPut(stack, 6, newInteger(1));	/* byte offset */ 
-
-	fprintf(stderr, "<%s>: %s\n", "runBlock", "trying to run new process" );
 
     /* now go execute it */
 	unaryPrims(9, process);
 	// while (execute(process, 15000))
 }
-
-
 
 void runSmalltalkProcess(object processToRun) {
 	// object buttonHandler;
