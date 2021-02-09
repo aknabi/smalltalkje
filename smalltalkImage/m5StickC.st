@@ -16,6 +16,13 @@ Methods M5StickC 'all'
 |
 	initialize
 		display <- Oled new.
+        EventHandlerBlocks <- Dictionary new.
+|
+    setupButtonHandlers
+        self when: 'BigButtonClicked' do: ['BigButtonClicked event block' print].
+        self when: 'BigButtonHeld' do: ['BigButtonHeld event block' print].
+        self when: 'LittleButtonClicked' do: ['LittleButtonClicked event block' print].
+        self when: 'LittleButtonHeld' do: ['LittleButtonHeld event block' print].
 |
     initializeLED
         <159 10 2>
@@ -35,30 +42,8 @@ Methods M5StickC 'all'
     blinkLED
         self ledOff; ledOn; delayTaskFor: 1000; ledOff.
 |
-    when: anEventSymbol do: aBlock | eventNum process |
-        eventNum <- self eventNumberFor: anEventSymbol.
-        eventNum notNil
-            ifTrue: [ 
-                "Create the process to run when clicked. Wrap that in a block to reset the process when done"
-                "buttonHandler <- self wrapHandlerBlock: aBlock event: eventNum."
-                "buttonHandler <- aBlock newProcess."
-                <181 1 eventNum aBlock> ]
-|
-    event: aSymbol
-        [aSymbol = #BigButtonClicked]
-            ifTrue: ['event big button click' print].
-        ^self asString print
-|
-    wrapHandlerBlock: aBlock event: eventNum
-        ^[ aBlock fork. buttonHandler <- self wrapHandlerBlock: aBlock event: eventNum. <181 1 eventNum buttonHandler> ] newProcess
-|
-    eventNumberFor: anEventSymbol
-        (Switch new key: anEventSymbol)
-            ifMatch: #BigButtonClicked do: [^1];
-            ifMatch: #BigButtonLongPressed do: [^2];
-            ifMatch: #LittleButtonClicked do: [^3];
-            ifMatch: #LittleButtonLongPressed do: [^4];
-            else: [^nil]
+    when: anEventString do: aBlock
+        EventHandlerBlocks at: anEventString put: aBlock
 ]
 Methods String 'execute'
     evalWith: arg

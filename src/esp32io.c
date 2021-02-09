@@ -42,26 +42,30 @@ extern object buttonProcesses[4];
 
 void m5ButtonHandler(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
     object buttonBlock = nilobj;
+    object eventDict = globalSymbol("EventHandlerBlocks");
+    char *eventStr;
+    if (eventDict == nilobj) return;
 
     if(base == m5button_a.esp_event_base) {
         switch(id) {
             case M5BUTTON_BUTTON_CLICK_EVENT:
-                buttonBlock = globalSymbol("BigButtonClicked");
+                eventStr = "BigButtonClicked";
                 break;
             case M5BUTTON_BUTTON_HOLD_EVENT:
-                buttonBlock = globalSymbol("BigButtonHeld");
+                eventStr = "BigButtonHeld";
                 break;
         }
     } else if(base == m5button_b.esp_event_base) {
         switch(id) {
             case M5BUTTON_BUTTON_CLICK_EVENT:
-                buttonBlock = globalSymbol("LittleButtonClicked");
+                eventStr = "LittleButtonClicked";
                 break;
             case M5BUTTON_BUTTON_HOLD_EVENT:
-                buttonBlock = globalSymbol("LittleButtonHeld");
+                eventStr = "LittleButtonHeld";
                 break;
         }
     }
+    buttonBlock =  nameTableLookup(eventDict, eventStr);
     if (buttonBlock != nilobj) {
         runBlock(buttonBlock, nilobj);
     }
