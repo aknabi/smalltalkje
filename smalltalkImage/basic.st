@@ -64,6 +64,9 @@ Methods Block 'initialization'
 |
 	evalWith: arg
 		<20 self arg>
+|
+	saveForEval
+		<15 self>
 ]
 Methods Boolean 'all'
 	ifTrue: trueBlock
@@ -334,6 +337,9 @@ Methods Object 'all'
 		(1 to: self basicSize) do:
 			[:i | newObj basicAt: i put: (self basicAt: i) ].
 		^ newObj
+|
+	evalWithSelf
+		<17 self>
 ]
 Methods Smalltalk 'all'
 	perform: message withArguments: args ifError: aBlock

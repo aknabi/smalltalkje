@@ -233,11 +233,9 @@ object firstarg, secondarg;
     switch (number) {
 	
     case 0:			/* prim 20 Execute string or block with arg */
-		if (getClass(firstarg) == globalSymbol("String")) {
-			fprintf(stderr, "primitive 20 execute string %s\n", charPtr(firstarg));
+		if (isObjectOfClassName(firstarg, "String")) {
 			doIt(charPtr(firstarg), secondarg);
 		} else if (getClass(firstarg) == globalSymbol("Block")) {
-			fprintf(stderr, "primitive 20 first argument with a block\n");
 			runBlock(firstarg, secondarg);
 		} else {
 			fprintf(stderr, "primitive 20 first argument must be a string or block\n");
@@ -745,6 +743,46 @@ object *arguments;
     return (returnedObject);
 }
 
+/*
+ * Execute either a method or block (the other param will be nilobj)
+ * Used by functions to wrap common code
+ * The argument arg will be passed in as a block temp.
+ * TODO: Arg should also be passed to method... also check to see block/method takes args
+ */
+void runMethodOrBlock(object method, object block, object arg)
+{
+    object process, stack, argArray;
+
+    process = allocObject(processSize);
+    incr(process);
+    stack = newArray(50);
+    incr(stack);
+
+
+    /* make a process */
+    basicAtPut(process, stackInProcess, stack);
+    basicAtPut(process, stackTopInProcess, newInteger(10));
+    basicAtPut(process, linkPtrInProcess, newInteger(2));
+
+    basicAtPut(stack, 1, method == nilobj ? nilobj : arg);	/* argument if method */
+
+    /* now make a linkage area in stack */
+    basicAtPut(stack, 2, nilobj);	/* previous link */
+
+	object ctxObj = method == nilobj ? basicAt(block, contextInBlock) : nilobj;
+	basicAtPut(stack, 3, ctxObj);	/* context object (nil = stack) */
+
+    basicAtPut(stack, 4, newInteger(1));	/* return point */
+
+    basicAtPut(stack, 5, method);	/* method if there is one (otherwise nil) */
+
+	object bytecountPos = method == nilobj ? basicAt(block, bytecountPositionInBlock) : newInteger(1);
+    basicAtPut(stack, 6, bytecountPos);	/* byte offset */
+
+    /* now go execute it */
+	unaryPrims(9, process);
+}
+
 void doIt(char* text, object arg)
 {
     object process, stack, method;
@@ -754,32 +792,7 @@ void doIt(char* text, object arg)
     setInstanceVariables(nilobj);
     ignore parse(method, text, false);
 
-    process = allocObject(processSize);
-    incr(process);
-    stack = newArray(50);
-    incr(stack);
-
-    /* make a process */
-    basicAtPut(process, stackInProcess, stack);
-    basicAtPut(process, stackTopInProcess, newInteger(10));
-    basicAtPut(process, linkPtrInProcess, newInteger(2));
-
-    /* put argument on stack */
-    basicAtPut(stack, 1, arg);	/* argument */
-
-    /* now make a linkage area in stack */
-    basicAtPut(stack, 2, nilobj);	/* previous link */
-    basicAtPut(stack, 3, nilobj);	/* context object (nil = stack) */
-    basicAtPut(stack, 4, newInteger(1));	/* return point */
-    basicAtPut(stack, 5, method);	/* method */
-    basicAtPut(stack, 6, newInteger(1));	/* byte offset */
-
-	fprintf(stderr, "eval: %s\n", "doIt", text );
-
-    /* now go execute it */
-	unaryPrims(9, process);
-    // while (execute(process, 15000))
-	// fprintf(stderr, "..");
+	runMethodOrBlock(method, nilobj, arg);
 }
 
 #ifdef TARGET_ESP32
@@ -833,50 +846,22 @@ void forkBlockTask(object block, object arg)
 
 #endif
 
-void runBlock(object aBlock, object arg)
+void runBlock(object block, object arg)
 {
-    object process, stack, argArray;
+    object argArray;
 
-	// object method;
-    // method = newMethod();
-    // incr(method);
-    // setInstanceVariables(nilobj);
-    // ignore parse(method, text, false);
+    /* put argument in block temps */
+	if (block != nilobj) {
+		argArray = newArray(1);
+    	incr(argArray);
+    	basicAtPut(argArray, 1, arg);
+		basicAtPut(basicAt(block, contextInBlock), temporariesInContext, argArray); // block
+	}
 
-    process = allocObject(processSize);
-	setClass(process, globalSymbol("Process"));
-    incr(process);
-    stack = newArray(50);
-    incr(stack);
-    argArray = newArray(1);
-    incr(stack);
-    basicAtPut(argArray, 1, arg);
-
-    /* make a process */
-    basicAtPut(process, stackInProcess, stack);
-    basicAtPut(process, stackTopInProcess, newInteger(10));
-    basicAtPut(process, linkPtrInProcess, newInteger(2));
-
-	basicAtPut(basicAt(aBlock, contextInBlock), temporariesInContext, argArray);
-
-    /* put argument on stack */
-    basicAtPut(stack, 1, nilobj);	/* argument */
-
-    /* now make a linkage area in stack */
-    basicAtPut(stack, 2, nilobj);	/* previous link */
-   	basicAtPut(stack, 3, basicAt(aBlock, contextInBlock));	/* context object (nil = stack) */
-    basicAtPut(stack, 4, newInteger(1));	/* return point */
-    basicAtPut(stack, 5, nilobj);	/* method */
-    basicAtPut(stack, 6, basicAt(aBlock, bytecountPositionInBlock));	/* byte offset */ 
-
-    /* now go execute it */
-	unaryPrims(9, process);
-	// while (execute(process, 15000))
+	runMethodOrBlock(nilobj, block, arg);
 }
 
 void runSmalltalkProcess(object processToRun) {
-	// object buttonHandler;
-	// buttonHandler = globalSymbol("buttonHandler");
     if (processToRun != nilobj) {
         unaryPrims(9, processToRun);
 	} else {

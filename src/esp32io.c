@@ -20,6 +20,8 @@
 #include "m5stickc.h"
 #include "memory.h"
 
+#include "names.h"
+
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
 
@@ -39,37 +41,33 @@ static const char *ESP_TAG = "ESP32";
 extern object buttonProcesses[4];
 
 void m5ButtonHandler(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
-    object buttonProcess = nilobj;
-    char* doItString= "x 'Big button has been pressed' print";
+    object buttonBlock = nilobj;
 
     if(base == m5button_a.esp_event_base) {
         switch(id) {
             case M5BUTTON_BUTTON_CLICK_EVENT:
-                buttonProcess = buttonProcesses[0];
-                doItString= "x [m5 event: #BigButtonClicked] value";
-                // buttonProcesses[0] = nilobj;
+                buttonBlock = globalSymbol("BigButtonClicked");
                 break;
             case M5BUTTON_BUTTON_HOLD_EVENT:
-                buttonProcess = buttonProcesses[1];
-                doItString= "x [m5 event: #BigButtonClicked] value";
-                // buttonProcesses[1] = nilobj;
+                buttonBlock = globalSymbol("BigButtonHeld");
                 break;
         }
     } else if(base == m5button_b.esp_event_base) {
         switch(id) {
             case M5BUTTON_BUTTON_CLICK_EVENT:
-                buttonProcess = buttonProcesses[2];
-                doItString= "x 'Little button has been pressed' print";
-                // buttonProcesses[2] = nilobj;
+                buttonBlock = globalSymbol("LittleButtonClicked");
                 break;
             case M5BUTTON_BUTTON_HOLD_EVENT:
-                buttonProcess = buttonProcesses[3];
-                doItString= "x ['Litte button has been held' print] value";
-                // buttonProcesses[3] = nilobj;
+                buttonBlock = globalSymbol("LittleButtonHeld");
                 break;
         }
     }
-    doIt(doItString);
+    if (buttonBlock != nilobj) {
+        runBlock(buttonBlock, nilobj);
+    }
+
+    // doIt(doItString);
+
     // if (buttonProcess == nilobj) {
     //     fprintf(stderr, "<%s>: %s\n", "m5ButtonHandler", "buttonProcess is nil");
     // } else {
