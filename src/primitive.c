@@ -96,6 +96,7 @@ int number;
 }
 
 object blockToExecute;
+extern void forkBlockTask(object block, object arg);
 extern void doIt(char* evalText, object arg);
 extern void runBlock(object block, object arg);
 
@@ -135,31 +136,50 @@ object firstarg;
 	fprintf(stderr, "primitive 14 %s\n", charPtr(firstarg));
 	break;
 
-    case 5:			/* Store block to exec */
-	fprintf(stderr, "primitive 15 store block to execute %d\n", firstarg);
-	blockToExecute = firstarg;
-	break;
+    case 5:			/* prim 15 Store block to exec */
+		returnedObject = getClass(firstarg) == globalSymbol("Block") ? trueobj : falseobj;
+		if (returnedObject == trueobj) {
+			fprintf(stderr, "primitive 15 store block to execute %d\n", firstarg);
+			// Decrement the reference count for any existing saved block we're going to replace
+			if (blockToExecute != nilobj) decr(blockToExecute);
+			// Increment the reference count for the new existing saved block
+			incr(firstarg);
+			blockToExecute = firstarg;
+		} else {
+			fprintf(stderr, "primitive 15 argument must be a block\n");
+		}
+		break;
 
     case 6:			/* Execute string */
-	fprintf(stderr, "primitive 16 execute string %s\n", charPtr(firstarg));
-	doIt(charPtr(firstarg), nilobj);
-	break;
+		fprintf(stderr, "primitive 16 execute string %s\n", charPtr(firstarg));
+		doIt(charPtr(firstarg), nilobj);
+		break;
+
+	case 7:			/* Execute saved block with first argument */
+		if ( blockToExecute == nilobj ) {
+			returnedObject = falseobj;
+		} else {
+			// runBlock(blockToExecute, firstarg);
+			forkBlockTask(blockToExecute, firstarg);
+			returnedObject = trueobj;
+		}
+		break;
 
     case 8:			/* change return point - block return */
-	/* first get previous link pointer */
-	i = intValue(basicAt(processStack, linkPointer));
-	/* then creating context pointer */
-	j = intValue(basicAt(firstarg, 1));
-	if (basicAt(processStack, j + 1) != firstarg) {
-	    returnedObject = falseobj;
-	    break;
-	}
-	/* first change link pointer to that of creator */
-	fieldAtPut(processStack, i, basicAt(processStack, j));
-	/* then change return point to that of creator */
-	fieldAtPut(processStack, i + 2, basicAt(processStack, j + 2));
-	returnedObject = trueobj;
-	break;
+		/* first get previous link pointer */
+		i = intValue(basicAt(processStack, linkPointer));
+		/* then creating context pointer */
+		j = intValue(basicAt(firstarg, 1));
+		if (basicAt(processStack, j + 1) != firstarg) {
+	    	returnedObject = falseobj;
+	    	break;
+		}
+		/* first change link pointer to that of creator */
+		fieldAtPut(processStack, i, basicAt(processStack, j));
+		/* then change return point to that of creator */
+		fieldAtPut(processStack, i + 2, basicAt(processStack, j + 2));
+		returnedObject = trueobj;
+		break;
 
     case 9:			/* process execute */
 	/* first save the values we are about to clobber */
@@ -212,17 +232,17 @@ object firstarg, secondarg;
     returnedObject = firstarg;
     switch (number) {
 	
-    case 0:			/* prim 20 Execute string with arg */
-	if (getClass(firstarg) == globalSymbol("String")) {
-		fprintf(stderr, "primitive 20 execute string %s\n", charPtr(firstarg));
-		doIt(charPtr(firstarg), secondarg);
-	} else if (getClass(firstarg) == globalSymbol("Block")) {
-		fprintf(stderr, "primitive 20 first argument with a block\n");
-		runBlock(firstarg, secondarg);
-	} else {
-		fprintf(stderr, "primitive 20 first argument must be a string or block\n");
-		returnedObject = falseobj;
-	}
+    case 0:			/* prim 20 Execute string or block with arg */
+		if (getClass(firstarg) == globalSymbol("String")) {
+			fprintf(stderr, "primitive 20 execute string %s\n", charPtr(firstarg));
+			doIt(charPtr(firstarg), secondarg);
+		} else if (getClass(firstarg) == globalSymbol("Block")) {
+			fprintf(stderr, "primitive 20 first argument with a block\n");
+			runBlock(firstarg, secondarg);
+		} else {
+			fprintf(stderr, "primitive 20 first argument must be a string or block\n");
+			returnedObject = falseobj;
+		}
 
 	break;
 
@@ -764,17 +784,32 @@ void doIt(char* text, object arg)
 
 #ifdef TARGET_ESP32
 
-object evalArg = nilobj;
-
 void evalTask(void* evalText, object arg)
 {
 	doIt(evalText, arg);
 	vTaskDelete( NULL );
 }
 
+void taskRunBlock(void* blockArg){
+	object block
+	runBlock(blockArg[0], blockArg[1]);
+	vTaskDelete( NULL );
+}
+
+void forkBlockTask(object block, object arg)
+{
+	object runBlockArgs[2] = { block, arg };
+    xTaskCreate(
+        taskRunBlock, /* Task function. */
+        "taskRunBlock", /* name of task. */
+        8096, /* Stack size of task */
+        runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
+        1, /* priority of the task */
+        NULL); /* Task handle to keep track of created task */
+}
+
 void forkEval(char* evalText, object arg)
 {
-	evalArg = arg;
     xTaskCreate(
         evalTask, /* Task function. */
         "evalTask", /* name of task. */
@@ -789,6 +824,11 @@ void forkEval(char* evalText, object arg)
 void forkEval(char* evalText, object arg)
 {
 	doIt(evalText, arg);
+}
+
+void forkBlockTask(object block, object arg)
+{
+	runBlock(block, arg);
 }
 
 #endif
@@ -842,8 +882,4 @@ void runSmalltalkProcess(object processToRun) {
 	} else {
 		fprintf(stderr, "<%s>: %s\n", "runSmalltalkProcess", "trying to run nil process" );
 	}
-}
-
-void runSmalltalkProcessNamed(char *processName) {
-	runSmalltalkProcess( globalSymbol(processName) );
 }
