@@ -19,10 +19,12 @@ Methods M5StickC 'all'
         EventHandlerBlocks <- Dictionary new.
 |
     setupButtonHandlers
-        self when: 'BigButtonClicked' do: ['BigButtonClicked event block' print].
-        self when: 'BigButtonHeld' do: ['BigButtonHeld event block' print].
-        self when: 'LittleButtonClicked' do: ['LittleButtonClicked event block' print].
-        self when: 'LittleButtonHeld' do: ['LittleButtonHeld event block' print].
+        "self when: 'BigButtonClicked' do: [10 timesRepeat: ['BigButtonClicked event block' print. self delayTaskFor: 1000]]."
+        "self when: 'BigButtonClicked' do: [ [10 timesRepeat: ['BigButtonClicked event block' print]] forkTask]."
+        self when: 'BigButtonClicked' do: [display clear; string: 'BigButtonClicked' x: 16 y: 16].
+        self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
+        self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
+        self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16].
 |
     initializeLED
         <159 10 2>

@@ -25,6 +25,10 @@ Methods Block 'forks'
 	fork
 		self newProcess resume
 |
+	forkTask
+		" fork this block as an indepenent task in the native OS "
+		self newProcess forkTask
+|
 	forkWith: args
 		(self newProcessWith: args) resume
 ]

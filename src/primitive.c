@@ -797,17 +797,25 @@ void doIt(char* text, object arg)
 
 #ifdef TARGET_ESP32
 
+TaskHandle_t taskHandle = NULL;
+
 void evalTask(void* evalText, object arg)
 {
 	doIt(evalText, arg);
 	vTaskDelete( NULL );
 }
 
+
 void taskRunBlock(void* blockArg){
 	object block
+	fprintf(stderr, "taskRunBlock: running block" );
+	fflush(stderr);
 	runBlock(blockArg[0], blockArg[1]);
-	vTaskDelete( NULL );
+	fprintf(stderr, "taskRunBlock: about to vTaskDelete" );
+	fflush(stderr);
+	vTaskDelete( xTaskGetCurrentTaskHandle() );
 }
+
 
 void forkBlockTask(object block, object arg)
 {
@@ -818,7 +826,7 @@ void forkBlockTask(object block, object arg)
         8096, /* Stack size of task */
         runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
         1, /* priority of the task */
-        NULL); /* Task handle to keep track of created task */
+        taskHandle); /* Task handle to keep track of created task */
 }
 
 void forkEval(char* evalText, object arg)

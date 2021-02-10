@@ -67,7 +67,8 @@ void m5ButtonHandler(void * handler_arg, esp_event_base_t base, int32_t id, void
     }
     buttonBlock =  nameTableLookup(eventDict, eventStr);
     if (buttonBlock != nilobj) {
-        runBlock(buttonBlock, nilobj);
+        // runBlock(buttonBlock, nilobj);
+        forkBlockTask(buttonBlock, nilobj);
     }
 
     // doIt(doItString);
