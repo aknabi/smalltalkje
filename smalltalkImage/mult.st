@@ -27,7 +27,7 @@ Methods Block 'forks'
 |
 	forkTask
 		" fork this block as an indepenent task in the native OS "
-		self newProcess forkTask
+		<17 self>
 |
 	forkWith: args
 		(self newProcessWith: args) resume

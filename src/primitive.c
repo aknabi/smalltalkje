@@ -23,6 +23,8 @@
 	system specific I/O primitives are found in a different file.
 */
 
+#include "build.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -155,14 +157,16 @@ object firstarg;
 		doIt(charPtr(firstarg), nilobj);
 		break;
 
-	case 7:			/* Execute saved block with first argument */
-		if ( blockToExecute == nilobj ) {
-			returnedObject = falseobj;
-		} else {
-			// runBlock(blockToExecute, firstarg);
-			forkBlockTask(blockToExecute, firstarg);
-			returnedObject = trueobj;
-		}
+	case 7:			/* Execute block (Block forkTask)... WAS Execute saved block with first argument */
+		forkBlockTask(firstarg, nilobj);
+		returnedObject = trueobj;
+		// if ( blockToExecute == nilobj ) {
+		// 	returnedObject = falseobj;
+		// } else {
+		// 	// runBlock(blockToExecute, firstarg);
+		// 	forkBlockTask(blockToExecute, firstarg);
+		// 	returnedObject = trueobj;
+		// }
 		break;
 
     case 8:			/* change return point - block return */
@@ -795,9 +799,9 @@ void doIt(char* text, object arg)
 	runMethodOrBlock(method, nilobj, arg);
 }
 
-#ifdef TARGET_ESP32
-
-TaskHandle_t taskHandle = NULL;
+/// TODO: FOR NOW DISABLE CREATING RTOS TASKS AS IT CRASHES,
+//  #ifdef TARGET_ESP32
+#ifdef TARGET_ESP32_DISABLED_THIS
 
 void evalTask(void* evalText, object arg)
 {
@@ -805,28 +809,41 @@ void evalTask(void* evalText, object arg)
 	vTaskDelete( NULL );
 }
 
+object passBlock = nilobj;
+object passArg = nilobj;
 
-void taskRunBlock(void* blockArg){
-	object block
-	fprintf(stderr, "taskRunBlock: running block" );
-	fflush(stderr);
-	runBlock(blockArg[0], blockArg[1]);
-	fprintf(stderr, "taskRunBlock: about to vTaskDelete" );
-	fflush(stderr);
-	vTaskDelete( xTaskGetCurrentTaskHandle() );
+void taskRunBlock(void* blockArg) {
+	//object block;
+	// object (*args) = (object (*)) blockArg;
+	// fprintf(stderr, "taskRunBlock: running block" );
+	// runBlock(args[0], args[1]);
+
+
+	// fprintf(stderr, "taskRunBlock: about to vTaskDelete" );
+	// vTaskDelete( xTaskGetCurrentTaskHandle() );
+
+	runBlock(passBlock, passArg);
+
+	vTaskDelete( NULL );
 }
-
 
 void forkBlockTask(object block, object arg)
 {
-	object runBlockArgs[2] = { block, arg };
+
+	// This just runs the block in the same thread and works.
+	// runBlock(block, arg); return;
+
+	// object runBlockArgs[2] = { block, arg };
+	passBlock = block;
+	passArg = arg;
+	
     xTaskCreate(
         taskRunBlock, /* Task function. */
-        "taskRunBlock", /* name of task. */
+        "forkBlockTask", /* name of task. */
         8096, /* Stack size of task */
-        runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
-        1, /* priority of the task */
-        taskHandle); /* Task handle to keep track of created task */
+        NULL, // runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
+    	1, /* priority of the task */
+        NULL); /* Task handle to keep track of created task */
 }
 
 void forkEval(char* evalText, object arg)
@@ -840,7 +857,7 @@ void forkEval(char* evalText, object arg)
         NULL); /* Task handle to keep track of created task */
 }
 
-#else
+#else // When not running on a ESP32 do single thread versions
 
 void forkEval(char* evalText, object arg)
 {

@@ -99,21 +99,21 @@ void addButtonHandlerProcess(object* arguments) {
 }
 
 typedef void (*primFunc_t)(object*);
+extern void runSmalltalkProcess(void *process);
 
 primFunc_t m5PrimitiveFunctions[] = { &addButtonHandlerProcess };
 
 void runTask(void *process)
 {
-    if (counter == 0) {
-        while (counter++ < 10) {
-            printf( "in runTask with loop number: %d", counter );
-            vTaskDelay( 5000 / portTICK_PERIOD_MS );
-        }
-        counter = 0;
-    }
-
+    // if (counter == 0) {
+    //     while (counter++ < 10) {
+    //         printf( "in runTask with loop number: %d", counter );
+    //         vTaskDelay( 5000 / portTICK_PERIOD_MS );
+    //     }
+    //     counter = 0;
+    // }
+    runSmalltalkProcess(process);
     /* delete a task when finish */
-    ignore fprintf(stderr, "Done with runTask... deleting task\n");
     vTaskDelete( NULL );
 }
 

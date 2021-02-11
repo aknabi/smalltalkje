@@ -82,9 +82,6 @@ void givepause()
 
 #ifdef TARGET_ESP32
 
-extern object processStack;
-extern int linkPointer;
-
 int counter = 0;
 
 object buttonProcesses[4] = {nilobj, nilobj, nilobj, nilobj};
@@ -107,29 +104,15 @@ primFunc_t m5PrimitiveFunctions[] = { &addButtonHandlerProcess };
 
 void runTask(void *process)
 {
-    if (counter == 0) {
-        while (counter++ < 10) {
-            printf( "in runTask with loop number: %d", counter );
-            vTaskDelay( 500 );
-        }
-        counter = 0;
-    }
-
-    // int i, j, saveLinkPointer;
-    // object returnedObject, saveProcessStack;
-
-    // /* first save the values we are about to clobber */
-	// saveProcessStack = processStack;
-	// saveLinkPointer = linkPointer;
-
-    // printf( "in runTask with process object: %d", (object) process );
-    // execute((object) process, 15000);
-    
-    // processStack = saveProcessStack;
-	// linkPointer = saveLinkPointer;
-
+    // if (counter == 0) {
+    //     while (counter++ < 10) {
+    //         printf( "in runTask with loop number: %d", counter );
+    //         vTaskDelay( 5000 / portTICK_PERIOD_MS );
+    //     }
+    //     counter = 0;
+    // }
+    unaryPrims(9, process);
     /* delete a task when finish */
-    ignore fprintf(stderr, "Done with runTask... deleting task\n");
     vTaskDelete( NULL );
 }
 
