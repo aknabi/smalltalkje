@@ -13,7 +13,7 @@ Class Semaphore Object count processList
 Methods Block 'forks'
 	newProcess 
 		" create a new process to execute block "
-		^ Process new; context: context ; startAt: bytePointer.
+		^ Process new; context: context ; startAt: bytePointer
 |
 	newProcessWith: args
 		(self checkArgumentCount: args size)
@@ -24,6 +24,10 @@ Methods Block 'forks'
 |
 	fork
 		self newProcess resume
+|
+	forkTask
+		" fork this block as an indepenent task in the native OS "
+		<17 self>
 |
 	forkWith: args
 		(self newProcessWith: args) resume
@@ -124,6 +128,9 @@ Methods Process 'creation'
 	forkTask
 		" fork this process as an indepenent task in the native OS "
 		<151 self>
+|
+	eval
+		<20 self nil>
 ]
 Methods Semaphore 'all'
 	new

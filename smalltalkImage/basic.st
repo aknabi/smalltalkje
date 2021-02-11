@@ -61,6 +61,12 @@ Methods Block 'initialization'
 |
 	whileFalse: aBlock
 		[ self value not ] whileTrue: aBlock
+|
+	evalWith: arg
+		<20 self arg>
+|
+	saveForEval
+		<15 self>
 ]
 Methods Boolean 'all'
 	ifTrue: trueBlock

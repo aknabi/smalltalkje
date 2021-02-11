@@ -58,7 +58,7 @@ char *text;
 
     process = allocObject(processSize);
     incr(process);
-    stack = allocObject(50);
+    stack = newArray(50);
     incr(stack);
 
     /* make a process */

@@ -23,6 +23,8 @@
 	system specific I/O primitives are found in a different file.
 */
 
+#include "build.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +32,13 @@
 #include "env.h"
 #include "memory.h"
 #include "names.h"
+
+#ifdef TARGET_ESP32
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#endif
 
 extern object processStack;
 extern int linkPointer;
@@ -88,6 +97,11 @@ int number;
     return (returnedObject);
 }
 
+object blockToExecute;
+extern void forkBlockTask(object block, object arg);
+extern void doIt(char* evalText, object arg);
+extern void runBlock(object block, object arg);
+
 static int unaryPrims(number, firstarg)
 int number;
 object firstarg;
@@ -124,21 +138,52 @@ object firstarg;
 	fprintf(stderr, "primitive 14 %s\n", charPtr(firstarg));
 	break;
 
+    case 5:			/* prim 15 Store block to exec */
+		returnedObject = getClass(firstarg) == globalSymbol("Block") ? trueobj : falseobj;
+		if (returnedObject == trueobj) {
+			fprintf(stderr, "primitive 15 store block to execute %d\n", firstarg);
+			// Decrement the reference count for any existing saved block we're going to replace
+			if (blockToExecute != nilobj) decr(blockToExecute);
+			// Increment the reference count for the new existing saved block
+			incr(firstarg);
+			blockToExecute = firstarg;
+		} else {
+			fprintf(stderr, "primitive 15 argument must be a block\n");
+		}
+		break;
+
+    case 6:			/* Execute string */
+		fprintf(stderr, "primitive 16 execute string %s\n", charPtr(firstarg));
+		doIt(charPtr(firstarg), nilobj);
+		break;
+
+	case 7:			/* Execute block (Block forkTask)... WAS Execute saved block with first argument */
+		forkBlockTask(firstarg, nilobj);
+		returnedObject = trueobj;
+		// if ( blockToExecute == nilobj ) {
+		// 	returnedObject = falseobj;
+		// } else {
+		// 	// runBlock(blockToExecute, firstarg);
+		// 	forkBlockTask(blockToExecute, firstarg);
+		// 	returnedObject = trueobj;
+		// }
+		break;
+
     case 8:			/* change return point - block return */
-	/* first get previous link pointer */
-	i = intValue(basicAt(processStack, linkPointer));
-	/* then creating context pointer */
-	j = intValue(basicAt(firstarg, 1));
-	if (basicAt(processStack, j + 1) != firstarg) {
-	    returnedObject = falseobj;
-	    break;
-	}
-	/* first change link pointer to that of creator */
-	fieldAtPut(processStack, i, basicAt(processStack, j));
-	/* then change return point to that of creator */
-	fieldAtPut(processStack, i + 2, basicAt(processStack, j + 2));
-	returnedObject = trueobj;
-	break;
+		/* first get previous link pointer */
+		i = intValue(basicAt(processStack, linkPointer));
+		/* then creating context pointer */
+		j = intValue(basicAt(firstarg, 1));
+		if (basicAt(processStack, j + 1) != firstarg) {
+	    	returnedObject = falseobj;
+	    	break;
+		}
+		/* first change link pointer to that of creator */
+		fieldAtPut(processStack, i, basicAt(processStack, j));
+		/* then change return point to that of creator */
+		fieldAtPut(processStack, i + 2, basicAt(processStack, j + 2));
+		returnedObject = trueobj;
+		break;
 
     case 9:			/* process execute */
 	/* first save the values we are about to clobber */
@@ -190,6 +235,19 @@ object firstarg, secondarg;
 
     returnedObject = firstarg;
     switch (number) {
+	
+    case 0:			/* prim 20 Execute string or block with arg */
+		if (isObjectOfClassName(firstarg, "String")) {
+			doIt(charPtr(firstarg), secondarg);
+		} else if (getClass(firstarg) == globalSymbol("Block")) {
+			runBlock(firstarg, secondarg);
+		} else {
+			fprintf(stderr, "primitive 20 first argument must be a string or block\n");
+			returnedObject = falseobj;
+		}
+
+	break;
+
     case 1:			/* object identity test */
 	if (firstarg == secondarg)
 	    returnedObject = trueobj;
@@ -689,14 +747,149 @@ object *arguments;
     return (returnedObject);
 }
 
-#if TARGET_DEVICE == DEVICE_M5STICKC
+/*
+ * Execute either a method or block (the other param will be nilobj)
+ * Used by functions to wrap common code
+ * The argument arg will be passed in as a block temp.
+ * TODO: Arg should also be passed to method... also check to see block/method takes args
+ */
+void runMethodOrBlock(object method, object block, object arg)
+{
+    object process, stack, argArray;
 
-void runButtonHandler() {
-    object buttonHandler;
-    buttonHandler = globalSymbol("buttonHandler");
-    if (buttonHandler != (object *) 0) {
-        unaryPrims(9, buttonHandler);
-    }
+    process = allocObject(processSize);
+    incr(process);
+    stack = newArray(50);
+    incr(stack);
+
+
+    /* make a process */
+    basicAtPut(process, stackInProcess, stack);
+    basicAtPut(process, stackTopInProcess, newInteger(10));
+    basicAtPut(process, linkPtrInProcess, newInteger(2));
+
+    basicAtPut(stack, 1, method == nilobj ? nilobj : arg);	/* argument if method */
+
+    /* now make a linkage area in stack */
+    basicAtPut(stack, 2, nilobj);	/* previous link */
+
+	object ctxObj = method == nilobj ? basicAt(block, contextInBlock) : nilobj;
+	basicAtPut(stack, 3, ctxObj);	/* context object (nil = stack) */
+
+    basicAtPut(stack, 4, newInteger(1));	/* return point */
+
+    basicAtPut(stack, 5, method);	/* method if there is one (otherwise nil) */
+
+	object bytecountPos = method == nilobj ? basicAt(block, bytecountPositionInBlock) : newInteger(1);
+    basicAtPut(stack, 6, bytecountPos);	/* byte offset */
+
+    /* now go execute it */
+	unaryPrims(9, process);
+}
+
+void doIt(char* text, object arg)
+{
+    object process, stack, method;
+
+    method = newMethod();
+    incr(method);
+    setInstanceVariables(nilobj);
+    ignore parse(method, text, false);
+
+	runMethodOrBlock(method, nilobj, arg);
+}
+
+/// TODO: FOR NOW DISABLE CREATING RTOS TASKS AS IT CRASHES,
+//  #ifdef TARGET_ESP32
+#ifdef TARGET_ESP32_DISABLED_THIS
+
+void evalTask(void* evalText, object arg)
+{
+	doIt(evalText, arg);
+	vTaskDelete( NULL );
+}
+
+object passBlock = nilobj;
+object passArg = nilobj;
+
+void taskRunBlock(void* blockArg) {
+	//object block;
+	// object (*args) = (object (*)) blockArg;
+	// fprintf(stderr, "taskRunBlock: running block" );
+	// runBlock(args[0], args[1]);
+
+
+	// fprintf(stderr, "taskRunBlock: about to vTaskDelete" );
+	// vTaskDelete( xTaskGetCurrentTaskHandle() );
+
+	runBlock(passBlock, passArg);
+
+	vTaskDelete( NULL );
+}
+
+void forkBlockTask(object block, object arg)
+{
+
+	// This just runs the block in the same thread and works.
+	// runBlock(block, arg); return;
+
+	// object runBlockArgs[2] = { block, arg };
+	passBlock = block;
+	passArg = arg;
+	
+    xTaskCreate(
+        taskRunBlock, /* Task function. */
+        "forkBlockTask", /* name of task. */
+        8096, /* Stack size of task */
+        NULL, // runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
+    	1, /* priority of the task */
+        NULL); /* Task handle to keep track of created task */
+}
+
+void forkEval(char* evalText, object arg)
+{
+    xTaskCreate(
+        evalTask, /* Task function. */
+        "evalTask", /* name of task. */
+        8096, /* Stack size of task */
+        evalText, /* parameter of the task (the Smalltalk exec string to run) */
+        1, /* priority of the task */
+        NULL); /* Task handle to keep track of created task */
+}
+
+#else // When not running on a ESP32 do single thread versions
+
+void forkEval(char* evalText, object arg)
+{
+	doIt(evalText, arg);
+}
+
+void forkBlockTask(object block, object arg)
+{
+	runBlock(block, arg);
 }
 
 #endif
+
+void runBlock(object block, object arg)
+{
+    object argArray;
+
+    /* put argument in block temps */
+	if (block != nilobj) {
+		argArray = newArray(1);
+    	incr(argArray);
+    	basicAtPut(argArray, 1, arg);
+		basicAtPut(basicAt(block, contextInBlock), temporariesInContext, argArray); // block
+	}
+
+	runMethodOrBlock(nilobj, block, arg);
+}
+
+void runSmalltalkProcess(object processToRun) {
+    if (processToRun != nilobj) {
+        unaryPrims(9, processToRun);
+	} else {
+		fprintf(stderr, "<%s>: %s\n", "runSmalltalkProcess", "trying to run nil process" );
+	}
+}

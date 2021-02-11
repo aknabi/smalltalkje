@@ -121,17 +121,12 @@ Methods UndefinedObject 'initial image'
 			(y class == Class)
 				ifTrue: [ classes at: x put: y ] ].
 		scheduler <- Scheduler new.
-		self setupButtonHandler.
 		" create the initial system process "
 		" note the delayed recursive call "
 		aBlock <- [ files do: [:f | f notNil ifTrue: [ f open ]].
 				   systemProcess <- aBlock newProcess.
 				   scheduler run ].
 		systemProcess <- aBlock newProcess.
-|
-	setupButtonHandler | aBlock |
-		aBlock <- [ 'Smalltalk says button pressed' print. buttonHandler <-  aBlock newProcess ].
-		buttonHandler <- aBlock newProcess.
 |
 	createStdFiles
 		"Create stdin, stdout, stderr"
