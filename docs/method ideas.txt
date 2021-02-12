@@ -1,0 +1,67 @@
+m5Stick when: #buttonOnePressed do: aBlock
+m5Stick when: #alarmGoesOff do:
+
+wifi connect: ssid password: password whenDone: aBlock 
+
+esp32 whenGPIO: pin do: aBlock
+esp32 do: [aBlock] after: milliseconds
+
+Make M5StickC a subclass of ESP32
+
+
+smalltalk after: 10 seconds do: [m5 ledOn]
+smalltalk every: 1 minute do: [m5 blink]
+smalltalk at: 1 oClock do: [m5 blink]
+
+
+aBlock runAfter: 10 seconds
+aBlock runEvery: 1 minute
+aBlock runAt: 1 oClock
+aBlock runAt: 16 : 45
+aBlock runEveryDayAt: 2 am
+
+
+smalltalk 
+
+Methods ESP32 'event handling' 
+
+Internally create a ESP32 prim 
+<180 funcNum arg1 arg2>
+
+funcNum mappings:
+
+	1 - register GPIO event handler process in arg 2 for pin arg1
+	2 - call block in arg1 after delay of milliseconds in arg2
+
+
+and a M5StickC prim 
+<181 funcNum arg1 arg2>
+
+funcNum mappings:
+	101 - register M5StickC event handler process in arg 2 for event num in arg1
+	
+event num mappings:
+	0 - Button A Clicked
+	1 - Button A Hold
+	2 - Button B Clicked
+	3 - Button B Hold
+
+
+someday have a HTTP prim
+<200 
+
+WiFi
+<201 bool> 
+	- turnOnOffWiFi
+
+<202 returnObj>
+	- return SSIDs available (with info structs?)
+
+<203 ssid password doneProcess>
+	- connect to ssid with password (callback process when success/fail)
+	
+<203 host method arg responseObj doneProcess> 
+	- spawn task and call done proc on complete.
+	
+	
+globalSymbol() should be renamed globalAtSymbol()

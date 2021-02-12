@@ -1,0 +1,11 @@
+#defines for FREERTOS (beyond ESP32), MEM_MAP_FLASH
+
+more nils - nothing, undefined
+
+JSON filein format.
+
+JavaDoc comments
+
+aBlock forkNative: ifUnsupported: aBlock
+can add ifUnsupported to methods that call platform dep prims
+

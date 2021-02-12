@@ -1,0 +1,44 @@
+oled <- Oled new
+
+oled initialize
+
+oled string: 'Hello world!' x: 16 y: 16
+
+oled transfer
+
+oled clear
+
+oled rectangleX: 16 y: 16 width: 80 height: 32 isFilled: true
+
+Rectangle new origin: 16 @ 16 extent: 64 @ 24; displayOn: oled
+
+rect <- Rectangle new origin: 16 @ 16 extent: 64 @ 24
+
+rect displayOn: oled
+
+rect corner y
+
+rect extent
+
+Circle new center: 64 @ 32 radius: 16; displayOn: oled
+
+circle <- Circle new center: 64 @ 32 radius: 16
+
+m5 <- M5StickC new. m5 setupButtonHandlers
+
+m5 afterDelay: 2000 do: [m5 ledOn. m5 afterDelay: 2000 do: [m5 ledOff] ]
+
+m5 when: #BigButtonClicked do: ['Big Button Pressed' print]
+
+m5 <- M5StickC new. m5 when: #BigButtonClicked do: buttonHandler
+
+aBlock <- [  'Smalltalk says button pressed' print. buttonHandler <-  aBlock newProcess ].
+buttonHandler <- aBlock newProcess.
+
+BigButtonClicked <- ['no arg block' print]
+
+'x [''Litte button has been held'' print] value' evalWith: 4
+
+m5 when: #BigButtonClicked do: [ aBlock <- ['Big Button Pressed' print]. aBlock value. aProc <- aBlock newProcess. <181 1 eventNum aProc> ]
+
+ButtonEventHandlers at: 'BigButtonClicked' put: ['BigButtonClicked string event' print]
