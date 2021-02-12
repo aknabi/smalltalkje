@@ -389,6 +389,8 @@ char *readLine(uart_port_t uart) {
 
 #endif
 
+object lastInputLine = nilobj;
+
 object getInputLine(char* prompt)
 {
     char *line;
@@ -417,7 +419,10 @@ object getInputLine(char* prompt)
         fflush(stdout);
     }
 	buffer[bufIndex] = 0;
-	return newStString(buffer);
+	lastInputLine = newStString(buffer);
+	// since we're keeping a vm reference, increment the pointer
+	incr(lastInputLine);
+	return lastInputLine;
 }
 
 
@@ -464,11 +469,11 @@ object ioPrimitive(int number, object * arguments)
 			fileIn(fp[i], true);
 		break;
 
-    case 4:			/* get a input line from the console */
+    case 4:			/* prim 124 get a input line from the console */
 		returnedObject = getInputLine(charPtr(arguments[0]));
 		break;
 
-    case 5:			/* get string */
+    case 5:			/* prim 125 - get string */
 		if (!fp[i]) break;
 		j = 0;
 		buffer[j] = '\0';
@@ -487,6 +492,10 @@ object ioPrimitive(int number, object * arguments)
 			/* else we loop again */
 		}
 		returnedObject = newStString(buffer);
+		break;
+
+    case 6:			/* prim 126 get the last input line from the console */
+		returnedObject = getInputLine(charPtr(arguments[0]));
 		break;
 
     case 7:			/* write an object image */
