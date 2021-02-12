@@ -419,6 +419,8 @@ object getInputLine(char* prompt)
         fflush(stdout);
     }
 	buffer[bufIndex] = 0;
+	// since we're keeping a vm reference, decrement pointer if an old line
+	if (lastInputLine != nilobj) decr(lastInputLine);
 	lastInputLine = newStString(buffer);
 	// since we're keeping a vm reference, increment the pointer
 	incr(lastInputLine);
@@ -469,8 +471,13 @@ object ioPrimitive(int number, object * arguments)
 			fileIn(fp[i], true);
 		break;
 
-    case 4:			/* prim 124 get a input line from the console */
-		returnedObject = getInputLine(charPtr(arguments[0]));
+    case 4:			/* prim 124 get a input line from the console (blocking/nonblocking) */
+		if (arguments[1] == trueobj) {
+			returnedObject = getInputLine(charPtr(arguments[0]));
+		} else {
+			returnedObject = getInputLine(charPtr(arguments[0]));
+			returnedObject = newStString("1 + 1");
+		}
 		break;
 
     case 5:			/* prim 125 - get string */
@@ -495,17 +502,17 @@ object ioPrimitive(int number, object * arguments)
 		break;
 
     case 6:			/* prim 126 get the last input line from the console */
-		returnedObject = getInputLine(charPtr(arguments[0]));
+		returnedObject = lastInputLine;
 		break;
 
-    case 7:			/* write an object image */
+    case 7:			/* prim 127 - write an object image */
 		if (fp[i])
 			imageWrite(fp[i]);
 		returnedObject = trueobj;
 		break;
 
-    case 8:			/* print no return */
-    case 9:			/* print string */
+    case 8:			/* prim 128 - print no return */
+    case 9:			/* prim 129 - print string */
 		if (!fp[i])
 			break;
 		ignore fputs(charPtr(arguments[1]), fp[i]);

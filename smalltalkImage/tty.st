@@ -56,8 +56,11 @@ Methods Class 'all'
 ]
 Methods Smalltalk 'all'
 	getPrompt: aString
-		input <- <124 aString>.
+		input <- <124 aString true>.
 		^ input
+|
+	getPrompt: aString do: aBlock
+		input <- <124 aString false aBlock>.
 |
 	inquire: aString	| response |
 		response <- self getPrompt: aString.
