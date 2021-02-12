@@ -33,6 +33,7 @@ extern object primitive(INT X OBJP);
 */
 
 static object method, messageToSend;
+static boolean _interruptInterpreter = false;
 
 static int messTest(obj)
 object obj;
@@ -48,6 +49,19 @@ static struct {
     object cacheClass;		/* the class of the method */
     object cacheMethod;		/* the method itself */
 } methodCache[cacheSize];
+
+/*
+ * Set a flag to interrupt the interpreter (e.g. after a delay task is done)
+ * Returns a boolean indicating success of setting a flag (if the flag
+ * is already set, then false would be returned as the calling function
+ * needs to wait until the current interrupt flag has been handled)
+ */
+
+boolean interruptInterpreter() {
+	if (_interruptInterpreter) return false;
+	_interruptInterpreter = true;
+	return true;
+}
 
 /* flush an entry from the cache (usually when its been recompiled) */
 void flushCache(messageToSend, class)
@@ -179,7 +193,7 @@ int maxsteps;
     lits = sysMemPtr(basicAt(method, literalsInMethod));
     bp = bytePtr(basicAt(method, bytecodesInMethod)) - 1;
 
-    while (--timeSliceCounter > 0) {
+    while (--timeSliceCounter > 0 && !_interruptInterpreter) {
 	low = (high = nextByte()) & 0x0F;
 	high >>= 4;
 	if (high == 0) {
@@ -309,7 +323,7 @@ int maxsteps;
 		    ipush(argarray);
 		    /* try again - if fail really give up */
 		    if (!findMethod(&methodClass)) {
-			sysWarn("can't find", "error recovery method");
+			sysWarn("can't find method", "error recovery method");
 			/* just quit */
 			return false;
 		    }
@@ -579,6 +593,8 @@ int maxsteps;
 	    break;
 	}
     }
+
+	_interruptInterpreter = false;
 
     /* before returning we put back the values in the current process */
     /* object */

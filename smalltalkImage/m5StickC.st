@@ -12,33 +12,26 @@ Class Font Object fontIndex
 *
 Methods M5StickC 'all'
 	new
-		^super new initialize
-|
-	initialize
 		display <- Oled new.
         EventHandlerBlocks <- Dictionary new.
 |
     setupButtonHandlers
         "self when: 'BigButtonClicked' do: [display clear; string: 'BigButtonClicked' x: 16 y: 16]."
         "self when: 'BigButtonClicked' do: [(1 to: 10) do: [:i | display string: 'Big Click ', i asString x: 16 y: 16. m5 delayTaskFor: 200]]."
-        self when: 'BigButtonClicked' do: [[self backgroundLoop] forkTask. self displayLoop].
+        "self when: 'BigButtonClicked' do: [self displayLoop. [self backgroundLoop] forkTask ]."
+        self when: 'BigButtonClicked' do: [self backgroundLoop].
         self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
         self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
         self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16].
 |
     displayLoop
-        self display: 'Big Click 1' atY: 16 delay: 1000.
-        self display: 'Big Click 2' atY: 16 delay: 1000.
-        self display: 'Big Click 3' atY: 16 delay: 1000.
-        self display: 'Big Click 4' atY: 16 delay: 1000.
-        self display: 'Big Click 5' atY: 16 delay: 1000.
-        self display: 'Big Click 6' atY: 16 delay: 1000.
-        self display: 'Big Click 7' atY: 16 delay: 1000.
-        self display: 'Big Click 8' atY: 16 delay: 1000.
-        self display: 'Big Click 9' atY: 16 delay: 1000.
-        self display: 'Big Click 10' atY: 16 delay: 1000.
+		(1 to: 10) do: [:x | self afterDelay: 1000 do: [display clear; string: 'Big Click ', x asString x: 16 y: 16]].
 |
     backgroundLoop
+		10 timesRepeat: [  self afterDelay: 500 do: [self ledOn].
+			self afterDelay: 500 do: [self ledOff] ].
+|
+	oldBackgroundLoop
        self ledOn; delayTaskFor: 500.
         self ledOff; delayTaskFor: 500.
         self ledOn; delayTaskFor: 500.
@@ -79,7 +72,10 @@ Methods M5StickC 'all'
 		^ display
 |
     delayTaskFor: milliseconds
-        <152 milliseconds>
+        <152 nil milliseconds>
+|
+    afterDelay: milliseconds do: aBlock 
+        <152 aBlock milliseconds>
 |
     blinkLED
         self ledOff; ledOn; delayTaskFor: 1000; ledOff.

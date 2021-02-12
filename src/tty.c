@@ -119,6 +119,8 @@ void runTask(void *process)
 
 #endif
 
+extern void runBlockAfter( object block, int ticks );
+
 object sysPrimitive(int number, object * arguments)
 {
     object returnedObject = nilobj;
@@ -150,8 +152,12 @@ object sysPrimitive(int number, object * arguments)
         break;
 
     case 2:         /* prim 152 delays the current OS task with a ST process for a given number of milliseconds */
-        checkIntArg(0)
-        vTaskDelay( intValue(arguments[0]) / portTICK_PERIOD_MS );
+        checkIntArg(1)
+        if ( arguments[0] == nilobj ) {
+            vTaskDelay( intValue(arguments[1]) / portTICK_PERIOD_MS );
+        } else {
+            runBlockAfter( arguments[0], arguments[1] / portTICK_PERIOD_MS );
+        }
         // We'd like to return the handle in order to manage the process.
         break;
 

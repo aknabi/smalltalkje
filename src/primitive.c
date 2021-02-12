@@ -52,6 +52,8 @@ extern void setInstanceVariables(OBJ);
 extern boolean parse(OBJ X char* X boolean);
 extern void flushCache(OBJ X OBJ);
 
+object vmBlockToRun;
+
 static object zeroaryPrims(number)
 int number;
 {
@@ -85,6 +87,17 @@ int number;
 	break;
 
     case 5:			/* flip watch - done in interp */
+	break;
+
+    case 6:			/* return a block that the VM needs to run (or nil if non) */
+	returnedObject = vmBlockToRun;
+	break;
+
+    case 7:			/* reset a block that the VM needs to run */
+	// VM incr when storing it
+	if (refCountField(vmBlockToRun) > 0) decr(vmBlockToRun);
+	vmBlockToRun = nilobj;
+	returnedObject = trueobj;
 	break;
 
     case 9:
@@ -800,8 +813,8 @@ void doIt(char* text, object arg)
 }
 
 /// TODO: FOR NOW DISABLE CREATING RTOS TASKS AS IT CRASHES,
-//  #ifdef TARGET_ESP32
-#ifdef TARGET_ESP32_DISABLED_THIS
+#ifdef TARGET_ESP32
+//#ifdef TARGET_ESP32_DISABLED_THIS
 
 void evalTask(void* evalText, object arg)
 {
@@ -811,6 +824,33 @@ void evalTask(void* evalText, object arg)
 
 object passBlock = nilobj;
 object passArg = nilobj;
+int delayTicks = 0;
+
+extern boolean interruptInterpreter();
+
+void taskRunBlockAfter( object block) {
+	vTaskDelay(delayTicks);
+	while (!interruptInterpreter()) {
+		vTaskDelay(20 / portTICK_PERIOD_MS);
+	}
+	vmBlockToRun = passBlock;
+	vTaskDelete( xTaskGetCurrentTaskHandle() );
+}
+
+void runBlockAfter( object block, int ticks ) {
+	// Since VM has a reference to the block
+	incr(block);
+	passBlock = block;
+	delayTicks = ticks;
+	vmBlockToRun = nilobj;
+	xTaskCreate(
+        taskRunBlockAfter, /* Task function. */
+        "taskRunBlockAfter", /* name of task. */
+        8096, /* Stack size of task */
+        block, // runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
+    	1, /* priority of the task */
+        NULL); /* Task handle to keep track of created task */
+}
 
 void taskRunBlock(void* blockArg) {
 	//object block;
@@ -821,9 +861,9 @@ void taskRunBlock(void* blockArg) {
 
 	// fprintf(stderr, "taskRunBlock: about to vTaskDelete" );
 	// vTaskDelete( xTaskGetCurrentTaskHandle() );
-
 	runBlock(passBlock, passArg);
-
+	vmBlockToRun = passBlock;
+	//vmBlockToRunArg = passArg;
 	vTaskDelete( NULL );
 }
 
@@ -831,19 +871,19 @@ void forkBlockTask(object block, object arg)
 {
 
 	// This just runs the block in the same thread and works.
-	// runBlock(block, arg); return;
+	runBlock(block, arg); return;
 
-	// object runBlockArgs[2] = { block, arg };
-	passBlock = block;
-	passArg = arg;
+	// // object runBlockArgs[2] = { block, arg };
+	// passBlock = block;
+	// passArg = arg;
 	
-    xTaskCreate(
-        taskRunBlock, /* Task function. */
-        "forkBlockTask", /* name of task. */
-        8096, /* Stack size of task */
-        NULL, // runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
-    	1, /* priority of the task */
-        NULL); /* Task handle to keep track of created task */
+    // xTaskCreate(
+    //     taskRunBlock, /* Task function. */
+    //     "forkBlockTask", /* name of task. */
+    //     8096, /* Stack size of task */
+    //     NULL, // runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
+    // 	1, /* priority of the task */
+    //     NULL); /* Task handle to keep track of created task */
 }
 
 void forkEval(char* evalText, object arg)

@@ -104,7 +104,6 @@ Methods Scheduler 'get commands'
 			ifTrue: [ notdone <- false ]
 			ifFalse: [ (string size > 0)
 				ifTrue: [ 
-					" [ 'This is from an OS Task' print ] newProcess forkTask. "
 					[ string value print ] fork ] ]
 ]
 Methods UndefinedObject 'initial image'

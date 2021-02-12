@@ -73,6 +73,8 @@ Methods Scheduler 'all'
 		"create a new scheduler with empty process list "
 		notdone <- true.
 		processList <- Set new.
+		"Global holding the block to execute from VM"
+		InterruptBlock <- nil.
 |
 	addProcess: aProcess
 		" add a process to the process list "
@@ -100,8 +102,19 @@ Methods Scheduler 'all'
 			[ processList size = 0 ifTrue: 
 				[ self initialize ].
 			  processList do: 
-				[ :x | currentProcess <- x.
-					x execute  ] ]
+				[ :x |
+				InterruptBlock <- <6>.
+				InterruptBlock notNil ifTrue: [ self execInterruptBlock ].
+				currentProcess <- x.
+				x execute  ] ]
+|
+	execInterruptBlock
+		(InterruptBlock isMemberOf: Block)
+			"ifTrue: [ currentProcess <- InterruptBlock newProcess. currentProcess execute ]"
+			ifTrue: [self critical: InterruptBlock]
+			ifFalse: ['Not a Block class cannot exec ' print ].	
+			"reset InterruptBlock"
+			<7>
 |
 	yield
 		" set time slice counter to zero, thereby
