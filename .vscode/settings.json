@@ -4,6 +4,8 @@
         "esp_system.h": "c",
         "gpio.h": "c",
         "target.h": "c",
-        "esp_spiffs.h": "c"
+        "esp_spiffs.h": "c",
+        "task.h": "c",
+        "build.h": "c"
     }
 }

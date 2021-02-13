@@ -5,6 +5,9 @@
 */
 // #define TARGET_ESP32
 
+// For calls to support threading, file init, etc use POSIX calls
+#define TARGET_POSIX
+
 #define TARGET_BUILD_IMAGE
 
 /*
