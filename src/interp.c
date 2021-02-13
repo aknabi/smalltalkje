@@ -33,7 +33,7 @@ extern object primitive(INT X OBJP);
 */
 
 static object method, messageToSend;
-static boolean _interruptInterpreter = false;
+boolean _interruptInterpreter = false;
 
 static int messTest(obj)
 object obj;

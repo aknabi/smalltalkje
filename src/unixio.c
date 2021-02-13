@@ -10,6 +10,7 @@
 #include <string.h>
 
 // Target defines (e.g. mac, esp32)
+#include "build.h"
 #include "target.h"
 
 #include "env.h"
@@ -390,6 +391,33 @@ char *readLine(uart_port_t uart) {
 #endif
 
 object lastInputLine = nilobj;
+extern boolean _interruptInterpreter;
+
+char getInputCharacter()
+{
+	char c = 0;
+#ifdef TARGET_ESP32
+    // int nread = 0;
+    // while ( nread <= 1 ) {
+    //     nread = read(&c, 1, 1, stdin);
+    //     if (c == -1) vTaskDelay(100); else  putchar('.');
+    // }
+
+	while (! ((c > 6 && c < 128) || _interruptInterpreter)) {
+		c = getc(stdin);
+		if (c == -1) {
+			vTaskDelay(100);
+		} else {
+			vTaskDelay(100); putchar('.');
+		}
+	}
+
+#else
+    c = fgetc(stdin);
+#endif
+
+	return c;
+}
 
 object getInputLine(char* prompt)
 {
@@ -403,9 +431,11 @@ object getInputLine(char* prompt)
 
 	fputs(prompt, stdout);
 
-	int c = 0;
+	// int c = 0;
+	char c = 0;
 	while (c != 0x0A) {
-        c = fgetc(stdin);
+        // c = fgetc(stdin);
+		c = getInputCharacter();
 		if (c == 0x08) {
 			if (bufIndex > 0) {
 				bufIndex--;
@@ -417,6 +447,9 @@ object getInputLine(char* prompt)
 		}
 		fputc(c, stdout);
         fflush(stdout);
+#ifdef TARGET_ESP32
+		vTaskDelay(5);
+#endif
     }
 	buffer[bufIndex] = 0;
 	// since we're keeping a vm reference, decrement pointer if an old line
@@ -427,6 +460,37 @@ object getInputLine(char* prompt)
 	return lastInputLine;
 }
 
+#ifdef TARGET_ESP32
+
+extern object vmBlockToRun;
+extern object passBlock;
+char *inputPrompt = "Prompt> ";
+
+void taskRunBlockAfterInput(object block) {
+	object input = getInputLine(inputPrompt);
+	while (!interruptInterpreter()) {
+		vTaskDelay(20 / portTICK_PERIOD_MS);
+	}
+	vmBlockToRun = passBlock;
+	// vTaskDelete( xTaskGetCurrentTaskHandle() );
+}
+
+void runBlockAfterInput(object block, char *prompt) {
+	// Since VM has a reference to the block
+	incr(block);
+	passBlock = block;
+	vmBlockToRun = nilobj;
+	// taskRunBlockAfterInput(block);
+	// xTaskCreate(
+    //     taskRunBlockAfterInput, /* Task function. */
+    //     "taskRunBlockAfter", /* name of task. */
+    //     8096, /* Stack size of task */
+    //     block, // runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
+    // 	1, /* priority of the task */
+    //     NULL); /* Task handle to keep track of created task */
+}
+
+#endif
 
 object ioPrimitive(int number, object * arguments)
 {
@@ -472,12 +536,16 @@ object ioPrimitive(int number, object * arguments)
 		break;
 
     case 4:			/* prim 124 get a input line from the console (blocking/nonblocking) */
+#ifdef TARGET_ESP32
 		if (arguments[1] == trueobj) {
 			returnedObject = getInputLine(charPtr(arguments[0]));
 		} else {
-			returnedObject = getInputLine(charPtr(arguments[0]));
-			returnedObject = newStString("1 + 1");
+			runBlockAfterInput(arguments[2], charPtr(arguments[0]));
+			// returnedObject = getInputLine(charPtr(arguments[0]));
 		}
+#else
+			returnedObject = getInputLine(charPtr(arguments[0]));
+#endif
 		break;
 
     case 5:			/* prim 125 - get string */

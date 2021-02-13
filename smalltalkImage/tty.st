@@ -100,20 +100,36 @@ Methods Smalltalk 'doit'
 		scheduler currentProcess; trace; terminate.
 ]
 Methods Scheduler 'get commands'
+	brokenInitialize	| string |
+		<2>.
+		smalltalk getPrompt: 'smalltalk> ' do: [ input <- <126>. (input notNil and: [input size > 0]) ifTrue: [ [ input value print ] fork ] ] ].
+		self runIdleBlock
+|
+	runIdleBlock
+		true whileTrue: [ self idleBlock runAfter: 1000]
+|
+	idleBlock
+		^['Idle loop' print. self idleBlock runAfter: 1000]
+|
+	blinkInitialize
+		<2>.
+		'No process... reinit scheduler' print.
+		inblink ifFalse: [ [nil ledBlinkOn] runAfter: 500 ].
+|
 	initialize	| string |
 		<2>.
 		string <- smalltalk getPrompt: 'smalltalk> '.
 		string isNil
 			ifTrue: [ notdone <- false ]
 			ifFalse: [ (string size > 0)
-				ifTrue: [ 
-					[ string value print ] fork ] ]
+				ifTrue: [ [ string value print ] fork ] ]
 ]
 Methods UndefinedObject 'initial image'
 	createGlobals	| aBlock |
 		" create global variables in initial image "
 		true <- True new.
 		false <- False new.
+		inblink <- false.
 		smalltalk <- Smalltalk new.
 		files <- Array new: 15.
 		self createStdFiles.
@@ -127,8 +143,23 @@ Methods UndefinedObject 'initial image'
 		" note the delayed recursive call "
 		aBlock <- [ files do: [:f | f notNil ifTrue: [ f open ]].
 				   systemProcess <- aBlock newProcess.
+				   self startupM5.
 				   scheduler run ].
 		systemProcess <- aBlock newProcess.
+|
+	startupM5
+		m5 <- M5StickC new. 
+		m5 setupButtonHandlers.
+		"self ledBlinkOn."
+|
+	ledBlinkOn
+		inblink = true.
+		m5 ledOn.
+		[self ledBlinkOff] runAfter: 500
+|
+	ledBlinkOff
+		m5 ledOff.
+		inblink = false.
 |
 	createStdFiles
 		"Create stdin, stdout, stderr"

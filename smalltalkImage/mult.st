@@ -31,6 +31,9 @@ Methods Block 'forks'
 |
 	forkWith: args
 		(self newProcessWith: args) resume
+|
+    runAfter: milliseconds
+        <152 self milliseconds>
 ]
 Methods Process 'all'
 	execute 

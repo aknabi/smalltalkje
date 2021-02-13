@@ -65,7 +65,7 @@ void readObjects()
 void smalltalkTask(void *process)
 {
     while (execute((object) process, 15000)) {
-        printf( "Free heap with ST running: %d\n", GET_FREE_HEAP_SIZE() );
+        // printf( "Free heap with ST running: %d\n", GET_FREE_HEAP_SIZE() );
     }
     /* delete a task when finish */
    vTaskDelete( NULL );

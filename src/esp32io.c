@@ -216,6 +216,13 @@ void m5StickTask(void* arg)
 
 #endif // TEST_M5STICK
 
+
+/*
+ * ESP32 UART SERIAL SUPPORT CODE
+ */
+
+#define BLOCKING_INPUT
+
 void init_console(void)
 {
     /* Drain stdout before reconfiguring it */
@@ -224,6 +231,8 @@ void init_console(void)
 
     /* Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
+    /* Enable buffering on stdin */
+    // setvbuf(stdin, NULL, _IOFBF, 32);
 
     // /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     // esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
@@ -247,8 +256,14 @@ void init_console(void)
     ESP_ERROR_CHECK( uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config) );
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+// #ifdef BLOCKING_INPUT
+//    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+// #else
+//    esp_vfs_dev_uart_use_nonblocking(CONFIG_ESP_CONSOLE_UART_NUM);
+// #endif
 }
+
+// END ESP32 UART SERIAL SUPPORT CODE
 
 void app_main(void)
 {
@@ -356,11 +371,21 @@ void writeObjectDataPartition()
         return;
 	}
 
-    int c;
     ESP_LOGI(ESP_TAG, "Write objects partition? (Y/y) >");
-    c = fgetc(stdin);
-    fputc(c, stdout);
-    fputs("\n", stdout);
+    // int c = 0;
+    // while (c != 89 || c != 121 || c != 78 || c != 110 ) {
+    //     vTaskDelay(5);
+    //     c = getchar();
+    // }
+
+    char c = 0;
+    int nread = 0;
+    while (!( (nread > 0) && (c == 89 || c == 121 || c == 78 || c == 110) ) ) {
+        nread = fread(&c, 1, 1, stdin);
+        if (nread > 0) putchar(c); else taskYIELD();
+    }
+
+    puts("\n");
     if ( c != 89 && c != 121) {
         ESP_LOGI(ESP_TAG, "Okay, skipping objects partition... Launch Smalltalk");
         return;
