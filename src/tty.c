@@ -329,10 +329,13 @@ object sysPrimitive(int number, object * arguments)
         break;
 
     // Prim 181 M5 functions. First arg is function number, second and third are arguments to the function
+    // Index 0 means restart the SoC/system
     case 31:
     	sysWarn("in primitive 181", "sysPrimitive");
         checkIntArg(0);
-        int funcIndex = getIntArg(0) - 1;
+        int argIndex = getIntArg(0);
+        if (argIndex == 0) esp_restart();
+        int funcIndex = argIndex - 1;
         if (funcIndex != 0) break;
     	sysWarn("181 register prim function", "sysPrimitive");
         primFunc_t m5Func = m5PrimitiveFunctions[funcIndex];

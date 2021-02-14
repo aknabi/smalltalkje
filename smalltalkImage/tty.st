@@ -74,6 +74,7 @@ Methods Smalltalk 'all'
 			scheduler checkInterruptBlock ].
 		"Output last CR"
 		c basicPrint.
+		input = 'restart' ifTrue: [ <181 0> ].
 		^ input
 |
 	getPromptBusted: aString
@@ -121,22 +122,6 @@ Methods Smalltalk 'doit'
 		scheduler currentProcess; trace; terminate.
 ]
 Methods Scheduler 'get commands'
-	brokenInitialize	| string |
-		<2>.
-		smalltalk getPrompt: 'smalltalk> ' do: [ input <- <126>. (input notNil and: [input size > 0]) ifTrue: [ [ input value print ] fork ] ] ].
-		self runIdleBlock
-|
-	runIdleBlock
-		true whileTrue: [ self idleBlock runAfter: 1000]
-|
-	idleBlock
-		^['Idle loop' print. self idleBlock runAfter: 1000]
-|
-	blinkInitialize
-		<2>.
-		'No process... reinit scheduler' print.
-		inblink ifFalse: [ [nil ledBlinkOn] runAfter: 500 ].
-|
 	initialize	| string |
 		<2>.
 		string <- smalltalk getPrompt: 'smalltalk> '.
