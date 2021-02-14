@@ -55,7 +55,7 @@ Methods Class 'all'
 			ifFalse: [ 'no such method' print ]
 ]
 Methods Smalltalk 'all'
-	getPromptORIG: aString
+	getPromptOriginal: aString
 		stdout printNoReturn: aString.
 		^stdin getString
 |
@@ -76,13 +76,6 @@ Methods Smalltalk 'all'
 		c basicPrint.
 		input = 'restart' ifTrue: [ <181 0> ].
 		^ input
-|
-	getPromptBusted: aString
-		input <- <124 aString true>.
-		^ input
-|
-	getPrompt: aString do: aBlock
-		input <- <124 aString false aBlock>.
 |
 	inquire: aString	| response |
 		response <- self getPrompt: aString.
@@ -156,16 +149,17 @@ Methods UndefinedObject 'initial image'
 	startupM5
 		m5 <- M5StickC new. 
 		m5 setupButtonHandlers.
-		"self ledBlinkOn."
+		self ledBlinkOn.
 |
 	ledBlinkOn
 		inblink = true.
 		m5 ledOn.
-		[self ledBlinkOff] runAfter: 500
+		blinkLED ifTrue: [ [self ledBlinkOff] runAfter: 10 ]
 |
 	ledBlinkOff
 		m5 ledOff.
 		inblink = false.
+		blinkLED ifTrue: [ [self ledBlinkOn] runAfter: 5000 ]
 |
 	createStdFiles
 		"Create stdin, stdout, stderr"
