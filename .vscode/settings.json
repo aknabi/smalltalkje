@@ -6,6 +6,7 @@
         "target.h": "c",
         "esp_spiffs.h": "c",
         "task.h": "c",
-        "build.h": "c"
+        "build.h": "c",
+        "freertos.h": "c"
     }
 }

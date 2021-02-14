@@ -265,9 +265,12 @@ void init_console(void)
 
 // END ESP32 UART SERIAL SUPPORT CODE
 
+extern void uart_input_init();
+
 void app_main(void)
 {
-	init_console();
+    uart_input_init();
+	// init_console();
 
 #ifdef TEST_M5STICK
     ESP_LOGI(ESP_TAG, "Starting M5StickC Test\n");
@@ -371,18 +374,12 @@ void writeObjectDataPartition()
         return;
 	}
 
-    ESP_LOGI(ESP_TAG, "Write objects partition? (Y/y) >");
-    // int c = 0;
-    // while (c != 89 || c != 121 || c != 78 || c != 110 ) {
-    //     vTaskDelay(5);
-    //     c = getchar();
-    // }
 
+    ESP_LOGI(ESP_TAG, "Write objects partition? (Y/y) >");
     char c = 0;
-    int nread = 0;
-    while (!( (nread > 0) && (c == 89 || c == 121 || c == 78 || c == 110) ) ) {
-        nread = fread(&c, 1, 1, stdin);
-        if (nread > 0) putchar(c); else taskYIELD();
+    while (!( c != 0 && (c == 89 || c == 121 || c == 78 || c == 110) ) ) {
+        if (c != 0) ESP_LOGI(ESP_TAG, "Write objects partition? (Y/y) >");
+        c = getInputCharacter();
     }
 
     puts("\n");
@@ -424,7 +421,7 @@ void writeObjectDataPartition()
 
     fclose(fpObjData);
     // remove("/spiffs/objectData"); 
-    ESP_LOGI(ESP_TAG, "Done writing objects partition. Hit any key to start smalltalk");
+    ESP_LOGI(ESP_TAG, "Done writing objects partition. Hit <Return> to start smalltalk");
     fgetc(stdin);
     // esp_restart();
 }

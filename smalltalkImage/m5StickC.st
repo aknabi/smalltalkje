@@ -78,7 +78,25 @@ Methods M5StickC 'all'
         <152 aBlock milliseconds>
 |
     blinkLED
-        self ledOff; ledOn; delayTaskFor: 1000; ledOff.
+        self ledOn. [self ledOff] runAfter: 1000
+|
+	blinkAndRun: aBlock
+	    self ledOn. [self ledOff] runAfter: 1000
+|
+	blinkTimes: numberOfBlinks
+		self blinkTimes: numberOfBlinks count: 0 period: 250
+|
+	blinkTimes: numberOfBlinks period: milliseconds
+		self blinkTimes: numberOfBlinks count: 0 period: milliseconds
+|
+	blinkTimes: numberOfBlinks count: c period: milliseconds | i |
+		i <- c + 1. 
+		i < numberOfBlinks 
+		ifTrue: [ 
+			[ self ledOn. 
+				[self ledOff. 
+					self blinkTimes: numberOfBlinks count: i period: milliseconds] 
+						runAfter: milliseconds ] runAfter: 10 ]
 |
     when: anEventString do: aBlock
         EventHandlerBlocks at: anEventString put: aBlock

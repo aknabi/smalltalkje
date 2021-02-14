@@ -95,7 +95,8 @@ int number;
 
     case 7:			/* reset a block that the VM needs to run */
 	// VM incr when storing it
-	if (refCountField(vmBlockToRun) > 0) decr(vmBlockToRun);
+	// if (refCountField(vmBlockToRun) > 0) decr(vmBlockToRun);
+	decr(vmBlockToRun);
 	vmBlockToRun = nilobj;
 	returnedObject = trueobj;
 	break;
@@ -147,8 +148,9 @@ object firstarg;
 	    returnedObject = newInteger(firstarg);
 	break;
 
-    case 4:			/* debugging print */
-	fprintf(stderr, "primitive 14 %s\n", charPtr(firstarg));
+    case 4:			/* basic print */
+	printf("%s", charPtr(firstarg));
+	fflush(stdout);
 	break;
 
     case 5:			/* prim 15 Store block to exec */
@@ -837,6 +839,7 @@ void taskRunBlockAfter( object block) {
 	vTaskDelete( xTaskGetCurrentTaskHandle() );
 }
 
+// prim 152 calls this
 void runBlockAfter( object block, int ticks ) {
 	// Since VM has a reference to the block
 	incr(block);

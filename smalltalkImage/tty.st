@@ -55,7 +55,21 @@ Methods Class 'all'
 			ifFalse: [ 'no such method' print ]
 ]
 Methods Smalltalk 'all'
-	getPrompt: aString
+	getPromptORIG: aString
+		stdout printNoReturn: aString.
+		^stdin getString
+|
+	getPrompt: aString | c input tmp |
+		stdout printNoReturn: aString.
+		input <- ''.
+		[ (c <- <132>) isCR ] whileFalse: [ 
+			(c isNull) ifFalse: [ c basicPrint. tmp <- input, c. input <- tmp ].
+			scheduler checkInterruptBlock ].
+		"Output last CR"
+		c basicPrint.
+		^ input
+|
+	getPromptBusted: aString
 		input <- <124 aString true>.
 		^ input
 |

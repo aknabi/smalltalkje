@@ -370,87 +370,56 @@ static FILE *fp[MAXFILES];
 
 // Functions to support command line input
 
-#ifdef TARGET_ESP32
-
-char *readLine(uart_port_t uart) {
-	static char line[256];
-	int size;
-	char *ptr = line;
-	while(1) {
-		size = uart_read_bytes(UART_NUM_1, (unsigned char *)ptr, 1, portMAX_DELAY);
-		if (size == 1) {
-			if (*ptr == '\n') {
-				*ptr = 0;
-				return line;
-			}
-			ptr++;
-		} // End of read a character
-	} // End of loop
-} // End of readLine
-
-#endif
-
 object lastInputLine = nilobj;
 extern boolean _interruptInterpreter;
 
-char getInputCharacter()
-{
-	char c = 0;
-#ifdef TARGET_ESP32
-    // int nread = 0;
-    // while ( nread <= 1 ) {
-    //     nread = read(&c, 1, 1, stdin);
-    //     if (c == -1) vTaskDelay(100); else  putchar('.');
-    // }
-
-	while (! ((c > 6 && c < 128) || _interruptInterpreter)) {
-		c = getc(stdin);
-		if (c == -1) {
-			vTaskDelay(100);
-		} else {
-			vTaskDelay(100); putchar('.');
-		}
-	}
-
-#else
-    c = fgetc(stdin);
-#endif
-
-	return c;
-}
+extern char getInputCharacter();
 
 object getInputLine(char* prompt)
 {
-    char *line;
+	char *line;
     char *p;
+
+	char c = 0;
 
     size_t bufsize = 80;
     size_t characters;
 	int	bufIndex = 0;
 	char buffer[bufsize];
 
-	fputs(prompt, stdout);
+    boolean lineDone = false;
 
-	// int c = 0;
-	char c = 0;
-	while (c != 0x0A) {
+    while ( !lineDone && c == 0)
+    {
         // c = fgetc(stdin);
-		c = getInputCharacter();
-		if (c == 0x08) {
-			if (bufIndex > 0) {
-				bufIndex--;
-				fputc(0x8, stdout);
-				fputc(0x20, stdout);
-			}
-		} else if (c != 0x0D) {
-			buffer[bufIndex++] = c;
-		}
-		fputc(c, stdout);
-        fflush(stdout);
+        c = getInputCharacter();
+        if (c > 0) {
+            if (c == 0x08) {
+                if (bufIndex >= 0) {
+                    if (bufIndex > 0) bufIndex--;
+                    buffer[bufIndex] = c;
+                    putchar(0x8);
+                    putchar(0x20);
+                    putchar(0x8);
+                }
+            } else if (c != 0x0D) {
+                if (c == 0xA) {
+                    lineDone = true;
+                } else {
+                    buffer[bufIndex++] = c;
+                }
+                putchar(c);
+            }
+            c = 0;
+            // printf("Buffer: %s\n", buffer);
+            fflush(stdout);
+        }
 #ifdef TARGET_ESP32
-		vTaskDelay(5);
+        vTaskDelay(5);
 #endif
+        // Check for the VM Interrupt flag and bounce out if true
     }
+
 	buffer[bufIndex] = 0;
 	// since we're keeping a vm reference, decrement pointer if an old line
 	if (lastInputLine != nilobj) decr(lastInputLine);
@@ -459,38 +428,6 @@ object getInputLine(char* prompt)
 	incr(lastInputLine);
 	return lastInputLine;
 }
-
-#ifdef TARGET_ESP32
-
-extern object vmBlockToRun;
-extern object passBlock;
-char *inputPrompt = "Prompt> ";
-
-void taskRunBlockAfterInput(object block) {
-	object input = getInputLine(inputPrompt);
-	while (!interruptInterpreter()) {
-		vTaskDelay(20 / portTICK_PERIOD_MS);
-	}
-	vmBlockToRun = passBlock;
-	// vTaskDelete( xTaskGetCurrentTaskHandle() );
-}
-
-void runBlockAfterInput(object block, char *prompt) {
-	// Since VM has a reference to the block
-	incr(block);
-	passBlock = block;
-	vmBlockToRun = nilobj;
-	// taskRunBlockAfterInput(block);
-	// xTaskCreate(
-    //     taskRunBlockAfterInput, /* Task function. */
-    //     "taskRunBlockAfter", /* name of task. */
-    //     8096, /* Stack size of task */
-    //     block, // runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
-    // 	1, /* priority of the task */
-    //     NULL); /* Task handle to keep track of created task */
-}
-
-#endif
 
 object ioPrimitive(int number, object * arguments)
 {
@@ -502,7 +439,7 @@ object ioPrimitive(int number, object * arguments)
 
     i = intValue(arguments[0]);
 
-    uint8_t myChar;
+    char c;
 
     switch (number) {
     case 0:			/* file open */
@@ -536,16 +473,17 @@ object ioPrimitive(int number, object * arguments)
 		break;
 
     case 4:			/* prim 124 get a input line from the console (blocking/nonblocking) */
-#ifdef TARGET_ESP32
-		if (arguments[1] == trueobj) {
-			returnedObject = getInputLine(charPtr(arguments[0]));
-		} else {
-			runBlockAfterInput(arguments[2], charPtr(arguments[0]));
-			// returnedObject = getInputLine(charPtr(arguments[0]));
-		}
-#else
-			returnedObject = getInputLine(charPtr(arguments[0]));
-#endif
+		returnedObject = getInputLine(charPtr(arguments[0]));
+// #ifdef TARGET_ESP32
+// 		if (arguments[1] == trueobj) {
+// 			returnedObject = getInputLine(charPtr(arguments[0]));
+// 		} else {
+// 			runBlockAfterInput(arguments[2], charPtr(arguments[0]));
+// 			// returnedObject = getInputLine(charPtr(arguments[0]));
+// 		}
+// #else
+// 			returnedObject = getInputLine(charPtr(arguments[0]));
+// #endif
 		break;
 
     case 5:			/* prim 125 - get string */
@@ -601,6 +539,10 @@ object ioPrimitive(int number, object * arguments)
 		if (fp[i])
 			writeObjectData(fp[i]);
 		returnedObject = trueobj;
+		break;
+
+	case 12:	/* primitive 132: get a single character from console (or 0 if timeout) */
+		returnedObject = newChar(getInputCharacter());
 		break;
 
     default:

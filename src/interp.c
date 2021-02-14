@@ -592,7 +592,8 @@ int maxsteps;
 	    sysError("invalid bytecode", "");
 	    break;
 	}
-    }
+	
+    } // interpreter while loop end
 
 	_interruptInterpreter = false;
 

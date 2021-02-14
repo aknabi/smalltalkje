@@ -72,6 +72,12 @@ Methods Char 'all'
 	isDigit
 		^ value between: $0 asInteger and: $9 asInteger
 |
+	isCR
+		^ value = 10
+|
+	isNull
+		^ value = 0
+|
 	isLowercase
 		^ value between: $a asInteger and: $z asInteger
 |

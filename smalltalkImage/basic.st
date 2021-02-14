@@ -292,9 +292,9 @@ Methods Object 'all'
 			[:i | newObj basicAt: i put: (self basicAt: i) copy].
 		^ newObj
 |
-	debugPrint
-		debugStr <- self asString.
-		^ <14 debugStr>
+	basicPrint
+		str <- self asString.
+		^ <14 str>
 |
 	display
 		('(Class ', self class, ') ' , self printString ) print

@@ -102,22 +102,26 @@ Methods Scheduler 'all'
 	run
 		" run as long as process list is non empty "
 		[ notdone ] whileTrue:
-			[ processList size = 0 ifTrue: 
+			[ 
+				self checkInterruptBlock.
+				processList size = 0 ifTrue: 
 				[ self initialize ].
 			  processList do: 
 				[ :x |
-				InterruptBlock <- <6>.
-				InterruptBlock notNil ifTrue: [ self execInterruptBlock ].
 				currentProcess <- x.
 				x execute  ] ]
+|
+	checkInterruptBlock
+		InterruptBlock <- <6>.
+		"reset vm interrupt block, we're handling"
+		<7>.
+		InterruptBlock notNil ifTrue: [ self execInterruptBlock ]
 |
 	execInterruptBlock
 		(InterruptBlock isMemberOf: Block)
 			"ifTrue: [ currentProcess <- InterruptBlock newProcess. currentProcess execute ]"
-			ifTrue: [self critical: InterruptBlock]
+			ifTrue: [self critical: InterruptBlock ]
 			ifFalse: ['Not a Block class cannot exec ' print ].	
-			"reset InterruptBlock"
-			<7>
 |
 	yield
 		" set time slice counter to zero, thereby
