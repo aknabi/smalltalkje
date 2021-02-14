@@ -59,11 +59,18 @@ Methods Smalltalk 'all'
 		stdout printNoReturn: aString.
 		^stdin getString
 |
-	getPrompt: aString | c input tmp |
+	getPrompt: aString | c input |
 		stdout printNoReturn: aString.
 		input <- ''.
+		eraseChar <- '', (Char new; value: 8), (Char new; value: 32), (Char new; value: 8).
 		[ (c <- <132>) isCR ] whileFalse: [ 
-			(c isNull) ifFalse: [ c basicPrint. tmp <- input, c. input <- tmp ].
+			(c isNull) ifFalse: [ 
+				c asInteger = 8
+					ifTrue: [
+						input size > 0
+							ifTrue: [ input <- input copyFrom: 1 to: (input size - 1).
+								eraseChar basicPrint ] ]
+					ifFalse: [ c basicPrint. input <- input, c ] ].
 			scheduler checkInterruptBlock ].
 		"Output last CR"
 		c basicPrint.
