@@ -119,7 +119,7 @@ void runTask(void *process)
 
 #endif
 
-extern void runBlockAfter( object block, int ticks );
+extern void runBlockAfter( object block, object arg, int ticks );
 
 object sysPrimitive(int number, object * arguments)
 {
@@ -156,7 +156,7 @@ object sysPrimitive(int number, object * arguments)
         if ( arguments[0] == nilobj ) {
             vTaskDelay( intValue(arguments[1]) / portTICK_PERIOD_MS );
         } else {
-            runBlockAfter( arguments[0], arguments[1] / portTICK_PERIOD_MS );
+            runBlockAfter( arguments[0], nilobj, arguments[1] / portTICK_PERIOD_MS );
         }
         // We'd like to return the handle in order to manage the process.
         break;

@@ -822,33 +822,43 @@ void evalTask(void* evalText, object arg)
 	vTaskDelete( NULL );
 }
 
-object passBlock = nilobj;
-object passArg = nilobj;
-int delayTicks = 0;
+typedef struct {
+    object	block;	// block to run
+    object	arg;	// and block argument
+	int		ticks;	// ticks to delay before running
+} task_block_arg;
 
 extern boolean interruptInterpreter();
 
-void taskRunBlockAfter( object block) {
-	vTaskDelay(delayTicks);
+void taskRunBlockAfter(task_block_arg *taskBlockArg) {
+	object block = taskBlockArg->block;
+	object arg = taskBlockArg->arg;
+	int ticks = taskBlockArg->ticks;
+	vTaskDelay(ticks);
 	while (!interruptInterpreter()) {
 		vTaskDelay(20 / portTICK_PERIOD_MS);
 	}
-	vmBlockToRun = passBlock;
+	vmBlockToRun = block;
 	vTaskDelete( xTaskGetCurrentTaskHandle() );
 }
 
 // prim 152 calls this
-void runBlockAfter( object block, int ticks ) {
+void runBlockAfter( object block, object arg, int ticks ) {
 	// Since VM has a reference to the block
+	task_block_arg taskBlockArg;
+
 	incr(block);
-	passBlock = block;
-	delayTicks = ticks;
+	
+	taskBlockArg.block = block;
+	taskBlockArg.arg = arg;
+	taskBlockArg.ticks = ticks;
+
 	vmBlockToRun = nilobj;
 	xTaskCreate(
         taskRunBlockAfter, /* Task function. */
         "taskRunBlockAfter", /* name of task. */
         8096, /* Stack size of task */
-        block, // runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
+        &taskBlockArg, // parameter of the task (block, arg and delay until run)
     	1, /* priority of the task */
         NULL); /* Task handle to keep track of created task */
 }
