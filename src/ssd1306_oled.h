@@ -32,7 +32,7 @@
 #define SCL_PIN GPIO_NUM_22
 
 // SLA (0x3C) + WRITE_MODE (0x00) =  0x78 (0b01111000)
-#define OLED_I2C_ADDRESS   0x3C
+#define OLED_I2C_ADDRESS 0x3C
 
 #define SSD1306_128_64
 
@@ -55,18 +55,18 @@ void SSD1306_StopScroll(void);
 void SSD1306_SetBrightness(uint8_t brightness);
 void SSD1306_Display(void);
 void SSD1306_ClearDisplay(void);
-void SSD1306_DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, oled_color color  );
-void SSD1306_DrawFastHLine(uint8_t x, uint8_t y, uint8_t w, oled_color color  );
-void SSD1306_DrawFastVLine(uint8_t x, uint8_t y, uint8_t h, oled_color color  );
-void SSD1306_FillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, oled_color color  );
-void SSD1306_FillScreen(bool color  );
+void SSD1306_DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, oled_color color);
+void SSD1306_DrawFastHLine(uint8_t x, uint8_t y, uint8_t w, oled_color color);
+void SSD1306_DrawFastVLine(uint8_t x, uint8_t y, uint8_t h, oled_color color);
+void SSD1306_FillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, oled_color color);
+void SSD1306_FillScreen(bool color);
 void SSD1306_DrawCircle(int16_t x0, int16_t y0, int16_t r);
 void SSD1306_DrawCircleHelper(int16_t x0, int16_t y0, int16_t r, uint8_t cornername);
 void SSD1306_FillCircle(int16_t x0, int16_t y0, int16_t r, oled_color color);
 void SSD1306_FillCircleHelper(int16_t x0, int16_t y0, int16_t r, uint8_t cornername, int16_t delta, oled_color color);
 void SSD1306_DrawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h);
 void SSD1306_DrawRoundRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t r);
-void SSD1306_FillRoundRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t r, bool color  );
+void SSD1306_FillRoundRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t r, bool color);
 void SSD1306_DrawTriangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
 void SSD1306_FillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, oled_color color);
 

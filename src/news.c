@@ -12,38 +12,39 @@
 #include "memory.h"
 #include "names.h"
 
-static object arrayClass = nilobj;	/* the class Array */
-static object intClass = nilobj;	/* the class Integer */
-static object stringClass = nilobj;	/* the class String */
-static object symbolClass = nilobj;	/* the class Symbol */
+static object arrayClass = nilobj;  /* the class Array */
+static object intClass = nilobj;    /* the class Integer */
+static object stringClass = nilobj; /* the class String */
+static object symbolClass = nilobj; /* the class Symbol */
 
-void ncopy(p, q, n)		/* ncopy - copy exactly n bytes from place to place */
-register char *p, *q;
+void ncopy(p, q, n) /* ncopy - copy exactly n bytes from place to place */
+    register char *p,
+    *q;
 register int n;
 {
     for (; n > 0; n--)
-	*p++ = *q++;
+        *p++ = *q++;
 }
 
-object getClass(obj)		/* getClass - get the class of an object */
-register object obj;
+object getClass(obj) /* getClass - get the class of an object */
+    register object obj;
 {
-    if (isInteger(obj)) {
-	if (intClass == nilobj)
-	    intClass = globalSymbol("Integer");
-	return (intClass);
+    if (isInteger(obj))
+    {
+        if (intClass == nilobj)
+            intClass = globalSymbol("Integer");
+        return (intClass);
     }
     return (classField(obj));
 }
 
-object newArray(size)
-int size;
+object newArray(size) int size;
 {
     object newObj;
 
     newObj = allocObject(size);
     if (arrayClass == nilobj)
-	arrayClass = globalSymbol("Array");
+        arrayClass = globalSymbol("Array");
     setClass(newObj, arrayClass);
     return newObj;
 }
@@ -57,8 +58,7 @@ object newBlock()
     return newObj;
 }
 
-object newByteArray(size)
-int size;
+object newByteArray(size) int size;
 {
     object newobj;
 
@@ -67,8 +67,7 @@ int size;
     return newobj;
 }
 
-object newChar(value)
-int value;
+object newChar(value) int value;
 {
     object newobj;
 
@@ -78,31 +77,34 @@ int value;
     return (newobj);
 }
 
-static object basicShallowCopy(object obj) {
+static object basicShallowCopy(object obj)
+{
     object newObj;
-    int size = (int) sizeField(obj);
+    int size = (int)sizeField(obj);
     newObj = allocObject(size);
     setClass(newObj, getClass(obj));
     incr(obj);
-    for (int i = 1; i <= size; i++) {
-	    basicAtPut(newObj, i, basicAt(obj, i));
-	}
+    for (int i = 1; i <= size; i++)
+    {
+        basicAtPut(newObj, i, basicAt(obj, i));
+    }
     return newObj;
 }
 
-object shallowCopy(object obj) 
+object shallowCopy(object obj)
 {
     object newObj;
-    int size = (int) sizeField(obj);
+    int size = (int)sizeField(obj);
     newObj = allocObject(size);
     setClass(newObj, getClass(obj));
     incr(obj);
-    for (int i = 1; i <= size; i++) {
-	    // basicAtPut(newObj, i, basicAt(obj, i) );
+    for (int i = 1; i <= size; i++)
+    {
+        // basicAtPut(newObj, i, basicAt(obj, i) );
         object instVar = basicAt(obj, i);
         object varCopy = isInteger(instVar) ? instVar : basicShallowCopy(instVar);
-	    basicAtPut(newObj, i, varCopy);
-	}
+        basicAtPut(newObj, i, varCopy);
+    }
     /*
     printf("Original ");
     printObject(obj);
@@ -126,8 +128,7 @@ void printObject(object obj)
 }
 */
 
-object newClass(name)
-char *name;
+object newClass(name) char *name;
 {
     object newObj, nameObj;
 
@@ -145,22 +146,22 @@ char *name;
 }
 
 object copyFrom(obj, start, size)
-object obj;
+    object obj;
 int start, size;
 {
     object newObj;
     int i;
 
     newObj = newArray(size);
-    for (i = 1; i <= size; i++) {
-	basicAtPut(newObj, i, basicAt(obj, start));
-	start++;
+    for (i = 1; i <= size; i++)
+    {
+        basicAtPut(newObj, i, basicAt(obj, start));
+        start++;
     }
     return newObj;
 }
 
-object newContext(link, method, args, temp)
-int link;
+object newContext(link, method, args, temp) int link;
 object method, args, temp;
 {
     object newObj;
@@ -174,8 +175,7 @@ object method, args, temp;
     return newObj;
 }
 
-object newDictionary(size)
-int size;
+object newDictionary(size) int size;
 {
     object newObj;
 
@@ -185,28 +185,28 @@ int size;
     return newObj;
 }
 
-object newFloat(d)
-double d;
+object newFloat(d) double d;
 {
     object newObj;
 
-    newObj = allocByte((int) sizeof(double));
-    ncopy(charPtr(newObj), (char *) &d, (int) sizeof(double));
+    newObj = allocByte((int)sizeof(double));
+    ncopy(charPtr(newObj), (char *)&d, (int)sizeof(double));
     setClass(newObj, globalSymbol("Float"));
     return newObj;
 }
 
 double floatValue(o)
-object o;
+    object o;
 {
     double d;
 
-    ncopy((char *) &d, charPtr(o), (int) sizeof(double));
+    ncopy((char *)&d, charPtr(o), (int)sizeof(double));
     return d;
 }
 
 object newLink(key, value)
-object key, value;
+    object key,
+    value;
 {
     object newObj;
 
@@ -226,32 +226,30 @@ object newMethod()
     return newObj;
 }
 
-object newStString(value)
-char *value;
+object newStString(value) char *value;
 {
     object newObj;
 
     newObj = allocStr(value);
     if (stringClass == nilobj)
-	stringClass = globalSymbol("String");
+        stringClass = globalSymbol("String");
     setClass(newObj, stringClass);
     return (newObj);
 }
 
-object newSymbol(str)
-char *str;
+object newSymbol(str) char *str;
 {
     object newObj;
 
     /* first see if it is already there */
     newObj = globalKey(str);
     if (newObj)
-	return newObj;
+        return newObj;
 
     /* not found, must make */
     newObj = allocStr(str);
     if (symbolClass == nilobj)
-	symbolClass = globalSymbol("Symbol");
+        symbolClass = globalSymbol("Symbol");
     setClass(newObj, symbolClass);
     nameTableInsert(symbols, strHash(str), newObj, nilobj);
     return newObj;

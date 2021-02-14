@@ -42,8 +42,8 @@
 #define stackTopInProcess 2
 #define linkPtrInProcess 3
 
-extern object trueobj;		/* the pseudo variable true */
-extern object falseobj;		/* the pseudo variable false */
+extern object trueobj;	/* the pseudo variable true */
+extern object falseobj; /* the pseudo variable false */
 
 extern object getClass(OBJ);
 extern object copyFrom(OBJ X INT X INT);
@@ -64,7 +64,7 @@ extern object shallowCopy(OBJ);
 
 extern double floatValue(OBJ);
 
-extern noreturn initCommonSymbols();	/* common symbols */
+extern noreturn initCommonSymbols(); /* common symbols */
 noreturn readObjectFiles(FILEP, FILEP);
 extern object unSyms[], binSyms[];
 
@@ -76,4 +76,4 @@ extern object findClass(STR);
 
 #define globalSymbol(s) nameTableLookup(symbols, s)
 
-#define isObjectOfClassName(o,s) (getClass(firstarg) == globalSymbol(s))
+#define isObjectOfClassName(o, s) (getClass(firstarg) == globalSymbol(s))

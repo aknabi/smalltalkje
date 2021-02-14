@@ -24,7 +24,7 @@ typedef unsigned char byte;
 
 /* ======== various defines that should work on all systems ==== */
 // #pragma GCC diagnostic ignored "-Werror=nonnull"
-#define streq(a,b) (strcmp(a,b) == 0)
+#define streq(a, b) (strcmp(a, b) == 0)
 
 #define true 1
 #define false 0
@@ -40,7 +40,6 @@ typedef int boolean;
 #define ignore (void)
 #define noreturn void
 
-
 /* Prototypes */
 #define X ,
 #define OBJ object
@@ -52,4 +51,3 @@ typedef int boolean;
 #define NOARGS void
 #define FILEP FILE *
 #define FUNC ()
-

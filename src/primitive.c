@@ -49,129 +49,134 @@ extern object ioPrimitive(INT X OBJP);
 extern object sysPrimitive(INT X OBJP);
 extern void byteAtPut(OBJ X INT X INT);
 extern void setInstanceVariables(OBJ);
-extern boolean parse(OBJ X char* X boolean);
+extern boolean parse(OBJ X char *X boolean);
 extern void flushCache(OBJ X OBJ);
 
 object vmBlockToRun;
 
-static object zeroaryPrims(number)
-int number;
+static object zeroaryPrims(number) int number;
 {
-    short i;
-    object returnedObject;
-    int objectCount();
+	short i;
+	object returnedObject;
+	int objectCount();
 
-    returnedObject = nilobj;
-    switch (number) {
+	returnedObject = nilobj;
+	switch (number)
+	{
 
-    case 1:
-	fprintf(stderr, "did primitive 1\n");
-	break;
+	case 1:
+		fprintf(stderr, "did primitive 1\n");
+		break;
 
-    case 2:
-	fprintf(stderr, "object count %d\n", objectCount());
-	break;
+	case 2:
+		fprintf(stderr, "object count %d\n", objectCount());
+		break;
 
-    case 3:			/* return a random number */
-	/* this is hacked because of the representation */
-	/* of integers as shorts */
-	i = rand() >> 8;	/* strip off lower bits */
-	if (i < 0)
-	    i = -i;
-	returnedObject = newInteger(i >> 1);
-	break;
+	case 3: /* return a random number */
+		/* this is hacked because of the representation */
+		/* of integers as shorts */
+		i = rand() >> 8; /* strip off lower bits */
+		if (i < 0)
+			i = -i;
+		returnedObject = newInteger(i >> 1);
+		break;
 
-    case 4:			/* return time in seconds */
-	i = (short) time((long *) 0);
-	returnedObject = newInteger(i);
-	break;
+	case 4: /* return time in seconds */
+		i = (short)time((long *)0);
+		returnedObject = newInteger(i);
+		break;
 
-    case 5:			/* flip watch - done in interp */
-	break;
+	case 5: /* flip watch - done in interp */
+		break;
 
-    case 6:			/* return a block that the VM needs to run (or nil if non) */
-	returnedObject = vmBlockToRun;
-	break;
+	case 6: /* return a block that the VM needs to run (or nil if non) */
+		returnedObject = vmBlockToRun;
+		break;
 
-    case 7:			/* reset a block that the VM needs to run */
-	// VM incr when storing it
-	// if (refCountField(vmBlockToRun) > 0) decr(vmBlockToRun);
-	decr(vmBlockToRun);
-	vmBlockToRun = nilobj;
-	returnedObject = trueobj;
-	break;
+	case 7: /* reset a block that the VM needs to run */
+		// VM incr when storing it
+		// if (refCountField(vmBlockToRun) > 0) decr(vmBlockToRun);
+		decr(vmBlockToRun);
+		vmBlockToRun = nilobj;
+		returnedObject = trueobj;
+		break;
 
-    case 9:
-	exit(0);
+	case 9:
+		exit(0);
 
-    default:			/* unknown primitive */
-	sysError("unknown primitive", "zeroargPrims");
-	break;
-    }
-    return (returnedObject);
+	default: /* unknown primitive */
+		sysError("unknown primitive", "zeroargPrims");
+		break;
+	}
+	return (returnedObject);
 }
 
 object blockToExecute;
-extern void doIt(char* evalText, object arg);
+extern void doIt(char *evalText, object arg);
 extern void runBlock(object block, object arg);
 
-static int unaryPrims(number, firstarg)
-int number;
+static int unaryPrims(number, firstarg) int number;
 object firstarg;
 {
-    int i, j, saveLinkPointer;
-    object returnedObject, saveProcessStack;
+	int i, j, saveLinkPointer;
+	object returnedObject, saveProcessStack;
 
-    returnedObject = firstarg;
-    switch (number) {
-    case 1:			/* class of object */
-	returnedObject = getClass(firstarg);
-	break;
+	returnedObject = firstarg;
+	switch (number)
+	{
+	case 1: /* class of object */
+		returnedObject = getClass(firstarg);
+		break;
 
-    case 2:			/* basic size of object */
-	if (isInteger(firstarg))
-	    i = 0;
-	else {
-	    i = sizeField(firstarg);
-	    /* byte objects have negative size */
-	    if (i < 0)
-		i = (-i);
-	}
-	returnedObject = newInteger(i);
-	break;
+	case 2: /* basic size of object */
+		if (isInteger(firstarg))
+			i = 0;
+		else
+		{
+			i = sizeField(firstarg);
+			/* byte objects have negative size */
+			if (i < 0)
+				i = (-i);
+		}
+		returnedObject = newInteger(i);
+		break;
 
-    case 3:			/* hash value of object */
-	if (isInteger(firstarg))
-	    returnedObject = firstarg;
-	else
-	    returnedObject = newInteger(firstarg);
-	break;
+	case 3: /* hash value of object */
+		if (isInteger(firstarg))
+			returnedObject = firstarg;
+		else
+			returnedObject = newInteger(firstarg);
+		break;
 
-    case 4:			/* basic print */
-	printf("%s", charPtr(firstarg));
-	fflush(stdout);
-	break;
+	case 4: /* basic print */
+		printf("%s", charPtr(firstarg));
+		fflush(stdout);
+		break;
 
-    case 5:			/* prim 15 Store block to exec */
+	case 5: /* prim 15 Store block to exec */
 		returnedObject = getClass(firstarg) == globalSymbol("Block") ? trueobj : falseobj;
-		if (returnedObject == trueobj) {
+		if (returnedObject == trueobj)
+		{
 			fprintf(stderr, "primitive 15 store block to execute %d\n", firstarg);
 			// Decrement the reference count for any existing saved block we're going to replace
-			if (blockToExecute != nilobj) decr(blockToExecute);
+			if (blockToExecute != nilobj)
+				decr(blockToExecute);
 			// Increment the reference count for the new existing saved block
 			incr(firstarg);
 			blockToExecute = firstarg;
-		} else {
+		}
+		else
+		{
 			fprintf(stderr, "primitive 15 argument must be a block\n");
 		}
 		break;
 
-    case 6:			/* Execute string */
+	case 6: /* Execute string */
 		fprintf(stderr, "primitive 16 execute string %s\n", charPtr(firstarg));
 		doIt(charPtr(firstarg), nilobj);
 		break;
 
-	case 7:			/* Execute block (Block forkTask)... WAS Execute saved block with first argument */
+	case 7: /* Execute block (Block forkTask)... WAS Execute saved block with first argument */
 		runBlock(firstarg, nilobj);
 		returnedObject = trueobj;
 		// if ( blockToExecute == nilobj ) {
@@ -182,14 +187,15 @@ object firstarg;
 		// }
 		break;
 
-    case 8:			/* change return point - block return */
+	case 8: /* change return point - block return */
 		/* first get previous link pointer */
 		i = intValue(basicAt(processStack, linkPointer));
 		/* then creating context pointer */
 		j = intValue(basicAt(firstarg, 1));
-		if (basicAt(processStack, j + 1) != firstarg) {
-	    	returnedObject = falseobj;
-	    	break;
+		if (basicAt(processStack, j + 1) != firstarg)
+		{
+			returnedObject = falseobj;
+			break;
 		}
 		/* first change link pointer to that of creator */
 		fieldAtPut(processStack, i, basicAt(processStack, j));
@@ -198,566 +204,581 @@ object firstarg;
 		returnedObject = trueobj;
 		break;
 
-    case 9:			/* process execute */
-	/* first save the values we are about to clobber */
-	saveProcessStack = processStack;
-	saveLinkPointer = linkPointer;
+	case 9: /* process execute */
+		/* first save the values we are about to clobber */
+		saveProcessStack = processStack;
+		saveLinkPointer = linkPointer;
 #ifdef SIGNAL
-	/* trap control-C */
-	signal(SIGINT, brkfun);
-	if (setjmp(jb)) {
-	    returnedObject = falseobj;
-	} else
+		/* trap control-C */
+		signal(SIGINT, brkfun);
+		if (setjmp(jb))
+		{
+			returnedObject = falseobj;
+		}
+		else
 #endif
 #ifdef CRTLBRK
-	    /* trap control-C using dos ctrlbrk routine */
-	    ctrlbrk(brkfun);
-	if (setjmp(jb)) {
-	    returnedObject = falseobj;
-	} else
+			/* trap control-C using dos ctrlbrk routine */
+			ctrlbrk(brkfun);
+		if (setjmp(jb))
+		{
+			returnedObject = falseobj;
+		}
+		else
 #endif
-	if (execute(firstarg, 5000))
-	    returnedObject = trueobj;
-	else
-	    returnedObject = falseobj;
-	/* then restore previous environment */
-	processStack = saveProcessStack;
-	linkPointer = saveLinkPointer;
+			if (execute(firstarg, 5000))
+			returnedObject = trueobj;
+		else
+			returnedObject = falseobj;
+		/* then restore previous environment */
+		processStack = saveProcessStack;
+		linkPointer = saveLinkPointer;
 #ifdef SIGNAL
-	signal(SIGINT, brkignore);
+		signal(SIGINT, brkignore);
 #endif
 #ifdef CTRLBRK
-	ctrlbrk(brkignore);
+		ctrlbrk(brkignore);
 #endif
-	break;
+		break;
 
-    default:			/* unknown primitive */
-	sysError("unknown primitive", "unaryPrims");
-	break;
-    }
-    return (returnedObject);
+	default: /* unknown primitive */
+		sysError("unknown primitive", "unaryPrims");
+		break;
+	}
+	return (returnedObject);
 }
 
-static int binaryPrims(number, firstarg, secondarg)
-int number;
+static int binaryPrims(number, firstarg, secondarg) int number;
 object firstarg, secondarg;
 {
-    char buffer[2000];
-    int i;
-    object returnedObject;
+	char buffer[2000];
+	int i;
+	object returnedObject;
 
-    returnedObject = firstarg;
-    switch (number) {
-	
-    case 0:			/* prim 20 Execute string or block with arg */
-		if (isObjectOfClassName(firstarg, "String")) {
+	returnedObject = firstarg;
+	switch (number)
+	{
+
+	case 0: /* prim 20 Execute string or block with arg */
+		if (isObjectOfClassName(firstarg, "String"))
+		{
 			doIt(charPtr(firstarg), secondarg);
-		} else if (getClass(firstarg) == globalSymbol("Block")) {
+		}
+		else if (getClass(firstarg) == globalSymbol("Block"))
+		{
 			runBlock(firstarg, secondarg);
-		} else {
+		}
+		else
+		{
 			fprintf(stderr, "primitive 20 first argument must be a string or block\n");
 			returnedObject = falseobj;
 		}
 
-	break;
+		break;
 
-    case 1:			/* object identity test */
-	if (firstarg == secondarg)
-	    returnedObject = trueobj;
-	else
-	    returnedObject = falseobj;
-	break;
+	case 1: /* object identity test */
+		if (firstarg == secondarg)
+			returnedObject = trueobj;
+		else
+			returnedObject = falseobj;
+		break;
 
-    case 2:			/* set class of object */
-	decr(classField(firstarg));
-	setClass(firstarg, secondarg);
-	returnedObject = firstarg;
-	break;
+	case 2: /* set class of object */
+		decr(classField(firstarg));
+		setClass(firstarg, secondarg);
+		returnedObject = firstarg;
+		break;
 
-    case 3:			/* debugging stuff */
-	fprintf(stderr, "primitive 23 %d %d\n", firstarg, secondarg);
-	break;
+	case 3: /* debugging stuff */
+		fprintf(stderr, "primitive 23 %d %d\n", firstarg, secondarg);
+		break;
 
-    case 4:			/* string cat */
-	ignore strcpy(buffer, charPtr(firstarg));
-	ignore strcat(buffer, charPtr(secondarg));
-	returnedObject = newStString(buffer);
-	break;
+	case 4: /* string cat */
+		ignore strcpy(buffer, charPtr(firstarg));
+		ignore strcat(buffer, charPtr(secondarg));
+		returnedObject = newStString(buffer);
+		break;
 
-    case 5:			/* basicAt: */
-	if (!isInteger(secondarg))
-	    sysError("non integer index", "basicAt:");
-	returnedObject = basicAt(firstarg, intValue(secondarg));
-	break;
+	case 5: /* basicAt: */
+		if (!isInteger(secondarg))
+			sysError("non integer index", "basicAt:");
+		returnedObject = basicAt(firstarg, intValue(secondarg));
+		break;
 
-    case 6:			/* byteAt: */
-	if (!isInteger(secondarg))
-	    sysError("non integer index", "byteAt:");
-	i = byteAt(firstarg, intValue(secondarg));
-	if (i < 0)
-	    i += 256;
-	returnedObject = newInteger(i);
-	break;
+	case 6: /* byteAt: */
+		if (!isInteger(secondarg))
+			sysError("non integer index", "byteAt:");
+		i = byteAt(firstarg, intValue(secondarg));
+		if (i < 0)
+			i += 256;
+		returnedObject = newInteger(i);
+		break;
 
-    case 7:			/* symbol set */
-	nameTableInsert(symbols, strHash(charPtr(firstarg)),
-			firstarg, secondarg);
-	break;
+	case 7: /* symbol set */
+		nameTableInsert(symbols, strHash(charPtr(firstarg)),
+						firstarg, secondarg);
+		break;
 
-    case 8:			/* block start */
-	/* first get previous link */
-	i = intValue(basicAt(processStack, linkPointer));
-	/* change context and byte pointer */
-	fieldAtPut(processStack, i + 1, firstarg);
-	fieldAtPut(processStack, i + 4, secondarg);
-	break;
+	case 8: /* block start */
+		/* first get previous link */
+		i = intValue(basicAt(processStack, linkPointer));
+		/* change context and byte pointer */
+		fieldAtPut(processStack, i + 1, firstarg);
+		fieldAtPut(processStack, i + 4, secondarg);
+		break;
 
-    case 9:			/* duplicate a block, adding a new context to it */
-	returnedObject = newBlock();
-	basicAtPut(returnedObject, 1, secondarg);
-	basicAtPut(returnedObject, 2, basicAt(firstarg, 2));
-	basicAtPut(returnedObject, 3, basicAt(firstarg, 3));
-	basicAtPut(returnedObject, 4, basicAt(firstarg, 4));
-	break;
+	case 9: /* duplicate a block, adding a new context to it */
+		returnedObject = newBlock();
+		basicAtPut(returnedObject, 1, secondarg);
+		basicAtPut(returnedObject, 2, basicAt(firstarg, 2));
+		basicAtPut(returnedObject, 3, basicAt(firstarg, 3));
+		basicAtPut(returnedObject, 4, basicAt(firstarg, 4));
+		break;
 
-    default:			/* unknown primitive */
-	sysError("unknown primitive", "binaryPrims");
-	break;
-
-    }
-    return (returnedObject);
+	default: /* unknown primitive */
+		sysError("unknown primitive", "binaryPrims");
+		break;
+	}
+	return (returnedObject);
 }
 
-static int trinaryPrims(number, firstarg, secondarg, thirdarg)
-int number;
+static int trinaryPrims(number, firstarg, secondarg, thirdarg) int number;
 object firstarg, secondarg, thirdarg;
 {
-    char *bp, *tp, buffer[256];
-    int i, j;
-    object returnedObject;
+	char *bp, *tp, buffer[256];
+	int i, j;
+	object returnedObject;
 
-    returnedObject = firstarg;
-    switch (number) {
-    case 1:			/* basicAt:Put: */
-	if (!isInteger(secondarg))
-	    sysError("non integer index", "basicAtPut");
-	fprintf(stderr, "IN BASICATPUT %d %d %d\n", firstarg,
-		intValue(secondarg), thirdarg);
-	fieldAtPut(firstarg, intValue(secondarg), thirdarg);
-	break;
+	returnedObject = firstarg;
+	switch (number)
+	{
+	case 1: /* basicAt:Put: */
+		if (!isInteger(secondarg))
+			sysError("non integer index", "basicAtPut");
+		fprintf(stderr, "IN BASICATPUT %d %d %d\n", firstarg,
+				intValue(secondarg), thirdarg);
+		fieldAtPut(firstarg, intValue(secondarg), thirdarg);
+		break;
 
-    case 2:			/* basicAt:Put: for bytes */
-	if (!isInteger(secondarg))
-	    sysError("non integer index", "byteAtPut");
-	if (!isInteger(thirdarg))
-	    sysError("assigning non int", "to byte");
-	byteAtPut(firstarg, intValue(secondarg), intValue(thirdarg));
-	break;
+	case 2: /* basicAt:Put: for bytes */
+		if (!isInteger(secondarg))
+			sysError("non integer index", "byteAtPut");
+		if (!isInteger(thirdarg))
+			sysError("assigning non int", "to byte");
+		byteAtPut(firstarg, intValue(secondarg), intValue(thirdarg));
+		break;
 
-    case 3:			/* string copyFrom:to: */
-	bp = charPtr(firstarg);
-	if ((!isInteger(secondarg)) || (!isInteger(thirdarg)))
-	    sysError("non integer index", "copyFromTo");
-	i = intValue(secondarg);
-	j = intValue(thirdarg);
-	tp = buffer;
-	if (i <= strlen(bp))
-	    for (; (i <= j) && bp[i - 1]; i++)
-		*tp++ = bp[i - 1];
-	*tp = '\0';
-	returnedObject = newStString(buffer);
-	break;
+	case 3: /* string copyFrom:to: */
+		bp = charPtr(firstarg);
+		if ((!isInteger(secondarg)) || (!isInteger(thirdarg)))
+			sysError("non integer index", "copyFromTo");
+		i = intValue(secondarg);
+		j = intValue(thirdarg);
+		tp = buffer;
+		if (i <= strlen(bp))
+			for (; (i <= j) && bp[i - 1]; i++)
+				*tp++ = bp[i - 1];
+		*tp = '\0';
+		returnedObject = newStString(buffer);
+		break;
 
-    case 9:			/* compile method */
-	setInstanceVariables(firstarg);
-	if (parse(thirdarg, charPtr(secondarg), false)) {
-	    flushCache(basicAt(thirdarg, messageInMethod), firstarg);
-	    returnedObject = trueobj;
-	} else
-	    returnedObject = falseobj;
-	break;
+	case 9: /* compile method */
+		setInstanceVariables(firstarg);
+		if (parse(thirdarg, charPtr(secondarg), false))
+		{
+			flushCache(basicAt(thirdarg, messageInMethod), firstarg);
+			returnedObject = trueobj;
+		}
+		else
+			returnedObject = falseobj;
+		break;
 
-    default:			/* unknown primitive */
-	sysError("unknown primitive", "trinaryPrims");
-	break;
-    }
-    return (returnedObject);
+	default: /* unknown primitive */
+		sysError("unknown primitive", "trinaryPrims");
+		break;
+	}
+	return (returnedObject);
 }
 
-static int intUnary(number, firstarg)
-int number, firstarg;
+static int intUnary(number, firstarg) int number, firstarg;
 {
-    object returnedObject;
+	object returnedObject;
 
-    switch (number) {
-    case 1:			/* float equiv of integer */
-	returnedObject = newFloat((double) firstarg);
-	break;
+	switch (number)
+	{
+	case 1: /* float equiv of integer */
+		returnedObject = newFloat((double)firstarg);
+		break;
 
-    case 2:			/* print - for debugging purposes */
-	fprintf(stderr, "debugging print %d\n", firstarg);
-	break;
+	case 2: /* print - for debugging purposes */
+		fprintf(stderr, "debugging print %d\n", firstarg);
+		break;
 
-    case 3:			/* set time slice - done in interpreter */
-	break;
+	case 3: /* set time slice - done in interpreter */
+		break;
 
-    case 5:			/* set random number */
-	ignore srand((unsigned) firstarg);
+	case 5: /* set random number */
+		ignore srand((unsigned)firstarg);
+		returnedObject = nilobj;
+		break;
+
+	case 8:
+		returnedObject = allocObject(firstarg);
+		break;
+
+	case 9:
+		returnedObject = allocByte(firstarg);
+		break;
+
+	default:
+		sysError("intUnary primitive", "not implemented yet");
+	}
+	return (returnedObject);
+}
+
+static object intBinary(number, firstarg, secondarg) register int firstarg, secondarg;
+int number;
+{
+	boolean binresult;
+	long longresult;
+	object returnedObject;
+
+	switch (number)
+	{
+	case 0: /* addition */
+		longresult = firstarg;
+		longresult += secondarg;
+		if (longCanBeInt(longresult))
+			firstarg = longresult;
+		else
+			goto overflow;
+		break;
+	case 1: /* subtraction */
+		longresult = firstarg;
+		longresult -= secondarg;
+		if (longCanBeInt(longresult))
+			firstarg = longresult;
+		else
+			goto overflow;
+		break;
+
+	case 2: /* relationals */
+		binresult = firstarg < secondarg;
+		break;
+	case 3:
+		binresult = firstarg > secondarg;
+		break;
+	case 4:
+		binresult = firstarg <= secondarg;
+		break;
+	case 5:
+		binresult = firstarg >= secondarg;
+		break;
+	case 6:
+	case 13:
+		binresult = firstarg == secondarg;
+		break;
+	case 7:
+		binresult = firstarg != secondarg;
+		break;
+
+	case 8: /* multiplication */
+		longresult = firstarg;
+		longresult *= secondarg;
+		if (longCanBeInt(longresult))
+			firstarg = longresult;
+		else
+			goto overflow;
+		break;
+
+	case 9: /* quo: */
+		if (secondarg == 0)
+			goto overflow;
+		firstarg /= secondarg;
+		break;
+
+	case 10: /* rem: */
+		if (secondarg == 0)
+			goto overflow;
+		firstarg %= secondarg;
+		break;
+
+	case 11: /* bit operations */
+		firstarg &= secondarg;
+		break;
+
+	case 12:
+		firstarg ^= secondarg;
+		break;
+
+	case 19: /* shifts */
+		if (secondarg < 0)
+			firstarg >>= (-secondarg);
+		else
+			firstarg <<= secondarg;
+		break;
+	}
+	if ((number >= 2) && (number <= 7))
+		if (binresult)
+			returnedObject = trueobj;
+		else
+			returnedObject = falseobj;
+	else
+		returnedObject = newInteger(firstarg);
+	return (returnedObject);
+
+	/* on overflow, return nil and let smalltalk code */
+	/* figure out what to do */
+overflow:
 	returnedObject = nilobj;
-	break;
-
-    case 8:
-	returnedObject = allocObject(firstarg);
-	break;
-
-    case 9:
-	returnedObject = allocByte(firstarg);
-	break;
-
-    default:
-	sysError("intUnary primitive", "not implemented yet");
-    }
-    return (returnedObject);
+	return (returnedObject);
 }
 
-static object intBinary(number, firstarg, secondarg)
-register int firstarg, secondarg;
-int number;
-{
-    boolean binresult;
-    long longresult;
-    object returnedObject;
-
-    switch (number) {
-    case 0:			/* addition */
-	longresult = firstarg;
-	longresult += secondarg;
-	if (longCanBeInt(longresult))
-	    firstarg = longresult;
-	else
-	    goto overflow;
-	break;
-    case 1:			/* subtraction */
-	longresult = firstarg;
-	longresult -= secondarg;
-	if (longCanBeInt(longresult))
-	    firstarg = longresult;
-	else
-	    goto overflow;
-	break;
-
-    case 2:			/* relationals */
-	binresult = firstarg < secondarg;
-	break;
-    case 3:
-	binresult = firstarg > secondarg;
-	break;
-    case 4:
-	binresult = firstarg <= secondarg;
-	break;
-    case 5:
-	binresult = firstarg >= secondarg;
-	break;
-    case 6:
-    case 13:
-	binresult = firstarg == secondarg;
-	break;
-    case 7:
-	binresult = firstarg != secondarg;
-	break;
-
-    case 8:			/* multiplication */
-	longresult = firstarg;
-	longresult *= secondarg;
-	if (longCanBeInt(longresult))
-	    firstarg = longresult;
-	else
-	    goto overflow;
-	break;
-
-    case 9:			/* quo: */
-	if (secondarg == 0)
-	    goto overflow;
-	firstarg /= secondarg;
-	break;
-
-    case 10:			/* rem: */
-	if (secondarg == 0)
-	    goto overflow;
-	firstarg %= secondarg;
-	break;
-
-    case 11:			/* bit operations */
-	firstarg &= secondarg;
-	break;
-
-    case 12:
-	firstarg ^= secondarg;
-	break;
-
-    case 19:			/* shifts */
-	if (secondarg < 0)
-	    firstarg >>= (-secondarg);
-	else
-	    firstarg <<= secondarg;
-	break;
-    }
-    if ((number >= 2) && (number <= 7))
-	if (binresult)
-	    returnedObject = trueobj;
-	else
-	    returnedObject = falseobj;
-    else
-	returnedObject = newInteger(firstarg);
-    return (returnedObject);
-
-    /* on overflow, return nil and let smalltalk code */
-    /* figure out what to do */
-  overflow:
-    returnedObject = nilobj;
-    return (returnedObject);
-}
-
-static int strUnary(number, firstargument)
-int number;
+static int strUnary(number, firstargument) int number;
 char *firstargument;
 {
-    object returnedObject;
+	object returnedObject;
 
-    switch (number) {
-    case 1:			/* length of string */
-	returnedObject = newInteger(strlen(firstargument));
-	break;
+	switch (number)
+	{
+	case 1: /* length of string */
+		returnedObject = newInteger(strlen(firstargument));
+		break;
 
-    case 2:			/* hash value of symbol */
-	returnedObject = newInteger(strHash(firstargument));
-	break;
+	case 2: /* hash value of symbol */
+		returnedObject = newInteger(strHash(firstargument));
+		break;
 
-    case 3:			/* string as symbol */
-	returnedObject = newSymbol(firstargument);
-	break;
+	case 3: /* string as symbol */
+		returnedObject = newSymbol(firstargument);
+		break;
 
-    case 7:			/* value of symbol */
-	returnedObject = globalSymbol(firstargument);
-	break;
+	case 7: /* value of symbol */
+		returnedObject = globalSymbol(firstargument);
+		break;
 
-    case 8:
+	case 8:
 #ifndef NOSYSTEM
-	returnedObject = newInteger(system(firstargument));
+		returnedObject = newInteger(system(firstargument));
 #endif
-	break;
+		break;
 
-    case 9:
-	sysError("fatal error", firstargument);
-	break;
+	case 9:
+		sysError("fatal error", firstargument);
+		break;
 
-    default:
-	sysError("unknown primitive", "strUnary");
-	break;
-    }
+	default:
+		sysError("unknown primitive", "strUnary");
+		break;
+	}
 
-    return (returnedObject);
+	return (returnedObject);
 }
 
-static int floatUnary(number, firstarg)
-int number;
+static int floatUnary(number, firstarg) int number;
 double firstarg;
 {
-    char buffer[20];
-    double temp;
-    int i, j;
-    object returnedObject;
+	char buffer[20];
+	double temp;
+	int i, j;
+	object returnedObject;
 
-    switch (number) {
-    case 1:			/* floating value asString */
-	ignore sprintf(buffer, "%g", firstarg);
-	returnedObject = newStString(buffer);
-	break;
+	switch (number)
+	{
+	case 1: /* floating value asString */
+		ignore sprintf(buffer, "%g", firstarg);
+		returnedObject = newStString(buffer);
+		break;
 
-    case 2:			/* log */
-	returnedObject = newFloat(log(firstarg));
-	break;
+	case 2: /* log */
+		returnedObject = newFloat(log(firstarg));
+		break;
 
-    case 3:			/* exp */
-	returnedObject = newFloat(exp(firstarg));
-	break;
+	case 3: /* exp */
+		returnedObject = newFloat(exp(firstarg));
+		break;
 
-    case 6:			/* integer part */
-	/* return two integers n and m such that */
-	/* number can be written as n * 2** m */
+	case 6: /* integer part */
+			/* return two integers n and m such that */
+			/* number can be written as n * 2** m */
 #define ndif 12
-	temp = frexp(firstarg, &i);
-	if ((i >= 0) && (i <= ndif)) {
-	    temp = ldexp(temp, i);
-	    i = 0;
-	} else {
-	    i -= ndif;
-	    temp = ldexp(temp, ndif);
-	}
-	j = (int) temp;
-	returnedObject = newArray(2);
-	basicAtPut(returnedObject, 1, newInteger(j));
-	basicAtPut(returnedObject, 2, newInteger(i));
+		temp = frexp(firstarg, &i);
+		if ((i >= 0) && (i <= ndif))
+		{
+			temp = ldexp(temp, i);
+			i = 0;
+		}
+		else
+		{
+			i -= ndif;
+			temp = ldexp(temp, ndif);
+		}
+		j = (int)temp;
+		returnedObject = newArray(2);
+		basicAtPut(returnedObject, 1, newInteger(j));
+		basicAtPut(returnedObject, 2, newInteger(i));
 #ifdef trynew
-	/* if number is too big it can't be integer anyway */
-	if (firstarg > 2e9)
-	    returnedObject = nilobj;
-	else {
-	    ignore modf(firstarg, &temp);
-	    ltemp = (long) temp;
-	    if (longCanBeInt(ltemp))
-		returnedObject = newInteger((int) temp);
-	    else
-		returnedObject = newFloat(temp);
-	}
+		/* if number is too big it can't be integer anyway */
+		if (firstarg > 2e9)
+			returnedObject = nilobj;
+		else
+		{
+			ignore modf(firstarg, &temp);
+			ltemp = (long)temp;
+			if (longCanBeInt(ltemp))
+				returnedObject = newInteger((int)temp);
+			else
+				returnedObject = newFloat(temp);
+		}
 #endif
-	break;
+		break;
 
-    default:
-	sysError("unknown primitive", "floatUnary");
-	break;
-    }
+	default:
+		sysError("unknown primitive", "floatUnary");
+		break;
+	}
 
-    return (returnedObject);
+	return (returnedObject);
 }
 
-static object floatBinary(number, first, second)
-int number;
+static object floatBinary(number, first, second) int number;
 double first, second;
 {
-    boolean binResult;
-    object returnedObject;
+	boolean binResult;
+	object returnedObject;
 
-    switch (number) {
-    case 0:
-	first += second;
-	break;
+	switch (number)
+	{
+	case 0:
+		first += second;
+		break;
 
-    case 1:
-	first -= second;
-	break;
-    case 2:
-	binResult = (first < second);
-	break;
-    case 3:
-	binResult = (first > second);
-	break;
-    case 4:
-	binResult = (first <= second);
-	break;
-    case 5:
-	binResult = (first >= second);
-	break;
-    case 6:
-	binResult = (first == second);
-	break;
-    case 7:
-	binResult = (first != second);
-	break;
-    case 8:
-	first *= second;
-	break;
-    case 9:
-	first /= second;
-	break;
-    default:
-	sysError("unknown primitive", "floatBinary");
-	break;
-    }
+	case 1:
+		first -= second;
+		break;
+	case 2:
+		binResult = (first < second);
+		break;
+	case 3:
+		binResult = (first > second);
+		break;
+	case 4:
+		binResult = (first <= second);
+		break;
+	case 5:
+		binResult = (first >= second);
+		break;
+	case 6:
+		binResult = (first == second);
+		break;
+	case 7:
+		binResult = (first != second);
+		break;
+	case 8:
+		first *= second;
+		break;
+	case 9:
+		first /= second;
+		break;
+	default:
+		sysError("unknown primitive", "floatBinary");
+		break;
+	}
 
-    if ((number >= 2) && (number <= 7))
-	if (binResult)
-	    returnedObject = trueobj;
+	if ((number >= 2) && (number <= 7))
+		if (binResult)
+			returnedObject = trueobj;
+		else
+			returnedObject = falseobj;
 	else
-	    returnedObject = falseobj;
-    else
-	returnedObject = newFloat(first);
-    return (returnedObject);
+		returnedObject = newFloat(first);
+	return (returnedObject);
 }
 
 /* primitive -
 	the main driver for the primitive handler
 */
-object primitive(primitiveNumber, arguments)
-register int primitiveNumber;
+object primitive(primitiveNumber, arguments) register int primitiveNumber;
 object *arguments;
 {
-    register int primitiveGroup = primitiveNumber / 10;
-    object returnedObject;
+	register int primitiveGroup = primitiveNumber / 10;
+	object returnedObject;
 
-
-    if (primitiveNumber >= 150) {
-	/* system dependent primitives, handled in separate module */
-	returnedObject = sysPrimitive(primitiveNumber, arguments);
-    } else {
-	switch (primitiveGroup) {
-	case 0:
-	    returnedObject = zeroaryPrims(primitiveNumber);
-	    break;
-	case 1:
-	    returnedObject =
-		unaryPrims(primitiveNumber - 10, arguments[0]);
-	    break;
-	case 2:
-	    returnedObject =
-		binaryPrims(primitiveNumber - 20, arguments[0],
-			    arguments[1]);
-	    break;
-	case 3:
-	    returnedObject =
-		trinaryPrims(primitiveNumber - 30, arguments[0],
-			     arguments[1], arguments[2]);
-	    break;
-
-	case 5:		/* integer unary operations */
-	    if (!isInteger(arguments[0]))
-		returnedObject = nilobj;
-	    else
-		returnedObject = intUnary(primitiveNumber - 50,
-					  intValue(arguments[0]));
-	    break;
-
-	case 6:
-	case 7:		/* integer binary operations */
-	    if ((!isInteger(arguments[0])) || !isInteger(arguments[1]))
-		returnedObject = nilobj;
-	    else
-		returnedObject = intBinary(primitiveNumber - 60,
-					   intValue(arguments[0]),
-					   intValue(arguments[1]));
-	    break;
-
-	case 8:		/* string unary */
-	    returnedObject =
-		strUnary(primitiveNumber - 80, charPtr(arguments[0]));
-	    break;
-
-	case 10:		/* float unary */
-	    returnedObject =
-		floatUnary(primitiveNumber - 100,
-			   floatValue(arguments[0]));
-	    break;
-
-	case 11:		/* float binary */
-	    returnedObject = floatBinary(primitiveNumber - 110,
-					 floatValue(arguments[0]),
-					 floatValue(arguments[1]));
-	    break;
-
-	case 12:
-	case 13:		/* file operations */
-
-	    returnedObject = ioPrimitive(primitiveNumber - 120, arguments);
-	    break;
-
-
-	default:
-	    sysError("unknown primitive number", "doPrimitive");
-	    break;
+	if (primitiveNumber >= 150)
+	{
+		/* system dependent primitives, handled in separate module */
+		returnedObject = sysPrimitive(primitiveNumber, arguments);
 	}
-    }
+	else
+	{
+		switch (primitiveGroup)
+		{
+		case 0:
+			returnedObject = zeroaryPrims(primitiveNumber);
+			break;
+		case 1:
+			returnedObject =
+				unaryPrims(primitiveNumber - 10, arguments[0]);
+			break;
+		case 2:
+			returnedObject =
+				binaryPrims(primitiveNumber - 20, arguments[0],
+							arguments[1]);
+			break;
+		case 3:
+			returnedObject =
+				trinaryPrims(primitiveNumber - 30, arguments[0],
+							 arguments[1], arguments[2]);
+			break;
 
-    return (returnedObject);
+		case 5: /* integer unary operations */
+			if (!isInteger(arguments[0]))
+				returnedObject = nilobj;
+			else
+				returnedObject = intUnary(primitiveNumber - 50,
+										  intValue(arguments[0]));
+			break;
+
+		case 6:
+		case 7: /* integer binary operations */
+			if ((!isInteger(arguments[0])) || !isInteger(arguments[1]))
+				returnedObject = nilobj;
+			else
+				returnedObject = intBinary(primitiveNumber - 60,
+										   intValue(arguments[0]),
+										   intValue(arguments[1]));
+			break;
+
+		case 8: /* string unary */
+			returnedObject =
+				strUnary(primitiveNumber - 80, charPtr(arguments[0]));
+			break;
+
+		case 10: /* float unary */
+			returnedObject =
+				floatUnary(primitiveNumber - 100,
+						   floatValue(arguments[0]));
+			break;
+
+		case 11: /* float binary */
+			returnedObject = floatBinary(primitiveNumber - 110,
+										 floatValue(arguments[0]),
+										 floatValue(arguments[1]));
+			break;
+
+		case 12:
+		case 13: /* file operations */
+
+			returnedObject = ioPrimitive(primitiveNumber - 120, arguments);
+			break;
+
+		default:
+			sysError("unknown primitive number", "doPrimitive");
+			break;
+		}
+	}
+
+	return (returnedObject);
 }
 
 /*
@@ -768,46 +789,45 @@ object *arguments;
  */
 void runMethodOrBlock(object method, object block, object arg)
 {
-    object process, stack, argArray;
+	object process, stack, argArray;
 
-    process = allocObject(processSize);
-    incr(process);
-    stack = newArray(50);
-    incr(stack);
+	process = allocObject(processSize);
+	incr(process);
+	stack = newArray(50);
+	incr(stack);
 
+	/* make a process */
+	basicAtPut(process, stackInProcess, stack);
+	basicAtPut(process, stackTopInProcess, newInteger(10));
+	basicAtPut(process, linkPtrInProcess, newInteger(2));
 
-    /* make a process */
-    basicAtPut(process, stackInProcess, stack);
-    basicAtPut(process, stackTopInProcess, newInteger(10));
-    basicAtPut(process, linkPtrInProcess, newInteger(2));
+	basicAtPut(stack, 1, method == nilobj ? nilobj : arg); /* argument if method */
 
-    basicAtPut(stack, 1, method == nilobj ? nilobj : arg);	/* argument if method */
-
-    /* now make a linkage area in stack */
-    basicAtPut(stack, 2, nilobj);	/* previous link */
+	/* now make a linkage area in stack */
+	basicAtPut(stack, 2, nilobj); /* previous link */
 
 	object ctxObj = method == nilobj ? basicAt(block, contextInBlock) : nilobj;
-	basicAtPut(stack, 3, ctxObj);	/* context object (nil = stack) */
+	basicAtPut(stack, 3, ctxObj); /* context object (nil = stack) */
 
-    basicAtPut(stack, 4, newInteger(1));	/* return point */
+	basicAtPut(stack, 4, newInteger(1)); /* return point */
 
-    basicAtPut(stack, 5, method);	/* method if there is one (otherwise nil) */
+	basicAtPut(stack, 5, method); /* method if there is one (otherwise nil) */
 
 	object bytecountPos = method == nilobj ? basicAt(block, bytecountPositionInBlock) : newInteger(1);
-    basicAtPut(stack, 6, bytecountPos);	/* byte offset */
+	basicAtPut(stack, 6, bytecountPos); /* byte offset */
 
-    /* now go execute it */
+	/* now go execute it */
 	unaryPrims(9, process);
 }
 
-void doIt(char* text, object arg)
+void doIt(char *text, object arg)
 {
-    object process, stack, method;
+	object process, stack, method;
 
-    method = newMethod();
-    incr(method);
-    setInstanceVariables(nilobj);
-    ignore parse(method, text, false);
+	method = newMethod();
+	incr(method);
+	setInstanceVariables(nilobj);
+	ignore parse(method, text, false);
 
 	runMethodOrBlock(method, nilobj, arg);
 }
@@ -816,67 +836,71 @@ void doIt(char* text, object arg)
 #ifdef TARGET_ESP32
 //#ifdef TARGET_ESP32_DISABLED_THIS
 
-void evalTask(void* evalText, object arg)
+void evalTask(void *evalText, object arg)
 {
 	doIt(evalText, arg);
-	vTaskDelete( NULL );
+	vTaskDelete(NULL);
 }
 
-typedef struct {
-    object	block;	// block to run
-    object	arg;	// and block argument
-	int		ticks;	// ticks to delay before running
+typedef struct
+{
+	object block; // block to run
+	object arg;	  // and block argument
+	int ticks;	  // ticks to delay before running
 } task_block_arg;
 
 extern boolean interruptInterpreter();
 
-void taskRunBlockAfter(task_block_arg *taskBlockArg) {
+void taskRunBlockAfter(task_block_arg *taskBlockArg)
+{
 	object block = taskBlockArg->block;
 	object arg = taskBlockArg->arg;
 	int ticks = taskBlockArg->ticks;
 	vTaskDelay(ticks);
-	while (!interruptInterpreter()) {
+	while (!interruptInterpreter())
+	{
 		vTaskDelay(20 / portTICK_PERIOD_MS);
 	}
 	vmBlockToRun = block;
-	vTaskDelete( xTaskGetCurrentTaskHandle() );
+	vTaskDelete(xTaskGetCurrentTaskHandle());
 }
 
 // prim 152 calls this
-void runBlockAfter( object block, object arg, int ticks ) {
+void runBlockAfter(object block, object arg, int ticks)
+{
 	// Since VM has a reference to the block
 	task_block_arg taskBlockArg;
 
 	incr(block);
-	
+
 	taskBlockArg.block = block;
 	taskBlockArg.arg = arg;
 	taskBlockArg.ticks = ticks;
 
 	vmBlockToRun = nilobj;
 	xTaskCreate(
-        taskRunBlockAfter, /* Task function. */
-        "taskRunBlockAfter", /* name of task. */
-        8096, /* Stack size of task */
-        &taskBlockArg, // parameter of the task (block, arg and delay until run)
-    	1, /* priority of the task */
-        NULL); /* Task handle to keep track of created task */
+		taskRunBlockAfter,	 /* Task function. */
+		"taskRunBlockAfter", /* name of task. */
+		8096,				 /* Stack size of task */
+		&taskBlockArg,		 // parameter of the task (block, arg and delay until run)
+		1,					 /* priority of the task */
+		NULL);				 /* Task handle to keep track of created task */
 }
 
-void forkEval(char* evalText, object arg)
+void forkEval(char *evalText, object arg)
 {
-    xTaskCreate(
-        evalTask, /* Task function. */
-        "evalTask", /* name of task. */
-        8096, /* Stack size of task */
-        evalText, /* parameter of the task (the Smalltalk exec string to run) */
-        1, /* priority of the task */
-        NULL); /* Task handle to keep track of created task */
+	xTaskCreate(
+		evalTask,	/* Task function. */
+		"evalTask", /* name of task. */
+		8096,		/* Stack size of task */
+		evalText,	/* parameter of the task (the Smalltalk exec string to run) */
+		1,			/* priority of the task */
+		NULL);		/* Task handle to keep track of created task */
 }
 
 #else // When not running on a ESP32 do single thread versions
 
-void forkEval(char* evalText, object arg)
+void forkEval(char *evalText, object arg)
 {
 	doIt(evalText, arg);
 }
@@ -885,23 +909,28 @@ void forkEval(char* evalText, object arg)
 
 void runBlock(object block, object arg)
 {
-    object argArray;
+	object argArray;
 
-    /* put argument in block temps */
-	if (block != nilobj) {
+	/* put argument in block temps */
+	if (block != nilobj)
+	{
 		argArray = newArray(1);
-    	incr(argArray);
-    	basicAtPut(argArray, 1, arg);
+		incr(argArray);
+		basicAtPut(argArray, 1, arg);
 		basicAtPut(basicAt(block, contextInBlock), temporariesInContext, argArray); // block
 	}
 
 	runMethodOrBlock(nilobj, block, arg);
 }
 
-void runSmalltalkProcess(object processToRun) {
-    if (processToRun != nilobj) {
-        unaryPrims(9, processToRun);
-	} else {
-		fprintf(stderr, "<%s>: %s\n", "runSmalltalkProcess", "trying to run nil process" );
+void runSmalltalkProcess(object processToRun)
+{
+	if (processToRun != nilobj)
+	{
+		unaryPrims(9, processToRun);
+	}
+	else
+	{
+		fprintf(stderr, "<%s>: %s\n", "runSmalltalkProcess", "trying to run nil process");
 	}
 }
