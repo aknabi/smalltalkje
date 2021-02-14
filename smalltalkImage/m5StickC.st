@@ -18,8 +18,7 @@ Methods M5StickC 'all'
     setupButtonHandlers
         "self when: 'BigButtonClicked' do: [display clear; string: 'BigButtonClicked' x: 16 y: 16]."
         "self when: 'BigButtonClicked' do: [(1 to: 10) do: [:i | display string: 'Big Click ', i asString x: 16 y: 16. m5 delayTaskFor: 200]]."
-        "self when: 'BigButtonClicked' do: [self displayLoop. [self backgroundLoop] forkTask ]."
-        self when: 'BigButtonClicked' do: [self backgroundLoop].
+        self when: 'BigButtonClicked' do: [ display clear; string: 'BigButtonClicked' x: 16 y: 16. [display clear] runAfter: 2000 ].
         self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
         self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
         self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16].
@@ -30,30 +29,6 @@ Methods M5StickC 'all'
     backgroundLoop
 		10 timesRepeat: [  self afterDelay: 500 do: [self ledOn].
 			self afterDelay: 500 do: [self ledOff] ].
-|
-	oldBackgroundLoop
-       self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
-        self ledOn; delayTaskFor: 500.
-        self ledOff; delayTaskFor: 500.
 |
     display: aString atY: yPos delay: milliseconds
         display clear; string: aString x: 16 y: yPos.

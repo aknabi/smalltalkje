@@ -134,6 +134,8 @@ void uart_input_init()
 
 char getInputCharacter()
 {
+    setvbuf(stdin, NULL, _IOFBF, 80);
+
     waitingTaskHandle = xTaskGetCurrentTaskHandle();
     c = 0;
     uint32_t charsReceived = ulTaskNotifyTake( pdTRUE, TICKS_TO_WAIT_FOR_CHAR );

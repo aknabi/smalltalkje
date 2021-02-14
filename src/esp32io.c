@@ -39,6 +39,7 @@ static const char *ESP_TAG = "ESP32";
 #if TARGET_DEVICE == DEVICE_M5STICKC
 
 extern object buttonProcesses[4];
+extern void runBlockAfter( object block, int ticks );
 
 void m5ButtonHandler(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
     object buttonBlock = nilobj;
@@ -68,18 +69,9 @@ void m5ButtonHandler(void * handler_arg, esp_event_base_t base, int32_t id, void
     buttonBlock =  nameTableLookup(eventDict, eventStr);
     if (buttonBlock != nilobj) {
         // runBlock(buttonBlock, nilobj);
-        forkBlockTask(buttonBlock, nilobj);
+        // Schedule as a Interrupt
+        runBlockAfter( buttonBlock, 0 );
     }
-
-    // doIt(doItString);
-
-    // if (buttonProcess == nilobj) {
-    //     fprintf(stderr, "<%s>: %s\n", "m5ButtonHandler", "buttonProcess is nil");
-    // } else {
-    //     fprintf(stderr, "<%s>: %s obj id: %d\n", "m5ButtonHandler", "buttonProcess a process", buttonProcess);
-    //     runBlock(buttonProcess);
-    //     // runSmalltalkProcess(buttonProcess);
-    // }
 }
 
 // To ensure we don't init M5StickC twice... causes big issues
@@ -118,104 +110,6 @@ void m5StickInit()
 }
 
 #endif // DEVICE_M5STICKC
-
-#ifdef TEST_M5STICK
-
-void m5_event_handler(void * handler_arg, esp_event_base_t base, int32_t id, void * event_data) {
-    if(base == m5button_a.esp_event_base) {
-        switch(id) {
-            case M5BUTTON_BUTTON_CLICK_EVENT:
-                TFT_resetclipwin();
-                TFT_fillScreen(_bg);
-                TFT_print("Click A!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
-                vTaskDelay(1000/portTICK_PERIOD_MS);
-                TFT_fillScreen(_bg);
-            break;
-            case M5BUTTON_BUTTON_HOLD_EVENT:
-                TFT_resetclipwin();
-                TFT_fillScreen(_bg);
-                TFT_print("Hold A!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
-                vTaskDelay(1000/portTICK_PERIOD_MS);
-                TFT_fillScreen(_bg);
-            break;
-        }
-    }
-    if(base == m5button_b.esp_event_base) {
-        switch(id) {
-            case M5BUTTON_BUTTON_CLICK_EVENT:
-                TFT_resetclipwin();
-                TFT_fillScreen(_bg);
-                TFT_print("Click B!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
-                vTaskDelay(1000/portTICK_PERIOD_MS);
-                TFT_fillScreen(_bg);
-            break;
-            case M5BUTTON_BUTTON_HOLD_EVENT:
-                TFT_resetclipwin();
-                TFT_fillScreen(_bg);
-                TFT_print("Hold B!", CENTER, (M5DISPLAY_HEIGHT-24)/2);
-                vTaskDelay(1000/portTICK_PERIOD_MS);
-                TFT_fillScreen(_bg);
-            break;
-        }
-    }
-}
-
-void m5StickTask(void* arg)
-{
-    char backlight_str[6];
-
-    m5StickInit();
-    
-    // Register for button events
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5_event_handler, NULL);
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_A_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5_event_handler, NULL);
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_CLICK_EVENT, m5_event_handler, NULL);
-    esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5_event_handler, NULL);
-
-    vTaskDelay(3000/portTICK_PERIOD_MS);
-    // ESP_LOGD(TAG, "Turning backlight off");
-    m5display_off();
-    vTaskDelay(3000/portTICK_PERIOD_MS);
-    // ESP_LOGD(TAG, "Turning backlight on");
-    m5display_on();
-    vTaskDelay(1000/portTICK_PERIOD_MS);
-
-    // Backlight level test
-    for(uint8_t i=7; i>0; --i) {
-        m5display_set_backlight_level(i);
-        TFT_fillScreen(_bg);
-        sprintf(backlight_str, "%d", i);
-        TFT_print("Backlight test", CENTER, (M5DISPLAY_HEIGHT-24)/2 +12);
-        TFT_print(backlight_str, CENTER, (M5DISPLAY_HEIGHT-24)/2 -12);
-        // ESP_LOGE(TAG, "Backlight: %d", i);
-        vTaskDelay(250/portTICK_PERIOD_MS);
-    }
-    for(uint8_t i=0; i<=7; ++i) {
-        m5display_set_backlight_level(i);
-        TFT_fillScreen(_bg);
-        sprintf(backlight_str, "%d", i);
-        TFT_print("Backlight test", CENTER, (M5DISPLAY_HEIGHT-24)/2 +12);
-        TFT_print(backlight_str, CENTER, (M5DISPLAY_HEIGHT-24)/2 -12);
-        // ESP_LOGE(TAG, "Backlight: %d", i);
-        vTaskDelay(250/portTICK_PERIOD_MS);
-    }
-
-    // Test buttons
-    TFT_fillScreen(_bg);
-    // ESP_LOGE(TAG, "Button test start");
-    TFT_print("Press or hold button", CENTER, (M5DISPLAY_HEIGHT-24)/2);
-
-    m5display_timeout(15000);
-
-    while(true) {
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
-    }
-
-   vTaskDelete( NULL );
-}
-
-#endif // TEST_M5STICK
-
 
 /*
  * ESP32 UART SERIAL SUPPORT CODE
@@ -271,17 +165,6 @@ void app_main(void)
 {
     uart_input_init();
 	// init_console();
-
-#ifdef TEST_M5STICK
-    ESP_LOGI(ESP_TAG, "Starting M5StickC Test\n");
-    xTaskCreate(
-        m5StickTask, /* Task function. */
-        "m5StickC", /* name of task. */
-        4096, /* Stack size of task */
-        NULL, /* parameter of the task */
-        1, /* priority of the task */
-        NULL); /* Task handle to keep track of created task */
-#endif
 
     ESP_LOGI(ESP_TAG, "Fresh free heap size: %d", esp_get_free_heap_size());
 

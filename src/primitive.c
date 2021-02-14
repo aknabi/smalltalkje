@@ -112,7 +112,6 @@ int number;
 }
 
 object blockToExecute;
-extern void forkBlockTask(object block, object arg);
 extern void doIt(char* evalText, object arg);
 extern void runBlock(object block, object arg);
 
@@ -173,13 +172,12 @@ object firstarg;
 		break;
 
 	case 7:			/* Execute block (Block forkTask)... WAS Execute saved block with first argument */
-		forkBlockTask(firstarg, nilobj);
+		runBlock(firstarg, nilobj);
 		returnedObject = trueobj;
 		// if ( blockToExecute == nilobj ) {
 		// 	returnedObject = falseobj;
 		// } else {
-		// 	// runBlock(blockToExecute, firstarg);
-		// 	forkBlockTask(blockToExecute, firstarg);
+		// 	runBlock(blockToExecute, firstarg);
 		// 	returnedObject = trueobj;
 		// }
 		break;
@@ -855,40 +853,6 @@ void runBlockAfter( object block, int ticks ) {
         NULL); /* Task handle to keep track of created task */
 }
 
-void taskRunBlock(void* blockArg) {
-	//object block;
-	// object (*args) = (object (*)) blockArg;
-	// fprintf(stderr, "taskRunBlock: running block" );
-	// runBlock(args[0], args[1]);
-
-
-	// fprintf(stderr, "taskRunBlock: about to vTaskDelete" );
-	// vTaskDelete( xTaskGetCurrentTaskHandle() );
-	runBlock(passBlock, passArg);
-	vmBlockToRun = passBlock;
-	//vmBlockToRunArg = passArg;
-	vTaskDelete( NULL );
-}
-
-void forkBlockTask(object block, object arg)
-{
-
-	// This just runs the block in the same thread and works.
-	runBlock(block, arg); return;
-
-	// // object runBlockArgs[2] = { block, arg };
-	// passBlock = block;
-	// passArg = arg;
-	
-    // xTaskCreate(
-    //     taskRunBlock, /* Task function. */
-    //     "forkBlockTask", /* name of task. */
-    //     8096, /* Stack size of task */
-    //     NULL, // runBlockArgs, /* parameter of the task (the Smalltalk exec string to run) */
-    // 	1, /* priority of the task */
-    //     NULL); /* Task handle to keep track of created task */
-}
-
 void forkEval(char* evalText, object arg)
 {
     xTaskCreate(
@@ -905,11 +869,6 @@ void forkEval(char* evalText, object arg)
 void forkEval(char* evalText, object arg)
 {
 	doIt(evalText, arg);
-}
-
-void forkBlockTask(object block, object arg)
-{
-	runBlock(block, arg);
 }
 
 #endif

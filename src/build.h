@@ -21,5 +21,4 @@
 #define TARGET_DEVICE DEVICE_M5STICKC
 
 // M5StickC defines
-// #define TEST_M5STICK
 
