@@ -12,7 +12,6 @@
 */
 #define WRITE_OBJECT_PARTITION
 
-
 // Define device as ESP32 dev board with a SSD1306 I2C OLED
 #define DEVICE_ESP32_SSD1306 1
 // Define device as an M5StickC
@@ -21,4 +20,3 @@
 #define TARGET_DEVICE DEVICE_M5STICKC
 
 // M5StickC defines
-

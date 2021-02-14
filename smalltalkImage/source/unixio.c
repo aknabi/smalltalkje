@@ -474,16 +474,6 @@ object ioPrimitive(int number, object * arguments)
 
     case 4:			/* prim 124 get a input line from the console (blocking/nonblocking) */
 		returnedObject = getInputLine(charPtr(arguments[0]));
-// #ifdef TARGET_ESP32
-// 		if (arguments[1] == trueobj) {
-// 			returnedObject = getInputLine(charPtr(arguments[0]));
-// 		} else {
-// 			runBlockAfterInput(arguments[2], charPtr(arguments[0]));
-// 			// returnedObject = getInputLine(charPtr(arguments[0]));
-// 		}
-// #else
-// 			returnedObject = getInputLine(charPtr(arguments[0]));
-// #endif
 		break;
 
     case 5:			/* prim 125 - get string */

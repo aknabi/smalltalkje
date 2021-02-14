@@ -28,17 +28,22 @@
 #include "tft.h"
 #endif
 
-
 #endif
 
 #define getIntArg(i) intValue(arguments[i])
 
-#define checkIntArg(i) if (!isInteger(arguments[i])) \
- { sysError("non integer index", "x"); }
- 
-#define checkArgClass(i, classStr) if ( classField(arguments[i] ) != findClass(classStr) ) \
- { sysError("Argument is not the expected class", classStr); }
- 
+#define checkIntArg(i)                      \
+    if (!isInteger(arguments[i]))           \
+    {                                       \
+        sysError("non integer index", "x"); \
+    }
+
+#define checkArgClass(i, classStr)                                \
+    if (classField(arguments[i]) != findClass(classStr))          \
+    {                                                             \
+        sysError("Argument is not the expected class", classStr); \
+    }
+
 extern boolean parseok;
 
 /* report a fatal system error */
@@ -57,13 +62,13 @@ noreturn sysWarn(char *s1, char *s2)
 void compilWarn(char *selector, char *str1, char *str2)
 {
     ignore fprintf(stderr, "compiler warning: Method %s : %s %s\n",
-		   selector, str1, str2);
+                   selector, str1, str2);
 }
 
 void compilError(char *selector, char *str1, char *str2)
 {
     ignore fprintf(stderr, "compiler error: Method %s : %s %s\n",
-		   selector, str1, str2);
+                   selector, str1, str2);
     parseok = false;
 }
 
@@ -86,22 +91,24 @@ int counter = 0;
 
 object buttonProcesses[4] = {nilobj, nilobj, nilobj, nilobj};
 
-void addButtonHandlerProcess(object* arguments) {
+void addButtonHandlerProcess(object *arguments)
+{
     sysWarn("start adding handler...", "addButtonHandlerProcess");
     checkIntArg(1);
     object handerProcess = arguments[2];
-    if (getIntArg(1) > 3) return;
+    if (getIntArg(1) > 3)
+        return;
     sysWarn("now adding handler...", "addButtonHandlerProcess");
-    fprintf(stderr, "Button object handler process: %d", handerProcess );
+    fprintf(stderr, "Button object handler process: %d", handerProcess);
     buttonProcesses[getIntArg(1) - 1] = handerProcess;
     // Store a ref to the button handler process outside of Smalltalk
     // incr(handerProcess);
 }
 
-typedef void (*primFunc_t)(object*);
+typedef void (*primFunc_t)(object *);
 extern void runSmalltalkProcess(void *process);
 
-primFunc_t m5PrimitiveFunctions[] = { &addButtonHandlerProcess };
+primFunc_t m5PrimitiveFunctions[] = {&addButtonHandlerProcess};
 
 void runTask(void *process)
 {
@@ -114,49 +121,53 @@ void runTask(void *process)
     // }
     runSmalltalkProcess(process);
     /* delete a task when finish */
-    vTaskDelete( NULL );
+    vTaskDelete(NULL);
 }
 
 #endif
 
-extern void runBlockAfter( object block, int ticks );
+extern void runBlockAfter(object block, object arg, int ticks);
 
-object sysPrimitive(int number, object * arguments)
+object sysPrimitive(int number, object *arguments)
 {
     object returnedObject = nilobj;
 
     /* someday there will be more here */
-    switch (number - 150) {
-    case 0:			/* do a system() call */
-	    returnedObject = newInteger(system(charPtr(arguments[0])));
-	    break;
+    switch (number - 150)
+    {
+    case 0: /* do a system() call */
+        returnedObject = newInteger(system(charPtr(arguments[0])));
+        break;
 
 #ifdef TARGET_ESP32
-    case 1:         /* prim 151 create a OS task with a ST process */
-        ; // Semicolon solves for "error: a label can only be part of a statement and a declaration is not a statement"
+    case 1: /* prim 151 create a OS task with a ST process */
+        ;   // Semicolon solves for "error: a label can only be part of a statement and a declaration is not a statement"
         // TaskHandle_t *taskHandle = NULL;;
         // BaseType_t xReturned = xTaskCreate(
         object processToRun = arguments[0];
-        if ( classField(processToRun) != findClass("Process") ) {
+        if (classField(processToRun) != findClass("Process"))
+        {
             sysError("forkTask argument must be a process", "taskDelay");
         }
         xTaskCreate(
-            runTask, /* Task function. */
-            "runTask", /* name of task. */
-            8096, /* Stack size of task */
+            runTask,      /* Task function. */
+            "runTask",    /* name of task. */
+            8096,         /* Stack size of task */
             arguments[0], /* parameter of the task (the Smalltalk process to run) */
-            1, /* priority of the task */
-            NULL); /* Task handle to keep track of created task */
+            1,            /* priority of the task */
+            NULL);        /* Task handle to keep track of created task */
 
         // We'd like to return the handle in order to manage the process.
         break;
 
-    case 2:         /* prim 152 delays the current OS task with a ST process for a given number of milliseconds */
-        checkIntArg(1)
-        if ( arguments[0] == nilobj ) {
-            vTaskDelay( intValue(arguments[1]) / portTICK_PERIOD_MS );
-        } else {
-            runBlockAfter( arguments[0], arguments[1] / portTICK_PERIOD_MS );
+    case 2: /* prim 152 delays the current OS task with a ST process for a given number of milliseconds */
+        checkIntArg(1) if (arguments[0] == nilobj)
+        {
+            vTaskDelay(intValue(arguments[1]) / portTICK_PERIOD_MS);
+        }
+        else
+        {
+            runBlockAfter(arguments[0], nilobj, arguments[1] / portTICK_PERIOD_MS);
         }
         // We'd like to return the handle in order to manage the process.
         break;
@@ -194,20 +205,19 @@ object sysPrimitive(int number, object * arguments)
     // Prim 156 Display the string at the x,y location passed in
     case 6:
         checkIntArg(1)
-        checkIntArg(2)
+            checkIntArg(2)
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
-        SSD1306_DrawText(
-            getIntArg(1), 
-            getIntArg(2), 
-            charPtr(arguments[0]),
-            1);
+                SSD1306_DrawText(
+                    getIntArg(1),
+                    getIntArg(2),
+                    charPtr(arguments[0]),
+                    1);
 #elif TARGET_DEVICE == DEVICE_M5STICKC
-        TFT_resetclipwin();
+                TFT_resetclipwin();
         TFT_setFont(DEFAULT_FONT, NULL);
         TFT_print(charPtr(arguments[0]), getIntArg(1), getIntArg(2));
 #endif
-
 
         /* Set GPIO PIN in first argument to value in second argument */
         // gpio_set_level(intValue(arguments[0]), intValue(arguments[1]));
@@ -218,37 +228,43 @@ object sysPrimitive(int number, object * arguments)
     // Prim 157 rectangleX: x y: y width: w height: h isFilled: aBoolean
     case 7:
         checkIntArg(0)
-        checkIntArg(1)
-        checkIntArg(2)
-        checkIntArg(3)
-        if (arguments[4] != trueobj && arguments[4] != falseobj) {
-	        sysError("non boolean argument", "isFilled");
+            checkIntArg(1)
+                checkIntArg(2)
+                    checkIntArg(3) if (arguments[4] != trueobj && arguments[4] != falseobj)
+        {
+            sysError("non boolean argument", "isFilled");
         }
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
-        if (arguments[4] == trueobj) {
+        if (arguments[4] == trueobj)
+        {
             SSD1306_FillRect(
-                getIntArg(0), 
-                getIntArg(1), 
-                getIntArg(2), 
-                getIntArg(3), 
+                getIntArg(0),
+                getIntArg(1),
+                getIntArg(2),
+                getIntArg(3),
                 oled_color_white);
-        } else {
+        }
+        else
+        {
             SSD1306_DrawRect(
-                getIntArg(0), 
-                getIntArg(1), 
-                getIntArg(2), 
+                getIntArg(0),
+                getIntArg(1),
+                getIntArg(2),
                 getIntArg(3));
         }
 #elif TARGET_DEVICE == DEVICE_M5STICKC
-        if (arguments[4] == trueobj) {
+        if (arguments[4] == trueobj)
+        {
             TFT_fillRect(
                 getIntArg(0),
                 getIntArg(1),
                 getIntArg(2),
                 getIntArg(3),
                 TFT_WHITE);
-        } else {
+        }
+        else
+        {
             TFT_drawRect(
                 getIntArg(0),
                 getIntArg(1),
@@ -261,34 +277,41 @@ object sysPrimitive(int number, object * arguments)
     // Prim 158 circleX: x y: y radius: r isFilled: aBoolean
     case 8:
         checkIntArg(0)
-        checkIntArg(1)
-        checkIntArg(2)
+            checkIntArg(1)
+                checkIntArg(2)
 
-        if (arguments[3] != trueobj && arguments[3] != falseobj) {
-	        sysError("non boolean argument", "isFilled");
+                    if (arguments[3] != trueobj && arguments[3] != falseobj)
+        {
+            sysError("non boolean argument", "isFilled");
         }
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
-        if (arguments[4] == trueobj) {
+        if (arguments[4] == trueobj)
+        {
             SSD1306_FillCircle(
-                getIntArg(0), 
-                getIntArg(1), 
-                getIntArg(2), 
+                getIntArg(0),
+                getIntArg(1),
+                getIntArg(2),
                 oled_color_white);
-        } else {
+        }
+        else
+        {
             SSD1306_DrawCircle(
-                getIntArg(0), 
-                getIntArg(1), 
+                getIntArg(0),
+                getIntArg(1),
                 getIntArg(2));
         }
 #elif TARGET_DEVICE == DEVICE_M5STICKC
-        if (arguments[4] == trueobj) {
+        if (arguments[4] == trueobj)
+        {
             TFT_fillCircle(
                 getIntArg(0),
                 getIntArg(1),
                 getIntArg(2),
                 TFT_WHITE);
-        } else {
+        }
+        else
+        {
             TFT_drawCircle(
                 getIntArg(0),
                 getIntArg(1),
@@ -304,19 +327,34 @@ object sysPrimitive(int number, object * arguments)
     // Prim 159 set GPIO pin in first arg to mode in second arg
     case 9:
         checkIntArg(0)
-        checkIntArg(1)
+            checkIntArg(1)
 
-        gpio_mode_t gpioMode;
+                gpio_mode_t gpioMode;
         gpio_pad_select_gpio(getIntArg(0));
 
-        switch(getIntArg(1)) {
-            case 0: gpioMode = GPIO_MODE_DISABLE; break; // disable input and output
-            case 1: gpioMode = GPIO_MODE_INPUT; break; // input only
-            case 2: gpioMode = GPIO_MODE_OUTPUT; break; // output only mode
-            case 3: gpioMode = GPIO_MODE_OUTPUT_OD; break; // output only with open-drain mode
-            case 4: gpioMode = GPIO_MODE_INPUT_OUTPUT_OD; break; // output and input with open-drain mode
-            case 5: gpioMode = GPIO_MODE_INPUT_OUTPUT; break; // output and input mode
-            default: gpioMode = GPIO_MODE_OUTPUT; break;
+        switch (getIntArg(1))
+        {
+        case 0:
+            gpioMode = GPIO_MODE_DISABLE;
+            break; // disable input and output
+        case 1:
+            gpioMode = GPIO_MODE_INPUT;
+            break; // input only
+        case 2:
+            gpioMode = GPIO_MODE_OUTPUT;
+            break; // output only mode
+        case 3:
+            gpioMode = GPIO_MODE_OUTPUT_OD;
+            break; // output only with open-drain mode
+        case 4:
+            gpioMode = GPIO_MODE_INPUT_OUTPUT_OD;
+            break; // output and input with open-drain mode
+        case 5:
+            gpioMode = GPIO_MODE_INPUT_OUTPUT;
+            break; // output and input mode
+        default:
+            gpioMode = GPIO_MODE_OUTPUT;
+            break;
         }
         gpio_set_direction(getIntArg(0), gpioMode);
         break;
@@ -324,20 +362,22 @@ object sysPrimitive(int number, object * arguments)
     // Prim 160 set GPIO pin in first arg to value in second arg
     case 10:
         checkIntArg(0)
-        checkIntArg(1)
-        gpio_set_level(getIntArg(0), getIntArg(1));
+            checkIntArg(1)
+                gpio_set_level(getIntArg(0), getIntArg(1));
         break;
 
     // Prim 181 M5 functions. First arg is function number, second and third are arguments to the function
     // Index 0 means restart the SoC/system
     case 31:
-    	sysWarn("in primitive 181", "sysPrimitive");
+        sysWarn("in primitive 181", "sysPrimitive");
         checkIntArg(0);
         int argIndex = getIntArg(0);
-        if (argIndex == 0) esp_restart();
+        if (argIndex == 0)
+            esp_restart();
         int funcIndex = argIndex - 1;
-        if (funcIndex != 0) break;
-    	sysWarn("181 register prim function", "sysPrimitive");
+        if (funcIndex != 0)
+            break;
+        sysWarn("181 register prim function", "sysPrimitive");
         primFunc_t m5Func = m5PrimitiveFunctions[funcIndex];
         m5Func(arguments);
         break;
@@ -345,7 +385,7 @@ object sysPrimitive(int number, object * arguments)
 #endif
 
     default:
-	    sysError("unknown primitive", "sysPrimitive");
+        sysError("unknown primitive", "sysPrimitive");
     }
     return (returnedObject);
 }

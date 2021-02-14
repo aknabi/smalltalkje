@@ -39,20 +39,21 @@ typedef int object;
  * This would eliminate 6 bytes per unused entry (so in a 5k free table 30k).
  * 
  */
-struct objectStruct {
-    object class;
-    short referenceCount;
-    short size;
-    object *memory;
+struct objectStruct
+{
+	object class;
+	short referenceCount;
+	short size;
+	object *memory;
 };
 
 #define ObjectTableMax 6144
 
 #ifdef obtalloc
-  extern struct objectStruct *objectTable;
+extern struct objectStruct *objectTable;
 #endif
 #ifndef obtalloc
-  extern struct objectStruct objectTable[];
+extern struct objectStruct objectTable[];
 #endif
 
 /*
@@ -64,8 +65,12 @@ struct objectStruct {
 
 extern object incrobj;
 
-#define incr(x) if ((incrobj=(x))&&!isInteger(incrobj)) refCountField(incrobj)++
-#define decr(x) if (((incrobj=(x))&&!isInteger(incrobj))&& (--refCountField(incrobj)<=0)) sysDecr(incrobj);
+#define incr(x)                                 \
+	if ((incrobj = (x)) && !isInteger(incrobj)) \
+	refCountField(incrobj)++
+#define decr(x)                                                                      \
+	if (((incrobj = (x)) && !isInteger(incrobj)) && (--refCountField(incrobj) <= 0)) \
+		sysDecr(incrobj);
 
 /*
 	notice that the argument x is first assigned to a global variable; this is
@@ -101,11 +106,15 @@ extern object allocStr(STR);
 
 extern object intobj;
 
-#define isInteger(x) ((x) & 0x8001)
-#define newInteger(x) ( (intobj = x)<0 ? intobj : (intobj<<1)+1 )
-#define intValue(x) ( (intobj = x)<0 ? intobj : (intobj>>1) )
+#define isInteger(x) ((x)&0x8001)
+#define newInteger(x) ((intobj = x) < 0 ? intobj : (intobj << 1) + 1)
+#define intValue(x) ((intobj = x) < 0 ? intobj : (intobj >> 1))
 
-#define adjustSizeIfNeg(size) if (size < 0) { size = ((-size) + 1) / 2; }
+#define adjustSizeIfNeg(size)     \
+	if (size < 0)                 \
+	{                             \
+		size = ((-size) + 1) / 2; \
+	}
 
 /*
 	There are four routines used to access fields within an object.
@@ -117,12 +126,14 @@ extern object intobj;
 	byteAtPut(x, i, v) - put value v in object x
 */
 
-
-#define basicAt(x,i) (sysMemPtr(x)[i-1])
-#define byteAt(x, i) ((int) ((bytePtr(x)[i-1])))
-#define simpleAtPut(x,i,y) (sysMemPtr(x)[i-1] = y)
-#define basicAtPut(x,i,y) incr(simpleAtPut(x, i, y))
-#define fieldAtPut(x,i,y) f_i=i; decr(basicAt(x,f_i)); basicAtPut(x,f_i,y)
+#define basicAt(x, i) (sysMemPtr(x)[i - 1])
+#define byteAt(x, i) ((int)((bytePtr(x)[i - 1])))
+#define simpleAtPut(x, i, y) (sysMemPtr(x)[i - 1] = y)
+#define basicAtPut(x, i, y) incr(simpleAtPut(x, i, y))
+#define fieldAtPut(x, i, y) \
+	f_i = i;                \
+	decr(basicAt(x, f_i));  \
+	basicAtPut(x, f_i, y)
 extern int f_i;
 
 /*
@@ -135,13 +146,13 @@ extern int f_i;
 #define objectTable(x) objectTable[x]
 
 #define objTableClass(x) objectTable(x).class
-#define setObjTableClass(x,y) (objectTable(x).class=y)
+#define setObjTableClass(x, y) (objectTable(x).class = y)
 #define objTableSize(x) objectTable(x).size
-#define setObjTableSize(x,y) (objectTable(x).size=y)
+#define setObjTableSize(x, y) (objectTable(x).size = y)
 #define objTableMemory(x) objectTable(x).memory
-#define setObjTableMemory(x,y) (objectTable(x).memory=y)
+#define setObjTableMemory(x, y) (objectTable(x).memory = y)
 #define objTableRefCount(x) objectTable(x).referenceCount
-#define setObjTableRefCount(x,y) (objectTable(x).referenceCount=y)
+#define setObjTableRefCount(x, y) (objectTable(x).referenceCount = y)
 
 /*
 	Finally, a few routines (or macros) are used to access or set
@@ -150,17 +161,17 @@ extern int f_i;
 	These are used outside of the memory routines (thus the index is shifted right)
 */
 
-#define classField(x) objTableClass(x>>1)
-#define setClass(x,y) incr(classField(x)=y)
-#define sizeField(x) objectTable[x>>1].size
-#define sysMemPtr(x) objectTable[x>>1].memory
-#define refCountField(x) objTableRefCount(x>>1)
+#define classField(x) objTableClass(x >> 1)
+#define setClass(x, y) incr(classField(x) = y)
+#define sizeField(x) objectTable[x >> 1].size
+#define sysMemPtr(x) objectTable[x >> 1].memory
+#define refCountField(x) objTableRefCount(x >> 1)
 extern object sysobj;
-#define memoryPtr(x) (isInteger(sysobj = x)?(object *) 0:sysMemPtr(sysobj))
-#define bytePtr(x) ((byte *) memoryPtr(x))
-#define charPtr(x) ((char *) memoryPtr(x))
+#define memoryPtr(x) (isInteger(sysobj = x) ? (object *)0 : sysMemPtr(sysobj))
+#define bytePtr(x) ((byte *)memoryPtr(x))
+#define charPtr(x) ((char *)memoryPtr(x))
 
-#define nilobj (object) 0
+#define nilobj (object)0
 
 /*
 	There is a large amount of differences in the qualities of malloc
@@ -178,7 +189,7 @@ extern object sysobj;
 	algorithm.
 */
 #ifndef mBlockAlloc
-  extern object *mBlockAlloc(INT);
+extern object *mBlockAlloc(INT);
 #endif
 
 /*
