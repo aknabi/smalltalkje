@@ -15,6 +15,8 @@
 	at the beginning of the file, as shown below
 */
 
+#include <stdio.h>
+
 typedef unsigned char byte;
 
 #define byteToInt(b) (b)
