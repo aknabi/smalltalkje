@@ -38,7 +38,7 @@ static const char *ESP_TAG = "ESP32";
 #if TARGET_DEVICE == DEVICE_M5STICKC
 
 extern object buttonProcesses[4];
-extern void runBlockAfter(object block, object art, int ticks);
+extern void runBlockAfter(object block, object arg, int ticks);
 
 void m5ButtonHandler(void *handler_arg, esp_event_base_t base, int32_t id, void *event_data)
 {
