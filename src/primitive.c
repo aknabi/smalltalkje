@@ -29,9 +29,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "process.h"
 #include "env.h"
-#include "memory.h"
+// #include "memory.h"
 #include "names.h"
+
 
 #ifdef TARGET_ESP32
 
@@ -51,8 +53,6 @@ extern void byteAtPut(OBJ X INT X INT);
 extern void setInstanceVariables(OBJ);
 extern boolean parse(OBJ X char *X boolean);
 extern void flushCache(OBJ X OBJ);
-
-object vmBlockToRun;
 
 static object zeroaryPrims(number) int number;
 {
@@ -90,14 +90,18 @@ static object zeroaryPrims(number) int number;
 		break;
 
 	case 6: /* return a block that the VM needs to run (or nil if non) */
-		returnedObject = vmBlockToRun;
+		returnedObject = getNextVMBlockToRun();
 		break;
 
 	case 7: /* reset a block that the VM needs to run */
 		// VM incr when storing it
 		// if (refCountField(vmBlockToRun) > 0) decr(vmBlockToRun);
-		decr(vmBlockToRun);
-		vmBlockToRun = nilobj;
+
+		// if (vmBlockToRun != nilobj) {
+		// 	decr(vmBlockToRun);
+		// 	vmBlockToRun = nilobj;
+		// }
+
 		returnedObject = trueobj;
 		break;
 
@@ -861,7 +865,7 @@ void taskRunBlockAfter(task_block_arg *taskBlockArg)
 	{
 		vTaskDelay(20 / portTICK_PERIOD_MS);
 	}
-	vmBlockToRun = block;
+	queueVMBlockToRun(block);
 	vTaskDelete(xTaskGetCurrentTaskHandle());
 }
 
@@ -877,7 +881,6 @@ void runBlockAfter(object block, object arg, int ticks)
 	taskBlockArg.arg = arg;
 	taskBlockArg.ticks = ticks;
 
-	vmBlockToRun = nilobj;
 	xTaskCreate(
 		taskRunBlockAfter,	 /* Task function. */
 		"taskRunBlockAfter", /* name of task. */

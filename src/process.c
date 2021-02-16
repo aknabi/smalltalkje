@@ -1,10 +1,6 @@
 /*
-    ESP-32 Little Smalltalk
+    ESP-32 Little Smalltalk interrupt driven execution support
     Written by Abdul Nabi, Feb. 2021
-
-    Based on:
-	Little Smalltalk, version 3
-	Written by Tim Budd, January 1989
 
 	process (blocks, etc) handling functions
 	this has been added for supporting device events/interrupts
@@ -20,9 +16,7 @@
 #include "build.h"
 #include "process.h"
 
-
 #define BLOCK_RUN_QUEUE_DEPTH       16
-#define BLOCK_RUN_QUEUE_ITEM_SIZE   sizeof(run_block_queue_item)
 
 // Note this does not use the interruptInterpreter mechanism.
 extern void runBlock(object block, object arg);
@@ -30,76 +24,36 @@ extern void runBlock(object block, object arg);
 #ifdef TARGET_ESP32
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "freertos/queue.h"
 
+static QueueHandle_t vmBlockToRunQueue;
 
-static QueueHandle_t blockRunQueue;
-
-void initBlockRunQueue()
+void initVMBlockToRunQueue()
 {
-blockRunQueue = xQueueCreate( BLOCK_RUN_QUEUE_DEPTH,
-                            BLOCK_RUN_QUEUE_ITEM_SIZE );
+    vmBlockToRunQueue = xQueueCreate( BLOCK_RUN_QUEUE_DEPTH, sizeof(object) );
 }
 
-boolean queueBlockItemToRun(run_block_queue_item blockItem, boolean isHighPrio)
+boolean queueVMBlockToRun(object block)
 {
-    BaseType_t result = isHighPrio ?
-        xQueueSendToBack( blockRunQueue, &blockItem, portMAX_DELAY ):
-        xQueueSendToFront( blockRunQueue, &blockItem, portMAX_DELAY );
+    incr(block);
+    BaseType_t result = xQueueSend( vmBlockToRunQueue, &block, portMAX_DELAY);
     return result == pdPASS;
 }
 
-boolean isBlockItemQueued()
+
+boolean isVMBlockQueued()
 {
-    return uxQueueMessagesWaiting( blockRunQueue ) > 0;
+    return uxQueueMessagesWaiting( vmBlockToRunQueue ) > 0;
 }
 
-void runNextBlockItem()
+object getNextVMBlockToRun()
 {
-    run_block_queue_item itemToRun;
-    BaseType_t result = xQueueReceive(blockRunQueue, &itemToRun, portMAX_DELAY);
-    if (result == pdPASS)
-        runBlock(itemToRun.block, itemToRun.arg);
-}
-
-extern boolean interruptInterpreter();
-extern object vmBlockToRun;
-
-static void taskRunBlockItem(run_block_queue_item *taskBlockArg)
-{
-    run_block_queue_item itemToRun;
-    while(true) {
-        BaseType_t result = xQueueReceive(blockRunQueue, &itemToRun, portMAX_DELAY);
-        if (result == pdPASS) {
-	        object block = taskBlockArg->block;
-	        object arg = taskBlockArg->arg;
-            // maybe have interruptInterpreter(object block)
-            while (!interruptInterpreter()) {
-		        vTaskDelay(2);
-	        }
-            // If we have interruptInterpreter(object block) don't need these
-            while (vmBlockToRun != nilobj) {
-                vTaskDelay(2);
-            }
-	        vmBlockToRun = block;
-            // OR???
-            // runBlock(itemToRun.block, itemToRun.arg);
-        }
+    object nextToRun;
+    if (isVMBlockQueued()) {
+        BaseType_t result = xQueueReceive(vmBlockToRunQueue, &nextToRun, portMAX_DELAY);
+        return (result == pdPASS) ? nextToRun : nilobj;
     }
-
-	vTaskDelete(xTaskGetCurrentTaskHandle());
-}
-
-void startBlockQueue()
-{
-	xTaskCreate(
-		taskRunBlockItem,	 /* Task function. */
-		"taskRunBlockItem", /* name of task. */
-		4096,				 /* Stack size of task */
-		NULL,		 // parameter of the task (block, arg and delay until run)
-		4,					 /* priority of the task */
-		NULL);				 /* Task handle to keep track of created task */
+    return nilobj;
 }
 
 #else
@@ -107,25 +61,31 @@ void startBlockQueue()
 static run_block_queue_item runBlockQueue[BLOCK_RUN_QUEUE_DEPTH];
 static int runBlockQueueIndex = 0;
 
+void initVMBlockToRunQueue() {}
+object getNextVMBlockToRun() { return nilobj; }
+boolean queueVMBlockToRun(object block) { return true; }
+boolean isVMBlockQueued() { return false; }
+
 void initBlockRunQueue()
 {
-    for (int i = 0; i < BLOCK_RUN_QUEUE_DEPTH; i**) runBlockQueue[i] = NULL;
-    static int runBlockQueueIndex = 0;
+    // for (int i = 0; i < BLOCK_RUN_QUEUE_DEPTH; i++) runBlockQueue[i] = NULL;
+    // static int runBlockQueueIndex = 0;
 }
 
 boolean queueBlockItemToRun(run_block_queue_item blockItem, boolean isHighPrio)
 {
-    if (++runBlockQueueIndex == BLOCK_RUN_QUEUE_DEPTH) runBlockQueueIndex = 0;
-    if (runBlockQueue[runBlockQueueIndex) != NULL) {
-        // Queue is full so don't add and revert index
-        if (runBlockQueueIndex == 0) {
-            runBlockQueueIndex = BLOCK_RUN_QUEUE_DEPTH - 1;
-        } else {
-            runBlockQueueIndex--;
-        }
-        return false;
-    } 
-    runBlockQueue[runBlockQueueIndex] = blockItem;
+    // if (++runBlockQueueIndex == BLOCK_RUN_QUEUE_DEPTH) runBlockQueueIndex = 0;
+    // if (runBlockQueue[runBlockQueueIndex) != NULL) {
+    //     // Queue is full so don't add and revert index
+    //     if (runBlockQueueIndex == 0) {
+    //         runBlockQueueIndex = BLOCK_RUN_QUEUE_DEPTH - 1;
+    //     } else {
+    //         runBlockQueueIndex--;
+    //     }
+    //     return false;
+    // } 
+    // runBlockQueue[runBlockQueueIndex] = blockItem;
+    return true;
 }
 
 boolean isBlockItemQueued()
@@ -133,21 +93,5 @@ boolean isBlockItemQueued()
     return false;
 }
 
-// THIS IS FLAWED LOGIC... HERE AS PLACEHOLDER UNTIL WE GET AROUND TO NON ESP32 QUEUE IMPLEMENTATION
-void runNextBlockItem()
-{
-    run_block_queue_item itemToRun;
-    int nextQueueSlot = runBlockQueueIndex + 1;
-    if (nextQueueSlot == BLOCK_RUN_QUEUE_DEPTH) nextQueueSlot = 0;
-    // WRONG TEST/LOGIC
-    while(nextQueueSlot != runBlockQueueIndex {
-        if (runBlockQueue[nextQueueSlot] != NULL) {
-            itemToRun = runBlockQueue[nextQueueSlot];
-            runBlockQueue[nextQueueSlot] = NULL
-            runBlock(runBlockQueue[nextQueueSlot]->block, runBlockQueue[nextQueueSlot]->arg);
-            break;
-        }
-    })
-}
 
 #endif
