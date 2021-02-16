@@ -7,6 +7,10 @@
         "esp_spiffs.h": "c",
         "task.h": "c",
         "build.h": "c",
-        "freertos.h": "c"
+        "freertos.h": "c",
+        "process.h": "c",
+        "memory.h": "c",
+        "env.h": "c",
+        "queue.h": "c"
     }
 }
