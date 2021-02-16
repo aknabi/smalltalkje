@@ -154,12 +154,12 @@ Methods UndefinedObject 'initial image'
 	ledBlinkOn
 		inblink = true.
 		m5 ledOn.
-		blinkLED ifTrue: [ [self ledBlinkOff] runAfter: 10 ]
+		[self ledBlinkOff] runAfter: 20
 |
 	ledBlinkOff
 		m5 ledOff.
 		inblink = false.
-		blinkLED ifTrue: [ [self ledBlinkOn] runAfter: 5000 ]
+		[self ledBlinkOn] runAfter: 5000
 |
 	createStdFiles
 		"Create stdin, stdout, stderr"

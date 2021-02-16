@@ -1,5 +1,5 @@
 # ESP32-smalltalk
-Little Smalltalk for ESP32 with SSD1306 OLED and M5StickC support
+**Little Smalltalk for ESP32 with SSD1306 OLED and M5StickC support**
 
 Based on:
 
@@ -14,6 +14,9 @@ Using an SSD1306 I2C OLED driver written by Limor Fried/Ladyada for Adafruit Ind
 
 https://simple-circuit.com/  
 
+Links to main resources used in development (besides Stackoverflow):
+- ESP-IDF repo
+- M5Stick repo
 
 This is a very early project. Right now builds in VisualStudio Code wiht PlatformIO plugin the and runs (on the Mac at least).
 

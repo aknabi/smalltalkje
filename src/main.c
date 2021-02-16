@@ -4,8 +4,10 @@
 #include <sys/stat.h>
 
 #include <stdlib.h>
+#include "process.h"
+
 #include "env.h"
-#include "memory.h"
+// #include "memory.h"
 #include "names.h"
 
 #include "target.h"
@@ -23,6 +25,8 @@ extern void writeObjectDataPartition();
 noreturn startup()
 {
     initFileSystem();
+
+    initVMBlockToRunQueue();
 
 #ifdef TARGET_ESP32
 #ifdef WRITE_OBJECT_PARTITION

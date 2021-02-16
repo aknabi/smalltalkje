@@ -79,7 +79,8 @@ void uart_init()
 static void uart_select_task()
 {
 
-    while (true) {
+    while (true)
+    {
         int s;
 
         fd_set rfds;
@@ -89,29 +90,41 @@ static void uart_select_task()
 
         s = select(fd + 1, &rfds, NULL, NULL, &tv);
 
-        if (s < 0) {
+        if (s < 0)
+        {
             ESP_LOGE(TAG, "Select failed: errno %d", errno);
             break;
-        } else if (s == 0) {
-            if (++timeoutCounter > 500) {
+        }
+        else if (s == 0)
+        {
+            if (++timeoutCounter > 500)
+            {
                 // ESP_LOGI(TAG, "Timeout 500 times");
                 timeoutCounter = 0;
             }
-        } else {
-            if (FD_ISSET(fd, &rfds)) {
-                if (read(fd, &c, 1) > 0) {
+        }
+        else
+        {
+            if (FD_ISSET(fd, &rfds))
+            {
+                if (read(fd, &c, 1) > 0)
+                {
                     // ESP_LOGI(TAG, "Received: %c", c);
                     // Note: Only one character was read even the buffer contains more. The other characters will
                     // be read one-by-one by subsequent calls to select() which will then return immediately
                     // without timeout.
 
-                    if (waitingTaskHandle != NULL) xTaskNotifyGive(  waitingTaskHandle );
-
-                } else {
+                    if (waitingTaskHandle != NULL)
+                        xTaskNotifyGive(waitingTaskHandle);
+                }
+                else
+                {
                     ESP_LOGE(TAG, "UART read error");
                     break;
                 }
-            } else {
+            }
+            else
+            {
                 ESP_LOGE(TAG, "No FD has been set in select()");
                 break;
             }
@@ -138,7 +151,7 @@ char getInputCharacter()
 
     waitingTaskHandle = xTaskGetCurrentTaskHandle();
     c = 0;
-    uint32_t charsReceived = ulTaskNotifyTake( pdTRUE, TICKS_TO_WAIT_FOR_CHAR );
+    uint32_t charsReceived = ulTaskNotifyTake(pdTRUE, TICKS_TO_WAIT_FOR_CHAR);
     // if (c != 0) ESP_LOGI(TAG, "getInputCharacter Received: %c", c);
     return charsReceived == 0 ? 0 : c;
 }
@@ -148,7 +161,7 @@ char getInputCharacter()
 char getInputCharacter()
 {
     c = fgetc(stdin);
-	return c;
+    return c;
 }
 
 #endif
