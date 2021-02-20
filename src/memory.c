@@ -426,11 +426,15 @@ int i, x;
 {
 	byte *bp;
 
+    // FIX: Just using -sizeField causes ByteArray  crash as sign is inverted... next task, why?
+    int sizeField = sizeField(z);
+    int negSizeField = sizeField < 0 ? -sizeField : sizeField;
+
 	if (isInteger(z))
 		sysError("indexing integer", "byteAtPut");
 	else if ((i <= 0) || (i > 2 * -sizeField(z)))
 	{
-		fprintf(stderr, "index %d size %d\n", i, sizeField(z));
+		fprintf(stderr, "index %d size %d\n", i, negSizeField);
 		sysError("index out of range", "byteAtPut");
 	}
 	else
@@ -479,6 +483,16 @@ int objectCount()
 	j = 0;
 	for (i = 0; i < ObjectTableMax; i++)
 		if (objectTable[i].referenceCount > 0)
+			j++;
+	return j;
+}
+
+int classInstCount(object aClass)
+{
+	register int i, j;
+	j = 0;
+	for (i = 0; i < ObjectTableMax; i++)
+		if (objectTable[i].referenceCount > 0 && objectTable[i].class == aClass)
 			j++;
 	return j;
 }

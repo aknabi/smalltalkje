@@ -119,19 +119,20 @@ void launchSmalltalk()
     printf("Updated for embedded systems by Abdul Nabi\n");
     printf("Free heap with ST running: %d\n", GET_FREE_HEAP_SIZE());
 
-#ifdef TARGET_ESP32
-    // FreeRTOS specific
-    xTaskCreate(
-        smalltalkTask, /* Task function. */
-        "smalltalk",   /* name of task. */
-        8096,          /* Stack size of task */
-        firstProcess,  /* parameter of the task (the Smalltalk process to run) */
-        1,             /* priority of the task */
-        NULL);         /* Task handle to keep track of created task */
-#else
+    // For now comment out running in a FreeRTOS task as it was cool, but for what benefit?
+// #ifdef TARGET_ESP32
+//     // FreeRTOS specific
+//     xTaskCreate(
+//         smalltalkTask, /* Task function. */
+//         "smalltalk",   /* name of task. */
+//         8096,          /* Stack size of task */
+//         firstProcess,  /* parameter of the task (the Smalltalk process to run) */
+//         1,             /* priority of the task */
+//         NULL);         /* Task handle to keep track of created task */
+// #else
     while (execute(firstProcess, 15000))
     {
-        printf("Free heap with ST running: %d\n", GET_FREE_HEAP_SIZE());
+        // printf("Free heap with ST running: %d\n", GET_FREE_HEAP_SIZE());
     }
-#endif
+// #endif
 }

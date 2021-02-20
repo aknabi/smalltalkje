@@ -166,6 +166,8 @@ extern int f_i;
 #define sizeField(x) objectTable[x >> 1].size
 #define sysMemPtr(x) objectTable[x >> 1].memory
 #define refCountField(x) objTableRefCount(x >> 1)
+#define setRefCountField(x, y) setObjTableRefCount(x >> 1, y)
+
 extern object sysobj;
 #define memoryPtr(x) (isInteger(sysobj = x) ? (object *)0 : sysMemPtr(sysobj))
 #define bytePtr(x) ((byte *)memoryPtr(x))
@@ -196,6 +198,8 @@ extern object *mBlockAlloc(INT);
 	the dictionary symbols is the source of all symbols in the system
 */
 extern object symbols;
+
+int classInstCount(object aClass);
 
 /*
 	finally some external declarations with prototypes

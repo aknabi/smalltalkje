@@ -381,11 +381,57 @@ object sysPrimitive(int number, object *arguments)
         primFunc_t m5Func = m5PrimitiveFunctions[funcIndex];
         m5Func(arguments);
         break;
+#else
+    case 1: /* prim 151 create a OS task with a ST process */
+        break;
 
+    case 2: /* prim 152 delays the current OS task with a ST process for a given number of milliseconds */
+        break;
+
+    /* prim 153 initializes the OLED display. Must be called before displaying */
+    case 3:
+        break;
+
+    // prim 154 Clear the display
+    case 4:
+        break;
+
+    // Prim 155 Render the buffer to the display
+    case 5:
+        break;
+
+    // Prim 156 Display the string at the x,y location passed in
+    case 6:
+        /* Set GPIO PIN in first argument to value in second argument */
+        // gpio_set_level(intValue(arguments[0]), intValue(arguments[1]));
+
+        // We'd like to return the handle in order to manage the process.
+        break;
+
+    // Prim 157 rectangleX: x y: y width: w height: h isFilled: aBoolean
+    case 7:
+        break;
+
+    // Prim 158 circleX: x y: y radius: r isFilled: aBoolean
+    case 8:
+        break;
+
+    // Prim 159 set GPIO pin in first arg to mode in second arg
+    case 9:
+        break;
+
+    // Prim 160 set GPIO pin in first arg to value in second arg
+    case 10:
+        break;
+
+    // Prim 181 M5 functions. First arg is function number, second and third are arguments to the function
+    // Index 0 means restart the SoC/system
+    case 31:
+        break;
 #endif
 
     default:
-        sysError("unknown primitive", "sysPrimitive");
+        sysWarn("unknown primitive", "sysPrimitive");
     }
     return (returnedObject);
 }

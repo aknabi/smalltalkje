@@ -18,7 +18,8 @@
 #include "driver/gpio.h"
 
 #include "m5stickc.h"
-#include "memory.h"
+#include "process.h"
+// #include "memory.h"
 
 #include "names.h"
 
@@ -39,6 +40,7 @@ static const char *ESP_TAG = "ESP32";
 
 extern object buttonProcesses[4];
 extern void runBlockAfter(object block, object arg, int ticks);
+extern void uart_input_init();
 
 void m5ButtonHandler(void *handler_arg, esp_event_base_t base, int32_t id, void *event_data)
 {
@@ -77,7 +79,8 @@ void m5ButtonHandler(void *handler_arg, esp_event_base_t base, int32_t id, void 
     {
         // runBlock(buttonBlock, nilobj);
         // Schedule as a Interrupt
-        runBlockAfter(buttonBlock, nilobj, 0);
+        // runBlockAfter(buttonBlock, nilobj, 0);
+        queueVMBlockToRun(buttonBlock);
     }
 }
 
@@ -118,60 +121,9 @@ void m5StickInit()
 
 #endif // DEVICE_M5STICKC
 
-/*
- * ESP32 UART SERIAL SUPPORT CODE
- */
-
-#define BLOCKING_INPUT
-
-void init_console(void)
-{
-    /* Drain stdout before reconfiguring it */
-    fflush(stdout);
-    fsync(fileno(stdout));
-
-    /* Disable buffering on stdin */
-    setvbuf(stdin, NULL, _IONBF, 0);
-    /* Enable buffering on stdin */
-    // setvbuf(stdin, NULL, _IOFBF, 32);
-
-    // /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    // esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
-    // /* Move the caret to the beginning of the next line on '\n' */
-    // esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
-
-    /* Configure UART. Note that REF_TICK is used so that the baud rate remains
-     * correct while APB frequency is changing in light sleep mode.
-     */
-    const uart_config_t uart_config = {
-        .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
-        .data_bits = UART_DATA_8_BITS,
-        .parity = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .source_clk = UART_SCLK_REF_TICK,
-    };
-
-    /* Install UART driver for interrupt-driven reads and writes */
-    ESP_ERROR_CHECK(uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM,
-                                        256, 0, 0, NULL, 0));
-    ESP_ERROR_CHECK(uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config));
-
-    /* Tell VFS to use UART driver */
-    // #ifdef BLOCKING_INPUT
-    //    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
-    // #else
-    //    esp_vfs_dev_uart_use_nonblocking(CONFIG_ESP_CONSOLE_UART_NUM);
-    // #endif
-}
-
-// END ESP32 UART SERIAL SUPPORT CODE
-
-extern void uart_input_init();
-
 void app_main(void)
 {
     uart_input_init();
-    // init_console();
 
     ESP_LOGI(ESP_TAG, "Fresh free heap size: %d", esp_get_free_heap_size());
 

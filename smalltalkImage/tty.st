@@ -59,21 +59,34 @@ Methods Smalltalk 'all'
 		stdout printNoReturn: aString.
 		^stdin getString
 |
-	getPrompt: aString | c input |
+	getPromptVM: aString
+		stdout printNoReturn: aString.
+		^ <124>
+|
+	getPromptBAK: aString | input |
 		stdout printNoReturn: aString.
 		input <- ''.
-		eraseChar <- '', (Char new; value: 8), (Char new; value: 32), (Char new; value: 8).
-		[ (c <- <132>) isCR ] whileFalse: [ 
+		[ VMC <- <132 VMC>. VMC isCR ] whileFalse: [
+			c <- VMC.
 			(c isNull) ifFalse: [ 
 				c asInteger = 8
 					ifTrue: [
 						input size > 0
-							ifTrue: [ input <- input copyFrom: 1 to: (input size - 1).
-								eraseChar basicPrint ] ]
+							ifTrue: [ input <- input copyFrom: 1 to: (input size - 1). eraseChar basicPrint ] ]
 					ifFalse: [ c basicPrint. input <- input, c ] ].
 			scheduler checkInterruptBlock ].
 		"Output last CR"
-		c basicPrint.
+		VMC basicPrint.
+		input = 'restart' ifTrue: [ <181 0> ].
+		^ input
+|
+	getPrompt: aString | input |
+		stdout printNoReturn: aString.
+		input <- ''.
+		[ VMC <- <132 VMC>. VMC isCR ] whileFalse: [
+			scheduler checkInterruptBlock ].
+		"Output last CR"
+		VMC basicPrint.
 		input = 'restart' ifTrue: [ <181 0> ].
 		^ input
 |
@@ -117,11 +130,9 @@ Methods Smalltalk 'doit'
 Methods Scheduler 'get commands'
 	initialize	| string |
 		<2>.
-		string <- smalltalk getPrompt: 'smalltalk> '.
-		string isNil
+		(string <- smalltalk getPrompt: 'smalltalk> ') isNil
 			ifTrue: [ notdone <- false ]
-			ifFalse: [ (string size > 0)
-				ifTrue: [ [ string value print ] fork ] ]
+			ifFalse: [ (string size > 0) ifTrue: [ [string value print] fork ] ]
 ]
 Methods UndefinedObject 'initial image'
 	createGlobals	| aBlock |
@@ -129,6 +140,8 @@ Methods UndefinedObject 'initial image'
 		true <- True new.
 		false <- False new.
 		inblink <- false.
+		eraseChar <- '', (Char new; value: 8), (Char new; value: 32), (Char new; value: 8).
+		VMC <- nil.
 		smalltalk <- Smalltalk new.
 		files <- Array new: 15.
 		self createStdFiles.

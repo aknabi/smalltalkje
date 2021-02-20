@@ -104,24 +104,15 @@ Methods Scheduler 'all'
 		[ notdone ] whileTrue:
 			[ 
 				self checkInterruptBlock.
-				processList size = 0 ifTrue: 
-				[ self initialize ].
-			  processList do: 
-				[ :x |
-				currentProcess <- x.
-				x execute  ] ]
+				processList size = 0 ifTrue: [ [self initialize] fork ].
+				processList do: [ :x |
+					currentProcess <- x.
+					x execute  ] ]
 |
 	checkInterruptBlock
 		InterruptBlock <- <6>.
-		"reset vm interrupt block, we're handling"
-		<7>.
-		InterruptBlock notNil ifTrue: [ self execInterruptBlock ]
-|
-	execInterruptBlock
-		(InterruptBlock isMemberOf: Block)
-			"ifTrue: [ currentProcess <- InterruptBlock newProcess. currentProcess execute ]"
-			ifTrue: [self critical: InterruptBlock ]
-			ifFalse: ['Not a Block class cannot exec ' print ].	
+		"reset vm interrupt block, we're handling <7>."
+		InterruptBlock notNil ifTrue: [ currentProcess <- InterruptBlock newProcess. currentProcess execute ]
 |
 	yield
 		" set time slice counter to zero, thereby

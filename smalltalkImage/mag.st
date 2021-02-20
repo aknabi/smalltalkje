@@ -47,9 +47,12 @@ Methods Char 'all'
 	asInteger
 		^ value
 |
-	asString
+	asStringOriginal
 		" make ourselves into a string "
 		^ ' ' copy; at: 1 put: self
+|
+	asString
+		^ <15 self>
 |
 	digitValue
 		" return an integer representing our value "

@@ -69,7 +69,7 @@ static object zeroaryPrims(number) int number;
 		break;
 
 	case 2:
-		fprintf(stderr, "object count %d\n", objectCount());
+		fprintf(stderr, "object count %d char count %d string count: %d\n", objectCount(), classInstCount(globalSymbol("Char")), classInstCount(globalSymbol("String")) );
 		break;
 
 	case 3: /* return a random number */
@@ -119,6 +119,8 @@ object blockToExecute;
 extern void doIt(char *evalText, object arg);
 extern void runBlock(object block, object arg);
 
+char *primString = { 0x0, 0x0 };
+
 static int unaryPrims(number, firstarg) int number;
 object firstarg;
 {
@@ -128,6 +130,10 @@ object firstarg;
 	returnedObject = firstarg;
 	switch (number)
 	{
+	case 0: /* instance count of class */
+		returnedObject = newInteger(classInstCount(firstarg));
+		break;
+
 	case 1: /* class of object */
 		returnedObject = getClass(firstarg);
 		break;
@@ -157,30 +163,21 @@ object firstarg;
 		fflush(stdout);
 		break;
 
-	case 5: /* prim 15 Store block to exec */
-		returnedObject = getClass(firstarg) == globalSymbol("Block") ? trueobj : falseobj;
-		if (returnedObject == trueobj)
-		{
-			fprintf(stderr, "primitive 15 store block to execute %d\n", firstarg);
-			// Decrement the reference count for any existing saved block we're going to replace
-			if (blockToExecute != nilobj)
-				decr(blockToExecute);
-			// Increment the reference count for the new existing saved block
-			incr(firstarg);
-			blockToExecute = firstarg;
-		}
-		else
-		{
-			fprintf(stderr, "primitive 15 argument must be a block\n");
+	case 5: /* prim 15 Create a string with the Char passed in */
+		returnedObject = nilobj;
+		char c = (char) intValue( basicAt(firstarg, 1) );
+		if (c != 0x0) {
+			returnedObject = newStString(" ");
+			charPtr(returnedObject)[0] = c;
 		}
 		break;
 
-	case 6: /* Execute string */
+	case 6: /* prim 16 - Execute string */
 		fprintf(stderr, "primitive 16 execute string %s\n", charPtr(firstarg));
 		doIt(charPtr(firstarg), nilobj);
 		break;
 
-	case 7: /* Execute block (Block forkTask)... WAS Execute saved block with first argument */
+	case 7: /* prim 17 - Execute block (Block forkTask)... WAS Execute saved block with first argument */
 		runBlock(firstarg, nilobj);
 		returnedObject = trueobj;
 		// if ( blockToExecute == nilobj ) {
@@ -796,9 +793,9 @@ void runMethodOrBlock(object method, object block, object arg)
 	object process, stack, argArray;
 
 	process = allocObject(processSize);
-	incr(process);
+	// incr(process);
 	stack = newArray(50);
-	incr(stack);
+	// incr(stack);
 
 	/* make a process */
 	basicAtPut(process, stackInProcess, stack);
@@ -821,7 +818,8 @@ void runMethodOrBlock(object method, object block, object arg)
 	basicAtPut(stack, 6, bytecountPos); /* byte offset */
 
 	/* now go execute it */
-	unaryPrims(9, process);
+	while (execute(process, 15000));
+	// unaryPrims(9, process);
 }
 
 void doIt(char *text, object arg)
@@ -846,49 +844,7 @@ void evalTask(void *evalText, object arg)
 	vTaskDelete(NULL);
 }
 
-typedef struct
-{
-	object block; // block to run
-	object arg;	  // and block argument
-	int ticks;	  // ticks to delay before running
-} task_block_arg;
-
 extern boolean interruptInterpreter();
-
-void taskRunBlockAfter(task_block_arg *taskBlockArg)
-{
-	object block = taskBlockArg->block;
-	object arg = taskBlockArg->arg;
-	int ticks = taskBlockArg->ticks;
-	vTaskDelay(ticks);
-	while (!interruptInterpreter())
-	{
-		vTaskDelay(20 / portTICK_PERIOD_MS);
-	}
-	queueVMBlockToRun(block);
-	vTaskDelete(xTaskGetCurrentTaskHandle());
-}
-
-// prim 152 calls this
-void runBlockAfter(object block, object arg, int ticks)
-{
-	// Since VM has a reference to the block
-	task_block_arg taskBlockArg;
-
-	incr(block);
-
-	taskBlockArg.block = block;
-	taskBlockArg.arg = arg;
-	taskBlockArg.ticks = ticks;
-
-	xTaskCreate(
-		taskRunBlockAfter,	 /* Task function. */
-		"taskRunBlockAfter", /* name of task. */
-		8096,				 /* Stack size of task */
-		&taskBlockArg,		 // parameter of the task (block, arg and delay until run)
-		1,					 /* priority of the task */
-		NULL);				 /* Task handle to keep track of created task */
-}
 
 void forkEval(char *evalText, object arg)
 {
@@ -912,28 +868,19 @@ void forkEval(char *evalText, object arg)
 
 void runBlock(object block, object arg)
 {
-	object argArray;
-
 	/* put argument in block temps */
 	if (block != nilobj)
 	{
-		argArray = newArray(1);
-		incr(argArray);
-		basicAtPut(argArray, 1, arg);
-		basicAtPut(basicAt(block, contextInBlock), temporariesInContext, argArray); // block
+		object argArray;
+
+		if (arg != nilobj) {
+			argArray = newArray(1);
+			// incr(argArray);
+			basicAtPut(argArray, 1, arg);
+			basicAtPut(basicAt(block, contextInBlock), temporariesInContext, argArray); // block
+		}
+
+		runMethodOrBlock(nilobj, block, arg);
 	}
 
-	runMethodOrBlock(nilobj, block, arg);
-}
-
-void runSmalltalkProcess(object processToRun)
-{
-	if (processToRun != nilobj)
-	{
-		unaryPrims(9, processToRun);
-	}
-	else
-	{
-		fprintf(stderr, "<%s>: %s\n", "runSmalltalkProcess", "trying to run nil process");
-	}
 }

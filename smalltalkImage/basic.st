@@ -64,9 +64,6 @@ Methods Block 'initialization'
 |
 	evalWith: arg
 		<20 self arg>
-|
-	saveForEval
-		<15 self>
 ]
 Methods Boolean 'all'
 	ifTrue: trueBlock
@@ -126,6 +123,9 @@ Methods Class 'creation'
 |
 	instanceSize
 		^ instanceSize
+|
+	instanceCount
+		^ <10 self>	
 |
 	printString
 		^ name asString

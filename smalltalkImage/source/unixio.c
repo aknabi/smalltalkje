@@ -459,11 +459,11 @@ object getInputLine(char *prompt)
 
 	buffer[bufIndex] = 0;
 	// since we're keeping a vm reference, decrement pointer if an old line
-	if (lastInputLine != nilobj)
-		decr(lastInputLine);
+	// if (lastInputLine != nilobj)
+	// 	decr(lastInputLine);
 	lastInputLine = newStString(buffer);
 	// since we're keeping a vm reference, increment the pointer
-	incr(lastInputLine);
+	// incr(lastInputLine);
 	return lastInputLine;
 }
 
@@ -578,7 +578,18 @@ object ioPrimitive(int number, object *arguments)
 		break;
 
 	case 12: /* primitive 132: get a single character from console (or 0 if timeout) */
-		returnedObject = newChar(getInputCharacter());
+		// if (arguments[0] != nilobj) {
+		// 	setRefCountField(arguments[0], 1);
+		// 	decr(arguments[0]);
+		// }
+
+		// decr(arguments[0]);
+		c = 0;
+		while (c == 0) {
+			c = getInputCharacter();
+		}
+		returnedObject = newChar(c);
+		// returnedObject = newInteger(getInputCharacter());
 		break;
 
 	default:
