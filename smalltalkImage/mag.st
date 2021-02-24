@@ -424,6 +424,10 @@ Methods Integer 'all'
 	truncated
 		^ self
 |
+	printAscii
+		"Print the ascii value of the receiver on stdout"
+		<133 self>
+|
 	printString
 		^ self asString
 |

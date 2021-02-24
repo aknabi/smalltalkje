@@ -90,7 +90,8 @@ Methods Class 'creation'
 			ifFalse: [ newObject new ]
 |
 	new: size	" hack out block the right size and class "
-		"create a new block, set its class"
+		(self = ByteArray or: [superClass = ByteArray])
+			ifTrue: [ ^ < 22 < 59 size > self > ].
 		^ < 22 < 58 size > self >
 |
 	addSubClass: aSymbol instanceVariableNames: aString	| newClass |
