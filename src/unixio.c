@@ -579,7 +579,7 @@ object ioPrimitive(int number, object *arguments)
 
 	case 12: /* primitive 132: get a single character from console (or 0 if timeout) */
 
-		returnedObject = newChar(getInputCharacter());
+		returnedObject = newInteger(getInputCharacter());
 
 		// // if (arguments[0] != nilobj) {
 		// // 	setRefCountField(arguments[0], 1);
@@ -594,6 +594,11 @@ object ioPrimitive(int number, object *arguments)
 		// returnedObject = newChar(c);
 		// // returnedObject = newInteger(getInputCharacter());
 
+		break;
+
+	case 13: /* prim 133: print the char of the integer passed in */
+		putc(intValue(arguments[0]), stdout);
+		fflush(stdout);
 		break;
 
 	default:

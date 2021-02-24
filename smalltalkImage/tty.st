@@ -63,30 +63,21 @@ Methods Smalltalk 'all'
 		stdout printNoReturn: aString.
 		^ <124>
 |
-	getPromptBAK: aString | input |
+	getPrompt: aString | input c i |
 		stdout printNoReturn: aString.
-		input <- ''.
-		[ VMC <- <132 VMC>. VMC isCR ] whileFalse: [
-			c <- VMC.
-			(c isNull) ifFalse: [ 
-				c asInteger = 8
+		input <- ByteArray new: 255.
+		i <- 1.
+		[ c <- <132>. c = 10 ] whileFalse: [
+			(c = 0) ifFalse: [ 
+				c = 8
 					ifTrue: [
-						input size > 0
-							ifTrue: [ input <- input copyFrom: 1 to: (input size - 1). eraseChar basicPrint ] ]
-					ifFalse: [ c basicPrint. input <- input, c ] ].
+						i > 1
+							ifTrue: [ i <- i - 1. input at: i put: 0. eraseChar basicPrint ] ]
+					ifFalse: [ c printAscii. input at: i put: c. i <- i + 1 ] ].
 			scheduler checkInterruptBlock ].
 		"Output last CR"
-		VMC basicPrint.
-		input = 'restart' ifTrue: [ <181 0> ].
-		^ input
-|
-	getPrompt: aString | input |
-		stdout printNoReturn: aString.
-		input <- ''.
-		[ VMC <- <132 VMC>. VMC isCR ] whileFalse: [
-			scheduler checkInterruptBlock ].
-		"Output last CR"
-		VMC basicPrint.
+		c printAscii.
+		input asString.
 		input = 'restart' ifTrue: [ <181 0> ].
 		^ input
 |

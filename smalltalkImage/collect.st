@@ -132,6 +132,7 @@ Methods Array 'all'
 ]
 Methods ByteArray 'all'
 	asString
+		"Turns the receiver into class String. This could be considered a bug"
 		<22 self String>
 |
 	basicAt: index put: value
@@ -168,7 +169,7 @@ Methods Collection 'all'
 		^ newArray
 |
 	asByteArray	| newArray i |
-		newArray <- ByteArray new size: self size.
+		newArray <- ByteArray new: self size.
 		i <- 0.
 		self do: [:x | i <- i + 1. newArray at: i put: x].
 		^ newArray
@@ -514,7 +515,7 @@ Methods String 'all'
 			ifFalse: [ ^ false ]
 |
 	asByteArray	| newArray i |
-		newArray <- ByteArray new size: self size.
+		newArray <- ByteArray new: self size.
 		i <- 0.
 		self do: [:x | i <- i + 1. newArray at: i put: x asInteger].
 		^ newArray

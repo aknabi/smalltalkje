@@ -578,18 +578,26 @@ object ioPrimitive(int number, object *arguments)
 		break;
 
 	case 12: /* primitive 132: get a single character from console (or 0 if timeout) */
-		// if (arguments[0] != nilobj) {
-		// 	setRefCountField(arguments[0], 1);
-		// 	decr(arguments[0]);
-		// }
 
-		// decr(arguments[0]);
-		c = 0;
-		while (c == 0) {
-			c = getInputCharacter();
-		}
-		returnedObject = newChar(c);
-		// returnedObject = newInteger(getInputCharacter());
+		returnedObject = newInteger(getInputCharacter());
+
+		// // if (arguments[0] != nilobj) {
+		// // 	setRefCountField(arguments[0], 1);
+		// // 	decr(arguments[0]);
+		// // }
+
+		// // decr(arguments[0]);
+		// c = 0;
+		// while (c == 0) {
+		// 	c = getInputCharacter();
+		// }
+		// returnedObject = newChar(c);
+		// // returnedObject = newInteger(getInputCharacter());
+
+		break;
+
+	case 13: /* prim 133: print the char of the integer passed in */
+		putchar(intValue(arguments[0]));
 		break;
 
 	default:
