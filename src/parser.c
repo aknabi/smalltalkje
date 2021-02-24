@@ -44,7 +44,7 @@
 #define methodLimit 64	  /* maximum number of methods permitted */
 
 boolean parseok; /* parse still ok? */
-extern char peek();
+extern char peek(void);
 int codeTop;			   /* top position filled in code array */
 byte codeArray[codeLimit]; /* bytecode array */
 int literalTop;			   /*  ... etc. */
@@ -66,20 +66,19 @@ enum blockstatus
 	OptimizedBlock
 } blockstat;
 
-void block();
-void body();
+void block(void);
+void body(void);
 void assignment(char *name);
-void expression();
+void expression(void);
 void genMessage(boolean toSuper, int argumentCount, object messagesym);
 void genInteger(int val);
 
 void compilWarn(char *selector, char *str1, char *str2);
 void compilError(char *selector, char *str1, char *str2);
-void parsePrimitive();
+void parsePrimitive(void);
 void sysDecr(object z);
 
-void setInstanceVariables(aClass)
-	object aClass;
+void setInstanceVariables(object aClass)
 {
 	int i, limit;
 	object vars;
@@ -99,7 +98,7 @@ void setInstanceVariables(aClass)
 	}
 }
 
-void genCode(value) int value;
+void genCode(int value)
 {
 	if (codeTop >= codeLimit)
 		compilError(selector, "too many bytecode instructions in method",
@@ -108,7 +107,7 @@ void genCode(value) int value;
 		codeArray[codeTop++] = value;
 }
 
-void genInstruction(high, low) int high, low;
+void genInstruction(int high, int low)
 {
 	if (low >= 16)
 	{
@@ -119,8 +118,7 @@ void genInstruction(high, low) int high, low;
 		genCode(high * 16 + low);
 }
 
-int genLiteral(aLiteral)
-	object aLiteral;
+int genLiteral(object aLiteral)
 {
 	if (literalTop >= literalLimit)
 		compilError(selector, "too many literals in method", "");
@@ -146,7 +144,7 @@ void genInteger(val) /* generate an integer push */
 char *glbsyms[] = {"currentInterpreter", "nil", "true", "false",
 				   0};
 
-boolean nameTerm(name) char *name;
+boolean nameTerm(char *name)
 {
 	int i;
 	boolean done = false;
@@ -436,8 +434,7 @@ object messagesym;
 	}
 }
 
-boolean unaryContinuation(superReceiver)
-	boolean superReceiver;
+boolean unaryContinuation(boolean superReceiver)
 {
 	int i;
 	boolean sent;
@@ -472,8 +469,7 @@ boolean unaryContinuation(superReceiver)
 	return (superReceiver);
 }
 
-boolean binaryContinuation(superReceiver)
-	boolean superReceiver;
+boolean binaryContinuation(boolean superReceiver)
 {
 	boolean superTerm;
 	object messagesym;
@@ -491,8 +487,7 @@ boolean binaryContinuation(superReceiver)
 	return (superReceiver);
 }
 
-int optimizeBlock(instruction, dopop) int instruction;
-boolean dopop;
+int optimizeBlock(int instruction, boolean dopop)
 {
 	int location;
 	enum blockstatus savebstat;
@@ -524,8 +519,7 @@ boolean dopop;
 	return (location);
 }
 
-boolean keyContinuation(superReceiver)
-	boolean superReceiver;
+boolean keyContinuation(boolean superReceiver)
 {
 	int i, j, argumentCount;
 	boolean sent, superTerm;
@@ -596,8 +590,7 @@ boolean keyContinuation(superReceiver)
 	return (superReceiver);
 }
 
-void continuation(superReceiver)
-	boolean superReceiver;
+void continuation(boolean superReceiver)
 {
 	superReceiver = keyContinuation(superReceiver);
 
@@ -858,10 +851,7 @@ void messagePattern()
 		compilError(selector, "illegal message selector", tokenString);
 }
 
-boolean parse(method, text, savetext)
-	object method;
-char *text;
-boolean savetext;
+boolean parse(object method, char *text, boolean savetext)
 {
 	int i;
 	object bytecodes, theLiterals;

@@ -21,7 +21,7 @@
 
 void sysDecr(object z);
 void flushCache(object messageToSend, object class);
-object hashEachElement(object dict, register int hash, int (*fun)());
+object hashEachElement(object dict, register int hash, int (*fun)(void));
 noreturn sysWarn(char *s1, char *s2);
 
 object trueobj, falseobj;
@@ -122,7 +122,7 @@ static boolean findMethod(methodClassLocation)
 #define ipop(x)     \
 	x = stackTop(); \
 	*pst-- = nilobj
-#define processStackTop() ((pst - psb) + 1)
+#define processStackTop() (int)((pst - psb) + 1)
 #define receiverAt(n) *(rcv + n)
 #define receiverAtPut(n, x) \
 	decr(receiverAt(n));    \

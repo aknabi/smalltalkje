@@ -27,7 +27,7 @@
 #include "env.h"
 #include "memory.h"
 
-void setFreeLists();
+void setFreeLists(void);
 void sysDecr(object z);
 void visit(register object x);
 
@@ -260,7 +260,7 @@ object allocStr(str) register char *str;
 	register object newSym;
 	char *c;
 
-	newSym = allocByte(1 + strlen(str));
+	newSym = allocByte(1 + (int) strlen(str));
 	c = charPtr(newSym);
 	ignore strcpy(c, str);
 	return (newSym);
@@ -420,9 +420,7 @@ register int i;
 #endif
 
 #ifndef byteAtPut
-void byteAtPut(z, i, x)
-	object z;
-int i, x;
+void byteAtPut(object z, int i, int x)
 {
 	byte *bp;
 

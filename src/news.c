@@ -17,10 +17,8 @@ static object intClass = nilobj;    /* the class Integer */
 static object stringClass = nilobj; /* the class String */
 static object symbolClass = nilobj; /* the class Symbol */
 
-void ncopy(p, q, n) /* ncopy - copy exactly n bytes from place to place */
-    register char *p,
-    *q;
-register int n;
+/* ncopy - copy exactly n bytes from place to place */
+void ncopy(register char *p, register char *q, register int n)
 {
     for (; n > 0; n--)
         *p++ = *q++;

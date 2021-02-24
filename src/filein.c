@@ -16,7 +16,7 @@
 void setInstanceVariables(object aClass);
 boolean parse(object method, char *text, boolean savetext);
 void sysDecr(object z);
-void givepause();
+void givepause(void);
 
 #define MethodTableSize 39
 
@@ -100,7 +100,7 @@ boolean printit;
 {
 	object classObj, methTable, theMethod, selector;
 #define LINEBUFFERSIZE 512
-	char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
+    char *cp = NULL, *eoftest, lineBuffer[LINEBUFFERSIZE];
 
 	if (nextToken() != nameconst)
 		sysError("missing name", "following Method keyword");

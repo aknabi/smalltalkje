@@ -45,8 +45,9 @@
 extern object processStack;
 extern int linkPointer;
 
-extern double frexp(), ldexp();
-extern long time();
+extern double frexp(double, int *);
+extern double ldexp(double, int);
+extern long time(long*);
 extern object ioPrimitive(INT X OBJP);
 extern object sysPrimitive(INT X OBJP);
 extern void byteAtPut(OBJ X INT X INT);
@@ -58,7 +59,7 @@ static object zeroaryPrims(number) int number;
 {
 	short i;
 	object returnedObject;
-	int objectCount();
+    int objectCount(void);
 
 	returnedObject = nilobj;
 	switch (number)
@@ -403,7 +404,7 @@ object firstarg, secondarg, thirdarg;
 
 static int intUnary(number, firstarg) int number, firstarg;
 {
-	object returnedObject;
+	object returnedObject = nilobj;
 
 	switch (number)
 	{
@@ -440,7 +441,7 @@ static int intUnary(number, firstarg) int number, firstarg;
 static object intBinary(number, firstarg, secondarg) register int firstarg, secondarg;
 int number;
 {
-	boolean binresult;
+    boolean binresult = false;
 	long longresult;
 	object returnedObject;
 
@@ -450,7 +451,7 @@ int number;
 		longresult = firstarg;
 		longresult += secondarg;
 		if (longCanBeInt(longresult))
-			firstarg = longresult;
+			firstarg = (int) longresult;
 		else
 			goto overflow;
 		break;
@@ -458,7 +459,7 @@ int number;
 		longresult = firstarg;
 		longresult -= secondarg;
 		if (longCanBeInt(longresult))
-			firstarg = longresult;
+			firstarg = (int) longresult;
 		else
 			goto overflow;
 		break;
@@ -487,7 +488,7 @@ int number;
 		longresult = firstarg;
 		longresult *= secondarg;
 		if (longCanBeInt(longresult))
-			firstarg = longresult;
+			firstarg = (int) longresult;
 		else
 			goto overflow;
 		break;
@@ -538,12 +539,12 @@ overflow:
 static int strUnary(number, firstargument) int number;
 char *firstargument;
 {
-	object returnedObject;
+	object returnedObject = nilobj;
 
 	switch (number)
 	{
 	case 1: /* length of string */
-		returnedObject = newInteger(strlen(firstargument));
+		returnedObject = newInteger((int) strlen(firstargument));
 		break;
 
 	case 2: /* hash value of symbol */
@@ -582,7 +583,7 @@ double firstarg;
 	char buffer[20];
 	double temp;
 	int i, j;
-	object returnedObject;
+	object returnedObject = nilobj;
 
 	switch (number)
 	{
@@ -645,7 +646,7 @@ double firstarg;
 static object floatBinary(number, first, second) int number;
 double first, second;
 {
-	boolean binResult;
+    boolean binResult = false;
 	object returnedObject;
 
 	switch (number)
@@ -699,11 +700,10 @@ double first, second;
 /* primitive -
 	the main driver for the primitive handler
 */
-object primitive(primitiveNumber, arguments) register int primitiveNumber;
-object *arguments;
+object primitive(register int primitiveNumber, object *arguments)
 {
 	register int primitiveGroup = primitiveNumber / 10;
-	object returnedObject;
+	object returnedObject = nilobj;
 
 	if (primitiveNumber >= 150)
 	{
@@ -790,7 +790,7 @@ object *arguments;
  */
 void runMethodOrBlock(object method, object block, object arg)
 {
-	object process, stack, argArray;
+	object process, stack;
 
 	process = allocObject(processSize);
 	// incr(process);
@@ -824,7 +824,7 @@ void runMethodOrBlock(object method, object block, object arg)
 
 void doIt(char *text, object arg)
 {
-	object process, stack, method;
+	object method;
 
 	method = newMethod();
 	incr(method);

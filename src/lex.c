@@ -30,7 +30,7 @@ static char cc;				/* current character */
 static long longresult;		/* value used when building int tokens */
 
 /* lexinit - initialize the lexical analysis routines */
-noreturn lexinit(str) char *str;
+noreturn lexinit(char *str)
 {
 	pushindex = 0;
 	cp = str;
@@ -160,7 +160,7 @@ tokentype nextToken()
 		}
 		if (longCanBeInt(longresult))
 		{
-			tokenInteger = longresult;
+			tokenInteger = (int) longresult;
 			token = intconst;
 		}
 		else

@@ -14,7 +14,7 @@
 
 int initial = 0; /* not making initial image */
 
-extern int objectCount();
+extern int objectCount(void);
 boolean execute(object aProcess, int maxsteps);
 
 void readImage()
