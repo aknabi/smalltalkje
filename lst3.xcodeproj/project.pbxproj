@@ -20,8 +20,8 @@
 		9635303E25E66C0700D34CA9 /* tty.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635303D25E66C0700D34CA9 /* tty.c */; };
 		9635304225E66C2200D34CA9 /* unixio.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635304025E66C2200D34CA9 /* unixio.c */; };
 		9635304325E66C2200D34CA9 /* uart.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635304125E66C2200D34CA9 /* uart.c */; };
-		9635304725E66C6700D34CA9 /* objectData in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9635304525E66C6700D34CA9 /* objectData */; };
-		9635304825E66C6700D34CA9 /* objectTable in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9635304625E66C6700D34CA9 /* objectTable */; };
+		9635305F25E6EBBA00D34CA9 /* objectData in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9635305D25E6EBBA00D34CA9 /* objectData */; };
+		9635306025E6EBBA00D34CA9 /* objectTable in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9635305E25E6EBBA00D34CA9 /* objectTable */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,8 +31,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
-				9635304725E66C6700D34CA9 /* objectData in CopyFiles */,
-				9635304825E66C6700D34CA9 /* objectTable in CopyFiles */,
+				9635305F25E6EBBA00D34CA9 /* objectData in CopyFiles */,
+				9635306025E6EBBA00D34CA9 /* objectTable in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,9 +53,9 @@
 		9635303D25E66C0700D34CA9 /* tty.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tty.c; path = src/tty.c; sourceTree = "<group>"; };
 		9635304025E66C2200D34CA9 /* unixio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = unixio.c; path = src/unixio.c; sourceTree = "<group>"; };
 		9635304125E66C2200D34CA9 /* uart.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uart.c; path = src/uart.c; sourceTree = "<group>"; };
-		9635304525E66C6700D34CA9 /* objectData */ = {isa = PBXFileReference; lastKnownFileType = file; name = objectData; path = data/objectData; sourceTree = "<group>"; };
-		9635304625E66C6700D34CA9 /* objectTable */ = {isa = PBXFileReference; lastKnownFileType = file; name = objectTable; path = data/objectTable; sourceTree = "<group>"; };
 		9635304E25E6E8DE00D34CA9 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		9635305D25E6EBBA00D34CA9 /* objectData */ = {isa = PBXFileReference; lastKnownFileType = file; name = objectData; path = data/objectData; sourceTree = "<group>"; };
+		9635305E25E6EBBA00D34CA9 /* objectTable */ = {isa = PBXFileReference; lastKnownFileType = file; name = objectTable; path = data/objectTable; sourceTree = "<group>"; };
 		96D020AE25DFD2D100087CC6 /* lst3 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lst3; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -70,12 +70,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9635306225E6EBE000D34CA9 /* Image files */ = {
+			isa = PBXGroup;
+			children = (
+				9635305E25E6EBBA00D34CA9 /* objectTable */,
+				9635305D25E6EBBA00D34CA9 /* objectData */,
+			);
+			name = "Image files";
+			sourceTree = "<group>";
+		};
 		96D020A525DFD2D100087CC6 = {
 			isa = PBXGroup;
 			children = (
 				9635304E25E6E8DE00D34CA9 /* include */,
-				9635304525E66C6700D34CA9 /* objectData */,
-				9635304625E66C6700D34CA9 /* objectTable */,
 				9635304125E66C2200D34CA9 /* uart.c */,
 				9635304025E66C2200D34CA9 /* unixio.c */,
 				9635303D25E66C0700D34CA9 /* tty.c */,
@@ -90,6 +97,7 @@
 				9635301C25E66AF900D34CA9 /* lex.c */,
 				9635301825E66ACF00D34CA9 /* interp.c */,
 				9635301525E66AB700D34CA9 /* filein.c */,
+				9635306225E6EBE000D34CA9 /* Image files */,
 				96D020AF25DFD2D100087CC6 /* Products */,
 			);
 			sourceTree = "<group>";
