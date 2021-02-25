@@ -55,30 +55,32 @@ Methods Class 'all'
 			ifFalse: [ 'no such method' print ]
 ]
 Methods Smalltalk 'all'
-	getPromptOriginal: aString
-		stdout printNoReturn: aString.
-		^stdin getString
-|
-	getPromptVM: aString
-		stdout printNoReturn: aString.
-		^ <124>
-|
 	getPrompt: aString | input c i |
 		stdout printNoReturn: aString.
 		input <- ByteArray new: 255.
 		i <- 1.
 		[ c <- <132>. c = 10 ] whileFalse: [
-			(c = 0) ifFalse: [ 
-				c = 8
-					ifTrue: [
-						i > 1
-							ifTrue: [ i <- i - 1. input at: i put: 0. eraseChar basicPrint ] ]
-					ifFalse: [ c printAscii. input at: i put: c. i <- i + 1 ] ].
-			scheduler checkInterruptBlock ].
+			c = 0 ifFalse: [ 
+				c = 8 ifTrue: [
+					i > 1 ifTrue: [ 
+						i <- i - 1. 
+						input at: i put: 0. eraseChar basicPrint
+					]
+				]
+				ifFalse: [ 
+					c printAscii.
+					input at: i put: c.
+					i <- i + 1
+				]
+			].
+			scheduler checkInterruptBlock
+		].
 		"Output last CR"
 		c printAscii.
 		input asString.
-		input = 'restart' ifTrue: [ <181 0> ].
+		input = 'restart' ifTrue: [
+			(self inquire: 'Restart system?') ifTrue: [ <181 0> ]
+		].
 		^ input
 |
 	inquire: aString	| response |
