@@ -1,5 +1,6 @@
-# ESP32-smalltalk
-**Little Smalltalk for ESP32 with SSD1306 OLED and M5StickC support**
+# smalltalk-e
+**An embedded Smalltalk based on Little Smalltalk **
+**(currently with ESP32, SSD1306 OLED and M5StickC support)**
 
 Based on:
 
@@ -19,6 +20,7 @@ Links to main resources used in development (besides Stackoverflow):
 - M5Stick repo
 
 This is a very early project. Right now builds in VisualStudio Code wiht PlatformIO plugin the and runs (on the Mac at least).
+Also builds with XCode to run basic VM on the Mac for testing and image creation.
 
 Publishing so that folks can take a look. 
 
