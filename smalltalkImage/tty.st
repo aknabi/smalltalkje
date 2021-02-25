@@ -130,9 +130,7 @@ Methods UndefinedObject 'initial image'
 		" create global variables in initial image "
 		true <- True new.
 		false <- False new.
-		inblink <- false.
 		eraseChar <- '', (Char new; value: 8), (Char new; value: 32), (Char new; value: 8).
-		VMC <- nil.
 		smalltalk <- Smalltalk new.
 		files <- Array new: 15.
 		self createStdFiles.
@@ -153,17 +151,18 @@ Methods UndefinedObject 'initial image'
 	startupM5
 		m5 <- M5StickC new. 
 		m5 setupButtonHandlers.
-		self ledBlinkOn.
+		"TODO: Store blocks because if we inline in on/off methods those block contexts accumluate"
+		ledOnBlock <- [self ledBlinkOn].
+		ledOffBlock <- [self ledBlinkOff].
+		self ledBlinkOn
 |
 	ledBlinkOn
-		inblink = true.
 		m5 ledOn.
-		[self ledBlinkOff] runAfter: 20
+		ledOffBlock runAfter: 20
 |
 	ledBlinkOff
 		m5 ledOff.
-		inblink = false.
-		[self ledBlinkOn] runAfter: 5000
+		ledOnBlock runAfter: 5000
 |
 	createStdFiles
 		"Create stdin, stdout, stderr"
