@@ -11,6 +11,8 @@
         "process.h": "c",
         "memory.h": "c",
         "env.h": "c",
-        "queue.h": "c"
-    }
+        "queue.h": "c",
+        "*.ipp": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
