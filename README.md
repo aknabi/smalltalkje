@@ -1,5 +1,5 @@
 # smalltalk-e
-**An embedded Smalltalk based on Little Smalltalk **
+## An embedded smalltalk (based on Tim Budd's Little Smalltalk)
 **(currently with ESP32, SSD1306 OLED and M5StickC support)**
 
 Based on:
