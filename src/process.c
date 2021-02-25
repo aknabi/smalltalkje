@@ -27,7 +27,6 @@ void runSmalltalkProcess(object processToRun)
 	if (processToRun != nilobj)
 	{
         while (execute(processToRun, 15000));
-		// unaryPrims(9, processToRun);
 	}
 	else
 	{

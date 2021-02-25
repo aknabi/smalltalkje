@@ -75,7 +75,7 @@ static int currentMemoryPosition; /* last used position in above */
 #endif
 
 /* initialize the memory management module */
-noreturn initMemoryManager()
+noreturn initMemoryManager(void)
 {
 	int i;
 
@@ -112,7 +112,7 @@ noreturn initMemoryManager()
 }
 
 /* setFreeLists - initialise the free lists */
-void setFreeLists()
+noreturn setFreeLists(void)
 {
 	int i, size;
 	register int z;
@@ -142,13 +142,12 @@ void setFreeLists()
 */
 #ifndef mBlockAlloc
 
-object *mBlockAlloc(memorySize) int memorySize;
+object *mBlockAlloc(int memorySize)
 {
 	object *objptr;
 
 	if (currentMemoryPosition + memorySize >= MemoryBlockSize)
 	{
-
 		/* we toss away space here.  Space-Frugal users may want to
 	   fix this by making a new object of size
 	   MemoryBlockSize - currentMemoryPositon - 1

@@ -24,8 +24,7 @@ void ncopy(register char *p, register char *q, register int n)
         *p++ = *q++;
 }
 
-object getClass(obj) /* getClass - get the class of an object */
-    register object obj;
+object getClass(register object obj) /* getClass - get the class of an object */
 {
     if (isInteger(obj))
     {
@@ -36,7 +35,7 @@ object getClass(obj) /* getClass - get the class of an object */
     return (classField(obj));
 }
 
-object newArray(size) int size;
+object newArray(int size)
 {
     object newObj;
 
@@ -56,7 +55,7 @@ object newBlock()
     return newObj;
 }
 
-object newByteArray(size) int size;
+object newByteArray(int size)
 {
     object newobj;
 
@@ -65,7 +64,7 @@ object newByteArray(size) int size;
     return newobj;
 }
 
-object newChar(value) int value;
+object newChar(int value)
 {
     object newobj;
 
@@ -126,7 +125,7 @@ void printObject(object obj)
 }
 */
 
-object newClass(name) char *name;
+object newClass(char *name)
 {
     object newObj, nameObj;
 
@@ -143,9 +142,7 @@ object newClass(name) char *name;
     return newObj;
 }
 
-object copyFrom(obj, start, size)
-    object obj;
-int start, size;
+object copyFrom(object obj, int start, int size)
 {
     object newObj;
     int i;
@@ -159,8 +156,7 @@ int start, size;
     return newObj;
 }
 
-object newContext(link, method, args, temp) int link;
-object method, args, temp;
+object newContext(int link, object method, object args, object temp)
 {
     object newObj;
 
@@ -173,7 +169,7 @@ object method, args, temp;
     return newObj;
 }
 
-object newDictionary(size) int size;
+object newDictionary(int size)
 {
     object newObj;
 
@@ -183,7 +179,7 @@ object newDictionary(size) int size;
     return newObj;
 }
 
-object newFloat(d) double d;
+object newFloat(double d)
 {
     object newObj;
 
@@ -193,8 +189,7 @@ object newFloat(d) double d;
     return newObj;
 }
 
-double floatValue(o)
-    object o;
+double floatValue(object o)
 {
     double d;
 
@@ -202,9 +197,7 @@ double floatValue(o)
     return d;
 }
 
-object newLink(key, value)
-    object key,
-    value;
+object newLink(object key, object value)
 {
     object newObj;
 
@@ -224,7 +217,7 @@ object newMethod()
     return newObj;
 }
 
-object newStString(value) char *value;
+object newStString(char *value)
 {
     object newObj;
 
@@ -235,7 +228,7 @@ object newStString(value) char *value;
     return (newObj);
 }
 
-object newSymbol(str) char *str;
+object newSymbol(char *str)
 {
     object newObj;
 

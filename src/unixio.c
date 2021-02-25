@@ -40,6 +40,7 @@ void fileIn(FILE *fd, boolean printit);
 #define STRING_CLASS 34
 #define SYMBOL_CLASS 8
 #define BLOCK_CLASS 182
+#define METHOD_CLASS 264
 
 struct
 {
@@ -202,6 +203,8 @@ noreturn readTableWithObjects(FILE *fp, void *objectData)
 	fprintf(stderr, "Set Class: %d\n", setClass);
 	object blockClass = findClass("Block");
 	fprintf(stderr, "Block Class: %d\n", blockClass);
+	object methodClass = findClass("Method");
+	fprintf(stderr, "Method Class: %d\n", methodClass);
 }
 
 noreturn readObjectFiles(FILE *fpObjTable, FILE *fpObjData)

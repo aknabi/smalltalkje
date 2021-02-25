@@ -18,11 +18,10 @@
 #include "driver/gpio.h"
 
 #include "m5stickc.h"
-#include "process.h"
 
+#include "process.h"
 #include "names.h"
 
-#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
 
 #include "driver/uart.h"
@@ -224,9 +223,7 @@ void writeObjectDataPartition()
         return;
     }
 
-    ESP_LOGI(ESP_TAG, "Write objects partition? (Yy/Nn) >");
-    fflush(stdout);
-   char c = 0;
+    char c = -1;
     while (!(c != 0 && (c == 89 || c == 121 || c == 78 || c == 110)))
     {
         if (c != 0) {
@@ -259,9 +256,6 @@ void writeObjectDataPartition()
     while (readBytes != 0)
     {
         readBytes = fread(fileBuf, 1, 4096, fpObjData);
-        //       if (readBytes && (readBytes != 1))
-        //	        sysError("objectData read count error", "");
-        // ESP_LOGI(TAG, "Read object data bytes: (%d)\n", readBytes);
         if (readBytes > 0)
         {
             err = esp_partition_write(part, offset, fileBuf, (size_t)readBytes);
@@ -284,11 +278,9 @@ void writeObjectDataPartition()
     }
 
     fclose(fpObjData);
-    // remove("/spiffs/objectData");
     ESP_LOGI(ESP_TAG, "Done writing objects partition. Hit <Return> to start smalltalk");
     fflush(stdout);
     fgetc(stdin);
-    // esp_restart();
 }
 
 #endif // WRITE_OBJECT_PARTITION

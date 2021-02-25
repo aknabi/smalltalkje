@@ -40,6 +40,7 @@ void fileIn(FILE *fd, boolean printit);
 #define STRING_CLASS 34
 #define SYMBOL_CLASS 8
 #define BLOCK_CLASS 182
+#define METHOD_CLASS 264
 
 struct
 {
@@ -160,7 +161,7 @@ noreturn readTableWithObjects(FILE *fp, void *objectData)
 		{
 			int sizeInBytes = ((int)sizeof(object)) * (int)size;
 			// if (dummyObject.flags > 0) {
-			if (dummyObject.cl == BYTE_ARRAY_CLASS || dummyObject.cl == STRING_CLASS || dummyObject.cl == SYMBOL_CLASS || dummyObject.cl == BLOCK_CLASS)
+			if (dummyObject.cl == BYTE_ARRAY_CLASS || dummyObject.cl == STRING_CLASS || dummyObject.cl == SYMBOL_CLASS || dummyObject.cl == BLOCK_CLASS || dummyObject.cl == METHOD_CLASS)
 			{
 				setObjTableMemory(i, (object *)objectData);
 				setObjTableRefCount(i, 0x7F);

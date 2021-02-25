@@ -157,9 +157,7 @@ static object growProcessStack(top, toadd) int top, toadd;
 	return newStack;
 }
 
-boolean execute(aProcess, maxsteps)
-	object aProcess;
-int maxsteps;
+boolean execute(object aProcess, int maxsteps)
 {
 	object returnedObject;
 	int returnPoint, timeSliceCounter;

@@ -771,9 +771,10 @@ void block()
 	basicAtPut(newBlk, bytecountPositionInBlock, newInteger(codeTop + 1));
 	blockstat = InBlock;
 	body();
+	// if ((token == closing) && streq(tokenString, "]"))
 	if ((token == closing) && streq(tokenString, "]"))
 		ignore nextToken();
-	else
+	else 
 		compilError(selector, "block not terminated by ]", "");
 	genInstruction(DoSpecial, StackReturn);
 	codeArray[fixLocation] = codeTop + 1;

@@ -112,7 +112,8 @@ void launchSmalltalk()
         exit(1);
     }
 
-    printf("Little Smalltalk, Version 3.1\n");
+    printf("Smalltalk-e, Version 0.5\n");
+    printf("Based on Little Smalltalk, Version 3.1\n");
     printf("Written by Tim Budd, Oregon State University\n");
     printf("Updated for modern systems by Charles Childers\n");
     printf("Updated for embedded systems by Abdul Nabi\n");

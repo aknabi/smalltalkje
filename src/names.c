@@ -32,12 +32,7 @@
 #include "memory.h"
 #include "names.h"
 
-void sysDecr(object z);
-
-noreturn nameTableInsert(dict, hash, key, value)
-	object dict,
-	key, value;
-int hash;
+noreturn nameTableInsert(object dict, int hash, object key, object value)
 {
 	object table, link, nwLink, nextLink, tablentry;
 
@@ -84,8 +79,6 @@ int hash;
 }
 
 object hashEachElement(object dict, register int hash, int (*fun)(object))
-//register int hash;
-//int (*fun)();
 {
 	object table, key, value, link;
 	register object *hp;
@@ -116,8 +109,7 @@ object hashEachElement(object dict, register int hash, int (*fun)(object))
 	return nilobj;
 }
 
-int strHash(str) /* compute hash value of string ---- strHash */
-	char *str;
+int strHash(char *str) /* compute hash value of string ---- strHash */
 {
 	register int hash;
 	register char *p;
@@ -136,8 +128,7 @@ int strHash(str) /* compute hash value of string ---- strHash */
 static object objBuffer;
 static char *charBuffer;
 
-static int strTest(key) /* test for string equality ---- strTest */
-	object key;
+static int strTest(object key) /* test for string equality ---- strTest */
 {
 	if (charPtr(key) && streq(charPtr(key), charBuffer))
 	{
@@ -147,8 +138,7 @@ static int strTest(key) /* test for string equality ---- strTest */
 	return 0;
 }
 
-object globalKey(str) /* return key associated with global symbol */
-	char *str;
+object globalKey(char *str) /* return key associated with global symbol */
 {
 	objBuffer = nilobj;
 	charBuffer = str;
@@ -156,9 +146,7 @@ object globalKey(str) /* return key associated with global symbol */
 	return objBuffer;
 }
 
-object nameTableLookup(dict, str)
-	object dict;
-char *str;
+object nameTableLookup(object dict, char *str)
 {
 	charBuffer = str;
 	return hashEachElement(dict, strHash(str), strTest);
