@@ -111,8 +111,7 @@ Methods Scheduler 'all'
 |
 	checkInterruptBlock
 		InterruptBlock <- <6>.
-		"reset vm interrupt block, we're handling <7>."
-		InterruptBlock notNil ifTrue: [ currentProcess <- InterruptBlock newProcess. currentProcess execute ]
+		InterruptBlock notNil ifTrue: [ scheduler critical: InterruptBlock ]		
 |
 	yield
 		" set time slice counter to zero, thereby
