@@ -195,6 +195,14 @@ extern object *mBlockAlloc(INT);
 #endif
 
 /*
+ * Called at startup to initialize the memory system (object tables, etc)
+ */
+noreturn initMemoryManager(void);
+
+/* setFreeLists - initialise the object free lists (used to recycle objects vs mallocs) */
+noreturn setFreeLists(void);
+
+/*
 	the dictionary symbols is the source of all symbols in the system
 */
 extern object symbols;
@@ -211,5 +219,5 @@ extern noreturn initMemoryManager(NOARGS);
 extern noreturn imageWrite(FILEP);
 extern noreturn imageRead(FILEP);
 extern boolean debugging;
-extern void sysDecr(object z);
+extern noreturn sysDecr(object z);
 extern boolean execute(object aProcess, int maxsteps);
