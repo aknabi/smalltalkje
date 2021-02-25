@@ -7,12 +7,11 @@
 #include "process.h"
 
 #include "env.h"
-// #include "memory.h"
 #include "names.h"
 
 #include "target.h"
 
-static const char *TAG = "TinyTalk";
+static const char *TAG = "Smalltalk";
 
 void *objectData;
 

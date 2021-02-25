@@ -19,7 +19,6 @@
 
 #include "m5stickc.h"
 #include "process.h"
-// #include "memory.h"
 
 #include "names.h"
 
@@ -27,8 +26,6 @@
 #include "esp_log.h"
 
 #include "driver/uart.h"
-// #include "linenoise/linenoise.h"
-// #include <esp_console.h>
 
 #endif // TARGET_ESP32
 
@@ -227,12 +224,15 @@ void writeObjectDataPartition()
         return;
     }
 
-    ESP_LOGI(ESP_TAG, "Write objects partition? (Y/y) >");
-    char c = 0;
+    ESP_LOGI(ESP_TAG, "Write objects partition? (Yy/Nn) >");
+    fflush(stdout);
+   char c = 0;
     while (!(c != 0 && (c == 89 || c == 121 || c == 78 || c == 110)))
     {
-        if (c != 0)
-            ESP_LOGI(ESP_TAG, "Write objects partition? (Y/y) >");
+        if (c != 0) {
+            ESP_LOGI(ESP_TAG, "Write objects partition? (Yy/Nn) >");
+            fflush(stdout);
+        }
         c = getInputCharacter();
     }
 
@@ -255,6 +255,7 @@ void writeObjectDataPartition()
     fileBuf = heap_caps_malloc(4096, MALLOC_CAP_DEFAULT);
 
     printf("Writing objects partition\n");
+    fflush(stdout);
     while (readBytes != 0)
     {
         readBytes = fread(fileBuf, 1, 4096, fpObjData);
@@ -267,10 +268,12 @@ void writeObjectDataPartition()
             if (err != ESP_OK)
             {
                 ESP_LOGE(ESP_TAG, "esp_partition_write failed. (%d)\n", err);
+                fflush(stdout);
             }
             else
             {
                 printf(readBytes < 4096 ? "o" : "O");
+                fflush(stdout);
             }
             offset += readBytes;
         }
@@ -283,6 +286,7 @@ void writeObjectDataPartition()
     fclose(fpObjData);
     // remove("/spiffs/objectData");
     ESP_LOGI(ESP_TAG, "Done writing objects partition. Hit <Return> to start smalltalk");
+    fflush(stdout);
     fgetc(stdin);
     // esp_restart();
 }

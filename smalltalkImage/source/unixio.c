@@ -30,10 +30,8 @@
 
 #endif // TARGET_ESP32
 
-static const char *TAG = "UNIXIO";
-
 void visit(register object x);
-void setFreeLists();
+void setFreeLists(void);
 void fileIn(FILE *fd, boolean printit);
 
 #define DUMMY_OBJ_FLAG_ROM 0x01;
@@ -63,7 +61,7 @@ static int fr(FILE *fp, char *p, int s)
 {
 	int r;
 
-	r = fread(p, s, 1, fp);
+	r = (int) fread(p, s, 1, fp);
 	if (r && (r != 1))
 	{
 		sysError("imageRead count error", "");
@@ -74,7 +72,7 @@ static int fr(FILE *fp, char *p, int s)
 noreturn imageRead(FILE *fp)
 {
 	short i, size;
-	object *mBlockAlloc();
+    object *mBlockAlloc(INT);
 
 	ignore fr(fp, (char *)&symbols, sizeof(object));
 	i = 0;
@@ -123,7 +121,7 @@ static const char *objectDataDebugString = "OBJECT_FILE_DEBUG";
 noreturn readTableWithObjects(FILE *fp, void *objectData)
 {
 	short i, size;
-	object *mBlockAlloc();
+	object *mBlockAlloc(INT);
 
 	// TT_LOG_INFO(TAG, "Reading flash object data from: %d", objectData );
 
@@ -209,7 +207,7 @@ noreturn readTableWithObjects(FILE *fp, void *objectData)
 noreturn readObjectFiles(FILE *fpObjTable, FILE *fpObjData)
 {
 	short i, size;
-	object *mBlockAlloc();
+	object *mBlockAlloc(INT);
 
 	int numROMObjects = 0;
 
@@ -401,17 +399,13 @@ static FILE *fp[MAXFILES];
 object lastInputLine = nilobj;
 extern boolean _interruptInterpreter;
 
-extern char getInputCharacter();
+extern char getInputCharacter(void);
 
 object getInputLine(char *prompt)
 {
-	char *line;
-	char *p;
-
 	char c = 0;
 
 	size_t bufsize = 80;
-	size_t characters;
 	int bufIndex = 0;
 	char buffer[bufsize];
 
@@ -477,8 +471,6 @@ object ioPrimitive(int number, object *arguments)
 
 	i = intValue(arguments[0]);
 
-	char c;
-
 	switch (number)
 	{
 	case 0: /* file open */
@@ -528,11 +520,11 @@ object ioPrimitive(int number, object *arguments)
 			if (fp[i] == stdin)
 			{
 				/* delete the newline */
-				j = strlen(buffer);
+				j = (int) strlen(buffer);
 				if (buffer[j - 1] == '\n')
 					buffer[j - 1] = '\0';
 			}
-			j = strlen(buffer) - 1;
+			j = (int) strlen(buffer) - 1;
 			if (buffer[j] != '\\')
 				break;
 			/* else we loop again */
@@ -597,7 +589,8 @@ object ioPrimitive(int number, object *arguments)
 		break;
 
 	case 13: /* prim 133: print the char of the integer passed in */
-		putchar(intValue(arguments[0]));
+		putc(intValue(arguments[0]), stdout);
+		fflush(stdout);
 		break;
 
 	default:

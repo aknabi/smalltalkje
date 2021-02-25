@@ -70,7 +70,7 @@ static object zeroaryPrims(number) int number;
 		break;
 
 	case 2:
-		fprintf(stderr, "object count %d char count %d string count: %d\n", objectCount(), classInstCount(globalSymbol("Char")), classInstCount(globalSymbol("String")) );
+		fprintf(stderr, "object count %d context count %d string count: %d\n", objectCount(), classInstCount(globalSymbol("Context")), classInstCount(globalSymbol("String")) );
 		break;
 
 	case 3: /* return a random number */
