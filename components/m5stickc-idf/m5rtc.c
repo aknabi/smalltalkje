@@ -25,8 +25,24 @@ static void maskRTCData(void);
 
 
     
-char strftime_buf[64];
+
+/* epoch seconds */
 time_t now;
+
+/*
+  int    tm_sec   seconds [0,61]
+  int    tm_min   minutes [0,59]
+  int    tm_hour  hour [0,23]
+  int    tm_mday  day of month [1,31]
+  int    tm_mon   month of year [0,11]
+  int    tm_year  years since 1900
+  int    tm_wday  day of week [0,6] (Sunday = 0)
+  int    tm_yday  day of year [0,365]
+  int    tm_isdst daylight savings flag
+
+  The value of tm_isdst is positive if Daylight Saving Time is in effect, 
+  0 if Daylight Saving Time is not in effect, and negative if the information is not available.
+*/
 struct tm timeinfo = { 0 };
 
 static void obtain_time(void)
@@ -66,12 +82,15 @@ esp_err_t m5rtc_init(void) {
 //   Wire1.endTransmission();
 
     sntp_setservername(0, "pool.ntp.org");
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_init();
 
     obtain_time();
 
     time(&now);
     localtime_r(&now, &timeinfo);
+
+    char strftime_buf[64];
 
     // Set timezone to Eastern Standard Time and print local time
     setenv("TZ", "EST5EDT,M3.2.0/2,M11.1.0", 1);
@@ -80,15 +99,12 @@ esp_err_t m5rtc_init(void) {
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     ESP_LOGI(TAG, "The current date/time in New York is: %s", strftime_buf);
 
-    // Set timezone to China Standard Time
-    setenv("TZ", "CST-8", 1);
+    // Set timezone to EU Central Time
+    setenv("TZ", "UTC-1", 1);
     tzset();
     localtime_r(&now, &timeinfo);
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
-
-    // sntp_setoperatingmode(SNTP_OPMODE_POLL);
-
+    ESP_LOGI(TAG, "The current date/time in Amsterdam is: %s", strftime_buf);
 
     esp_err_t e;
     i2c_cmd_handle_t cmd;
@@ -313,7 +329,7 @@ static void bcd2ascii(void)
 {
   uint8_t i,j;
   for (j=0,i=0; i<7; i++){
-    asc[j++] =(rtc_data[i]&0xf0)>>4|0x30 ;/*格式为: 秒 分 时 日 月 星期 年 */
+    asc[j++] =(rtc_data[i]&0xf0)>>4|0x30 ;
     asc[j++] =(rtc_data[i]&0x0f)|0x30;
   }
 }
