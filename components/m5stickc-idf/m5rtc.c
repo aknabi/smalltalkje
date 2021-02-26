@@ -6,6 +6,7 @@
  */
 
 #include "include/m5rtc.h"
+#include "esp_sntp.h"
 
 // if we want to use esp-idf sntp stuff
 #include <lwip/apps/sntp.h>
@@ -22,6 +23,39 @@ static uint8_t byteToBcd2(uint8_t value);
 static void bcd2ascii(void);
 static void maskRTCData(void);
 
+
+    
+char strftime_buf[64];
+time_t now;
+struct tm timeinfo = { 0 };
+
+static void obtain_time(void)
+{
+    // ESP_ERROR_CHECK( nvs_flash_init() );
+    // ESP_ERROR_CHECK(esp_netif_init());
+    // ESP_ERROR_CHECK( esp_event_loop_create_default() );
+
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+     * Read "Establishing Wi-Fi or Ethernet Connection" section in
+     * examples/protocols/README.md for more information about this function.
+     */
+    // ESP_ERROR_CHECK(example_connect());
+
+    // initialize_sntp();
+
+    // wait for time to be set
+    int retry = 0;
+    const int retry_count = 10;
+    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
+        ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    // ESP_ERROR_CHECK( example_disconnect() );
+}
+
 esp_err_t m5rtc_init(void) {
 //   Wire1.begin(21,22);
 
@@ -31,9 +65,30 @@ esp_err_t m5rtc_init(void) {
 //   Wire1.write(0x00);  // Status2 reset
 //   Wire1.endTransmission();
 
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "pool.ntp.org");
     sntp_init();
+
+    obtain_time();
+
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    // Set timezone to Eastern Standard Time and print local time
+    setenv("TZ", "EST5EDT,M3.2.0/2,M11.1.0", 1);
+    tzset();
+    localtime_r(&now, &timeinfo);
+    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+    ESP_LOGI(TAG, "The current date/time in New York is: %s", strftime_buf);
+
+    // Set timezone to China Standard Time
+    setenv("TZ", "CST-8", 1);
+    tzset();
+    localtime_r(&now, &timeinfo);
+    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+    ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
+
+    // sntp_setoperatingmode(SNTP_OPMODE_POLL);
+
 
     esp_err_t e;
     i2c_cmd_handle_t cmd;

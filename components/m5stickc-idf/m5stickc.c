@@ -75,13 +75,13 @@ esp_err_t m5_init(m5stickc_config_t * config) {
     }
 
     // Init RTC
-    e = m5rtc_init();
-    if(e == ESP_OK) {
-        ESP_LOGD(TAG, "RTC initialized");
-    } else {
-        ESP_LOGE(TAG, "Error initializing RTC");
-        ++error_count;
-    }
+    // e = m5rtc_init();
+    // if(e == ESP_OK) {
+    //     ESP_LOGD(TAG, "RTC initialized");
+    // } else {
+    //     ESP_LOGE(TAG, "Error initializing RTC");
+    //     ++error_count;
+    // }
 
     if(error_count == 0) {
         ESP_LOGD(TAG, "M5StickC initialized successfully");

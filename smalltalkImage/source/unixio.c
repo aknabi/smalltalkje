@@ -161,7 +161,7 @@ noreturn readTableWithObjects(FILE *fp, void *objectData)
 		{
 			int sizeInBytes = ((int)sizeof(object)) * (int)size;
 			// if (dummyObject.flags > 0) {
-			if (dummyObject.cl == BYTE_ARRAY_CLASS || dummyObject.cl == STRING_CLASS || dummyObject.cl == SYMBOL_CLASS || dummyObject.cl == BLOCK_CLASS || dummyObject.cl == METHOD_CLASS)
+			if (dummyObject.cl == BYTE_ARRAY_CLASS || dummyObject.cl == STRING_CLASS || dummyObject.cl == SYMBOL_CLASS || dummyObject.cl == BLOCK_CLASS)
 			{
 				setObjTableMemory(i, (object *)objectData);
 				setObjTableRefCount(i, 0x7F);
@@ -203,6 +203,8 @@ noreturn readTableWithObjects(FILE *fp, void *objectData)
 	fprintf(stderr, "Set Class: %d\n", setClass);
 	object blockClass = findClass("Block");
 	fprintf(stderr, "Block Class: %d\n", blockClass);
+	object methodClass = findClass("Method");
+	fprintf(stderr, "Method Class: %d\n", methodClass);
 }
 
 noreturn readObjectFiles(FILE *fpObjTable, FILE *fpObjData)

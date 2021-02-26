@@ -153,10 +153,19 @@ Methods UndefinedObject 'initial image'
 	startupM5
 		m5 <- M5StickC new. 
 		m5 setupButtonHandlers.
+		self startWifi.
 		"TODO: Store blocks because if we inline in on/off methods those block contexts accumluate"
 		ledOnBlock <- [self ledBlinkOn].
 		ledOffBlock <- [self ledBlinkOff].
 		self ledBlinkOn
+|
+	startWifi
+		| ssid password |
+		m5 setupWifiHandlers.
+		ssid <- smalltalk getPrompt: 'WIFI SSID: '.
+		pass <- smalltalk getPrompt: 'WIFI PASS: '.
+		m5 wifiSSID: ssid password: pass.
+		m5 wifiOn.
 |
 	ledBlinkOn
 		m5 ledOn.

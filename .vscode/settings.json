@@ -17,7 +17,20 @@
         "m5rtc.h": "c",
         "m5display.h": "c",
         "m5button.h": "c",
-        "esp_err.h": "c"
+        "esp_err.h": "c",
+        "nvs_flash.h": "c",
+        "sys.h": "c",
+        "err.h": "c",
+        "sntp.h": "c",
+        "esp_wifi.h": "c",
+        "esp_event.h": "c",
+        "esp_log.h": "c",
+        "event_groups.h": "c",
+        "esp_partition.h": "c",
+        "nvs.h": "c",
+        "names.h": "c",
+        "wifi_connect.h": "c",
+        "esp_sntp.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

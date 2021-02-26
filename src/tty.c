@@ -19,7 +19,7 @@
 #include "build.h"
 
 #ifdef TARGET_ESP32
-
+#include "wifi_connect.h"
 #include "driver/gpio.h"
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
@@ -131,6 +131,7 @@ extern void runBlockAfter(object block, object arg, int ticks);
 object sysPrimitive(int number, object *arguments)
 {
     object returnedObject = nilobj;
+    int argIndex;
 
     /* someday there will be more here */
     switch (number - 150)
@@ -366,12 +367,28 @@ object sysPrimitive(int number, object *arguments)
                 gpio_set_level(getIntArg(0), getIntArg(1));
         break;
 
+    // Prim 170 ESP32 functions. First arg is function number, second and third are arguments to the function
+    case 20:
+        checkIntArg(0);
+        argIndex = getIntArg(0);
+        // function 0 wifi_start()
+        if (argIndex == 0)
+            wifi_start();
+        // function 1 is set wifi ssid and password
+        else if (argIndex == 1) {
+            if (arguments[1] != nilobj)
+                wifi_set_ssid(charPtr(arguments[1]));
+            if (arguments[2] != nilobj)
+                wifi_set_password(charPtr(arguments[2]));
+        }
+        break;
+
     // Prim 181 M5 functions. First arg is function number, second and third are arguments to the function
     // Index 0 means restart the SoC/system
     case 31:
         sysWarn("in primitive 181", "sysPrimitive");
         checkIntArg(0);
-        int argIndex = getIntArg(0);
+        argIndex = getIntArg(0);
         if (argIndex == 0)
             esp_restart();
         int funcIndex = argIndex - 1;

@@ -23,6 +23,9 @@ Methods M5StickC 'all'
         self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
         self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16].
 |
+	setupWifiHandlers
+	    self when: 'WifiConnected' do: [ display clear; string: 'Wifi Connected' x: 16 y: 16. [display clear] runAfter: 2000 ].
+|
     displayLoop
 		(1 to: 10) do: [:x | self afterDelay: 1000 do: [display clear; string: 'Big Click ', x asString x: 16 y: 16]].
 |
@@ -42,6 +45,12 @@ Methods M5StickC 'all'
 |
     ledOff
         <160 10 1>
+|
+	wifiOn
+		<170 0>
+|
+	wifiSSID: ssid password: password
+		<170 1 ssid password>
 |
 	display
 		^ display
