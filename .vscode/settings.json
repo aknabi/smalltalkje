@@ -12,7 +12,12 @@
         "memory.h": "c",
         "env.h": "c",
         "queue.h": "c",
-        "*.ipp": "c"
+        "*.ipp": "c",
+        "m5stickc.h": "c",
+        "m5rtc.h": "c",
+        "m5display.h": "c",
+        "m5button.h": "c",
+        "esp_err.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
