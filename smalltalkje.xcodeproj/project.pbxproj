@@ -22,9 +22,35 @@
 		9635304325E66C2200D34CA9 /* uart.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635304125E66C2200D34CA9 /* uart.c */; };
 		9635305F25E6EBBA00D34CA9 /* objectData in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9635305D25E6EBBA00D34CA9 /* objectData */; };
 		9635306025E6EBBA00D34CA9 /* objectTable in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9635305E25E6EBBA00D34CA9 /* objectTable */; };
+		9635306A25EA4C7B00D34CA9 /* parser.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635302F25E66B9900D34CA9 /* parser.c */; };
+		9635306B25EA4C7B00D34CA9 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635302425E66B3F00D34CA9 /* memory.c */; };
+		9635306C25EA4C7B00D34CA9 /* filein.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635301525E66AB700D34CA9 /* filein.c */; };
+		9635306D25EA4C7B00D34CA9 /* process.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635303525E66BC400D34CA9 /* process.c */; };
+		9635306E25EA4C7B00D34CA9 /* names.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635302825E66B6800D34CA9 /* names.c */; };
+		9635306F25EA4C7B00D34CA9 /* st.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635303925E66BE900D34CA9 /* st.c */; };
+		9635307025EA4C7B00D34CA9 /* interp.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635301825E66ACF00D34CA9 /* interp.c */; };
+		9635307125EA4C7B00D34CA9 /* lex.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635301C25E66AF900D34CA9 /* lex.c */; };
+		9635307225EA4C7B00D34CA9 /* uart.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635304125E66C2200D34CA9 /* uart.c */; };
+		9635307325EA4C7B00D34CA9 /* tty.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635303D25E66C0700D34CA9 /* tty.c */; };
+		9635307425EA4C7B00D34CA9 /* unixio.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635304025E66C2200D34CA9 /* unixio.c */; };
+		9635307525EA4C7B00D34CA9 /* primitive.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635303225E66BB100D34CA9 /* primitive.c */; };
+		9635307625EA4C7B00D34CA9 /* news.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635302C25E66B8B00D34CA9 /* news.c */; };
+		9635307925EA4C7B00D34CA9 /* objectData in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9635305D25E6EBBA00D34CA9 /* objectData */; };
+		9635307A25EA4C7B00D34CA9 /* objectTable in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9635305E25E6EBBA00D34CA9 /* objectTable */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		9635307825EA4C7B00D34CA9 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 16;
+			files = (
+				9635307925EA4C7B00D34CA9 /* objectData in CopyFiles */,
+				9635307A25EA4C7B00D34CA9 /* objectTable in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		96D020AC25DFD2D100087CC6 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 12;
@@ -55,10 +81,18 @@
 		9635304E25E6E8DE00D34CA9 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
 		9635305D25E6EBBA00D34CA9 /* objectData */ = {isa = PBXFileReference; lastKnownFileType = file; name = objectData; path = data/objectData; sourceTree = "<group>"; };
 		9635305E25E6EBBA00D34CA9 /* objectTable */ = {isa = PBXFileReference; lastKnownFileType = file; name = objectTable; path = data/objectTable; sourceTree = "<group>"; };
-		96D020AE25DFD2D100087CC6 /* lst3 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lst3; sourceTree = BUILT_PRODUCTS_DIR; };
+		9635307E25EA4C7B00D34CA9 /* M5StickC Image */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "M5StickC Image"; sourceTree = BUILT_PRODUCTS_DIR; };
+		96D020AE25DFD2D100087CC6 /* Mac stje */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "Mac stje"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		9635307725EA4C7B00D34CA9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		96D020AB25DFD2D100087CC6 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -103,7 +137,8 @@
 		96D020AF25DFD2D100087CC6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				96D020AE25DFD2D100087CC6 /* lst3 */,
+				96D020AE25DFD2D100087CC6 /* Mac stje */,
+				9635307E25EA4C7B00D34CA9 /* M5StickC Image */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -111,9 +146,26 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		96D020AD25DFD2D100087CC6 /* lst3 */ = {
+		9635306825EA4C7B00D34CA9 /* M5StickC Image */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 96D020B525DFD2D100087CC6 /* Build configuration list for PBXNativeTarget "lst3" */;
+			buildConfigurationList = 9635307B25EA4C7B00D34CA9 /* Build configuration list for PBXNativeTarget "M5StickC Image" */;
+			buildPhases = (
+				9635306925EA4C7B00D34CA9 /* Sources */,
+				9635307725EA4C7B00D34CA9 /* Frameworks */,
+				9635307825EA4C7B00D34CA9 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "M5StickC Image";
+			productName = lst3;
+			productReference = 9635307E25EA4C7B00D34CA9 /* M5StickC Image */;
+			productType = "com.apple.product-type.tool";
+		};
+		96D020AD25DFD2D100087CC6 /* Mac stje */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96D020B525DFD2D100087CC6 /* Build configuration list for PBXNativeTarget "Mac stje" */;
 			buildPhases = (
 				96D020AA25DFD2D100087CC6 /* Sources */,
 				96D020AB25DFD2D100087CC6 /* Frameworks */,
@@ -123,9 +175,9 @@
 			);
 			dependencies = (
 			);
-			name = lst3;
+			name = "Mac stje";
 			productName = lst3;
-			productReference = 96D020AE25DFD2D100087CC6 /* lst3 */;
+			productReference = 96D020AE25DFD2D100087CC6 /* Mac stje */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -154,12 +206,33 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				96D020AD25DFD2D100087CC6 /* lst3 */,
+				96D020AD25DFD2D100087CC6 /* Mac stje */,
+				9635306825EA4C7B00D34CA9 /* M5StickC Image */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		9635306925EA4C7B00D34CA9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9635306A25EA4C7B00D34CA9 /* parser.c in Sources */,
+				9635306B25EA4C7B00D34CA9 /* memory.c in Sources */,
+				9635306C25EA4C7B00D34CA9 /* filein.c in Sources */,
+				9635306D25EA4C7B00D34CA9 /* process.c in Sources */,
+				9635306E25EA4C7B00D34CA9 /* names.c in Sources */,
+				9635306F25EA4C7B00D34CA9 /* st.c in Sources */,
+				9635307025EA4C7B00D34CA9 /* interp.c in Sources */,
+				9635307125EA4C7B00D34CA9 /* lex.c in Sources */,
+				9635307225EA4C7B00D34CA9 /* uart.c in Sources */,
+				9635307325EA4C7B00D34CA9 /* tty.c in Sources */,
+				9635307425EA4C7B00D34CA9 /* unixio.c in Sources */,
+				9635307525EA4C7B00D34CA9 /* primitive.c in Sources */,
+				9635307625EA4C7B00D34CA9 /* news.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		96D020AA25DFD2D100087CC6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -183,6 +256,32 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		9635307C25EA4C7B00D34CA9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				INCLUDED_SOURCE_FILE_NAMES = "";
+				OTHER_CFLAGS = (
+					"-DTARGET_MAC",
+					"-I./include/",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		9635307D25EA4C7B00D34CA9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				INCLUDED_SOURCE_FILE_NAMES = "";
+				OTHER_CFLAGS = (
+					"-DTARGET_MAC",
+					"-I./include/",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		96D020B325DFD2D100087CC6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -323,6 +422,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		9635307B25EA4C7B00D34CA9 /* Build configuration list for PBXNativeTarget "M5StickC Image" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9635307C25EA4C7B00D34CA9 /* Debug */,
+				9635307D25EA4C7B00D34CA9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		96D020A925DFD2D100087CC6 /* Build configuration list for PBXProject "smalltalkje" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -332,7 +440,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		96D020B525DFD2D100087CC6 /* Build configuration list for PBXNativeTarget "lst3" */ = {
+		96D020B525DFD2D100087CC6 /* Build configuration list for PBXNativeTarget "Mac stje" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				96D020B625DFD2D100087CC6 /* Debug */,

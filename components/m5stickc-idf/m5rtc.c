@@ -136,7 +136,7 @@ esp_err_t m5rtc_init(void) {
 
     getRTCTime(&rtcTimeNow);
 
-    printf("Time Now: %d:%d:%d", rtcTimeNow.hours, rtcTimeNow.minutes, rtcTimeNow.seconds);
+    printf("M5 RTC Time Now: %d:%d:%d\n", rtcTimeNow.hours, rtcTimeNow.minutes, rtcTimeNow.seconds);
 
     return e;
 

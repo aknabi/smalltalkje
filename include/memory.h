@@ -47,7 +47,7 @@ struct objectStruct
 	object *memory;
 };
 
-#define ObjectTableMax 6144
+#define ObjectTableMax 5000
 
 #ifdef obtalloc
 extern struct objectStruct *objectTable;
@@ -143,15 +143,21 @@ extern int f_i;
 
 	These are used internally in memory routines and in unixio.c
 */
+
+// MOT: Check for which OT: e.g. getObjectTable(x)[getObjectIndex(x)]
 #define objectTable(x) objectTable[x]
 
 #define objTableClass(x) objectTable(x).class
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setObjTableClass(x, y) (objectTable(x).class = y)
 #define objTableSize(x) objectTable(x).size
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setObjTableSize(x, y) (objectTable(x).size = y)
 #define objTableMemory(x) objectTable(x).memory
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setObjTableMemory(x, y) (objectTable(x).memory = y)
 #define objTableRefCount(x) objectTable(x).referenceCount
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setObjTableRefCount(x, y) (objectTable(x).referenceCount = y)
 
 /*
@@ -162,10 +168,14 @@ extern int f_i;
 */
 
 #define classField(x) objTableClass(x >> 1)
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setClass(x, y) incr(classField(x) = y)
-#define sizeField(x) objectTable[x >> 1].size
-#define sysMemPtr(x) objectTable[x >> 1].memory
+
+#define sizeField(x) objTableSize(x >> 1)
+#define sysMemPtr(x) objTableMemory(x >> 1)
+
 #define refCountField(x) objTableRefCount(x >> 1)
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setRefCountField(x, y) setObjTableRefCount(x >> 1, y)
 
 extern object sysobj;
