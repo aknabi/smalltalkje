@@ -7,8 +7,8 @@ default:
 	@rm source/main.c
 	@rm source/wifi_connect.*
 	@cd source && $(CC) -c memory.c names.c news.c interp.c process.c primitive.c filein.c lex.c parser.c unixio.c st.c initial.c uart.c tty.c
-	@cd source && $(CC) memory.o names.o news.o interp.o process.o primitive.o filein.o lex.o parser.o unixio.o st.o uart.o tty.o -o ../lst3 $(LIBS)
-	@cd source && $(CC) memory.o names.o news.o interp.o process.o primitive.o filein.o lex.o parser.o unixio.o initial.o uart.o tty.o -o ../buildImage $(LIBS)
+	@cd source && $(CC) memory.o names.o news.o interp.o process.o primitive.o filein.o lex.o parser.o unixio.o st.o uart.o tty.o -o ../stje $(LIBS)
+	@cd source && $(CC) memory.o names.o news.o interp.o process.o primitive.o filein.o lex.o parser.o unixio.o initial.o uart.o tty.o -o ../imageBuilder $(LIBS)
 #	@cd bootstrap && ../buildImage basic.st mag.st collect.st file.st mult.st tty.st
 #	@mv bootstrap/systemImage .
 	./buildImage basic.st mag.st collect.st file.st mult.st oled.st m5StickC.st tty.st
@@ -27,10 +27,10 @@ image:
 	@mv ./systemImage ../spiffs_image/systemImage
 
 clean:
-	rm -f source/*.o lst3 buildImage systemImage
+	rm -f source/*.o stje imageBuilder systemImage
 	rm -f `find . | grep \~`
 
 install:
-	@mkdir -p /usr/share/lst3
-	@cp systemImage /usr/share/lst3
-	@cp lst3 /usr/bin
+	@mkdir -p /usr/share/stje
+	@cp systemImage /usr/share/stje
+	@cp stje /usr/bin

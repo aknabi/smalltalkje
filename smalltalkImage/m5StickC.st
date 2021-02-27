@@ -1,5 +1,7 @@
 *
-* Little Smalltalk, version 3 - Oled Display support
+* m5StickC.st
+* 
+* Little Smalltalk, version 3 - M5StickC, Oled Display support
 * Written by Abdul Nabi, code crafters, January 2021
 *
 *  M5StickC class representing the device...
@@ -51,6 +53,9 @@ Methods M5StickC 'all'
 |
 	wifiSSID: ssid password: password
 		<170 1 ssid password>
+|
+	freeHeap
+		^ <170 100>
 |
 	display
 		^ display

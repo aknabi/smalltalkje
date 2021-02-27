@@ -17,7 +17,7 @@
                BlueprintIdentifier = "96D020AD25DFD2D100087CC6"
                BuildableName = "lst3"
                BlueprintName = "lst3"
-               ReferencedContainer = "container:lst3.xcodeproj">
+               ReferencedContainer = "container:smalltalkje.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,7 +47,7 @@
             BlueprintIdentifier = "96D020AD25DFD2D100087CC6"
             BuildableName = "lst3"
             BlueprintName = "lst3"
-            ReferencedContainer = "container:lst3.xcodeproj">
+            ReferencedContainer = "container:smalltalkje.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -64,7 +64,7 @@
             BlueprintIdentifier = "96D020AD25DFD2D100087CC6"
             BuildableName = "lst3"
             BlueprintName = "lst3"
-            ReferencedContainer = "container:lst3.xcodeproj">
+            ReferencedContainer = "container:smalltalkje.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

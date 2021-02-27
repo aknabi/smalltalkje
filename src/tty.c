@@ -380,6 +380,9 @@ object sysPrimitive(int number, object *arguments)
                 wifi_set_ssid(charPtr(arguments[1]));
             if (arguments[2] != nilobj)
                 wifi_set_password(charPtr(arguments[2]));
+        } else if (argIndex == 100) {
+            returnedObject = newInteger(GET_FREE_HEAP_SIZE());
+            break;
         }
         break;
 

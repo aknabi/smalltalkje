@@ -30,7 +30,8 @@
         "nvs.h": "c",
         "names.h": "c",
         "wifi_connect.h": "c",
-        "esp_sntp.h": "c"
+        "esp_sntp.h": "c",
+        "esp_http_client.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
