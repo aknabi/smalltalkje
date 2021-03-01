@@ -217,6 +217,7 @@ object newMethod()
     return newObj;
 }
 
+// This will copy the string passed to use as the object's data (not the)
 object newStString(char *value)
 {
     object newObj;

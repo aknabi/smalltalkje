@@ -11,6 +11,8 @@
 Class M5StickC Object display
 Class Color Object red green blue
 Class Font Object fontIndex
+Class HttpRequest Object url method
+Class HttpResponse Object statusCode contentLength content
 *
 Methods M5StickC 'all'
 	new
@@ -214,4 +216,22 @@ Methods Font 'all'
 |
 	customEmbedded
 		fontIndex = 11.
+]
+Methods HttpRequest 'all'
+	getURL: urlString
+		url <- urlString.
+		method <- 0
+|
+	execute
+		^ <183 0 self>
+]
+Methods HttpResponse 'all'
+	statusCode
+		^ statusCode
+|
+	contentLength
+		^ contentLength
+|
+	content
+		^ content
 ]

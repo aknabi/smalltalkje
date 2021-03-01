@@ -132,6 +132,7 @@ object sysPrimitive(int number, object *arguments)
 {
     object returnedObject = nilobj;
     int argIndex;
+    int funcNum;
 
     /* someday there will be more here */
     switch (number - 150)
@@ -402,12 +403,18 @@ object sysPrimitive(int number, object *arguments)
         m5Func(arguments);
         break;
 
-
-    // Prim 182 ESP NVS functions. First arg is function number, second and third are arguments to the function
+    // Prim 182 ESP NVS functions. First arg is function number, rest are arguments to the function
     case 32:
         checkIntArg(0);
-        int funcNum = getIntArg(0);
+        funcNum = getIntArg(0);
         returnedObject = nvsPrim(funcNum, arguments);
+        break;
+
+    // Prim 183 ESP HTTP functions. First arg is function number, rest are arguments to the function
+    case 33:
+        checkIntArg(0);
+        funcNum = getIntArg(0);
+        returnedObject = httpPrim(funcNum, arguments);
         break;
 
 #else
