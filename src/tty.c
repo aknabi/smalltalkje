@@ -401,6 +401,15 @@ object sysPrimitive(int number, object *arguments)
         primFunc_t m5Func = m5PrimitiveFunctions[funcIndex];
         m5Func(arguments);
         break;
+
+
+    // Prim 182 ESP NVS functions. First arg is function number, second and third are arguments to the function
+    case 32:
+        checkIntArg(0);
+        int funcNum = getIntArg(0);
+        returnedObject = nvsPrim(funcNum, arguments);
+        break;
+
 #else
     case 1: /* prim 151 create a OS task with a ST process */
         break;

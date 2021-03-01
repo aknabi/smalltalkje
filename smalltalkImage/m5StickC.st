@@ -54,6 +54,15 @@ Methods M5StickC 'all'
 	wifiSSID: ssid password: password
 		<170 1 ssid password>
 |
+	nvsAt: key put: object
+		^ <182 1 key object>
+|
+	nvsStringAtKey: key
+		^ <182 2 key String>
+|
+	nvsRemoveKey: key
+		^ <182 3 key>
+|
 	freeHeap
 		^ <170 100>
 |

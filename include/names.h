@@ -76,4 +76,5 @@ extern object findClass(STR);
 
 #define globalSymbol(s) nameTableLookup(symbols, s)
 
-#define isObjectOfClassName(o, s) (getClass(firstarg) == globalSymbol(s))
+#define isClassNameEqual(c, s) (c == globalSymbol(s))
+#define isObjectOfClassName(o, s) isClassNameEqual(getClass(o), s)

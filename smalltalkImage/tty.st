@@ -160,10 +160,18 @@ Methods UndefinedObject 'initial image'
 		self ledBlinkOn
 |
 	startWifi
-		| ssid password |
+		| savedSSID savedPass ssid password |
 		m5 setupWifiHandlers.
-		ssid <- smalltalk getPrompt: 'WIFI SSID: '.
-		pass <- smalltalk getPrompt: 'WIFI PASS: '.
+		savedSSID <- m5 nvsStringAtKey: 'ssid'.
+		savedPass <- m5 nvsStringAtKey: 'password'.
+		ssid <- smalltalk getPrompt: ('WIFI SSID (', savedSSID, '): ').
+		ssid size = 0
+			ifTrue: [ ssid <- savedSSID ]
+			ifFalse: [ m5 nvsAt: 'ssid' put: ssid ].
+		pass <- smalltalk getPrompt: ('WIFI PASS (', savedPass, '): ').
+		pass size = 0
+			ifTrue: [ pass <- savedPass ]
+			ifFalse: [ m5 nvsAt: 'password' put: pass ].
 		m5 wifiSSID: ssid password: pass.
 		m5 wifiOn.
 |

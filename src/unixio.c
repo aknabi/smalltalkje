@@ -41,6 +41,7 @@ void fileIn(FILE *fd, boolean printit);
 #define SYMBOL_CLASS 8
 #define BLOCK_CLASS 182
 #define METHOD_CLASS 264
+#define CLASS_CLASS 10
 
 struct
 {
@@ -123,6 +124,26 @@ noreturn imageRead(FILE *fp)
 static const char *objectDataDebugString = "OBJECT_FILE_DEBUG";
 #endif
 
+noreturn printClassNumbers()
+{
+    object byteArrayClass = findClass("ByteArray");
+    fprintf(stderr, "ByteArray Class: %d\n", byteArrayClass);
+    object stringClass = findClass("String");
+    fprintf(stderr, "String Class: %d\n", stringClass);
+    object listClass = findClass("List");
+    fprintf(stderr, "List Class: %d\n", listClass);
+    object arrayClass = findClass("Array");
+    fprintf(stderr, "Array Class: %d\n", arrayClass);
+    object setClass = findClass("Set");
+    fprintf(stderr, "Set Class: %d\n", setClass);
+    object blockClass = findClass("Block");
+    fprintf(stderr, "Block Class: %d\n", blockClass);
+    object methodClass = findClass("Method");
+    fprintf(stderr, "Method Class: %d\n", methodClass);
+    object classClass = findClass("Class");
+    fprintf(stderr, "Class Class: %d\n", classClass);
+}
+
 noreturn readTableWithObjects(FILE *fp, void *objectData)
 {
 	short i, size;
@@ -191,21 +212,7 @@ noreturn readTableWithObjects(FILE *fp, void *objectData)
 	fprintf(stderr, "Number of RAM Object read: %d size in bytes: %d\n", numRAMObjects, totalRAMBytes);
 
 	cleanupImage();
-
-	object byteArrayClass = findClass("ByteArray");
-	fprintf(stderr, "ByteArray Class: %d\n", byteArrayClass);
-	object stringClass = findClass("String");
-	fprintf(stderr, "String Class: %d\n", stringClass);
-	object listClass = findClass("List");
-	fprintf(stderr, "List Class: %d\n", listClass);
-	object arrayClass = findClass("Array");
-	fprintf(stderr, "Array Class: %d\n", arrayClass);
-	object setClass = findClass("Set");
-	fprintf(stderr, "Set Class: %d\n", setClass);
-	object blockClass = findClass("Block");
-	fprintf(stderr, "Block Class: %d\n", blockClass);
-	object methodClass = findClass("Method");
-	fprintf(stderr, "Method Class: %d\n", methodClass);
+    printClassNumbers();
 }
 
 noreturn readObjectFiles(FILE *fpObjTable, FILE *fpObjData)
@@ -264,6 +271,7 @@ noreturn readObjectFiles(FILE *fpObjTable, FILE *fpObjData)
 #endif
 
 	cleanupImage();
+    printClassNumbers();
 }
 
 /*

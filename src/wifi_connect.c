@@ -169,7 +169,8 @@ void wifi_init_sta(void)
 
 void wifi_start(void)
 {
-    nvs_init();
+    // This has been done at startp, but it's required for ESP32 wifi
+    // nvs_init();
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
