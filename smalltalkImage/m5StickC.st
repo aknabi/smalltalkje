@@ -11,13 +11,14 @@
 Class M5StickC Object display
 Class Color Object red green blue
 Class Font Object fontIndex
-Class HttpRequest Object url method
+Class HttpRequest Object url method contentType body
 Class HttpResponse Object statusCode contentLength content
 *
 Methods M5StickC 'all'
 	new
 		display <- Oled new.
         EventHandlerBlocks <- Dictionary new.
+		hp <- HttpRequest new; postUrl: 'http://httpbin.org/post' contentType: nil data: '{ "value" : 9 }'
 |
     setupButtonHandlers
         "self when: 'BigButtonClicked' do: [display clear; string: 'BigButtonClicked' x: 16 y: 16]."
@@ -64,6 +65,15 @@ Methods M5StickC 'all'
 |
 	nvsRemoveKey: key
 		^ <182 3 key>
+|
+	i2cByteAt: i2cAddress
+		^ <170 20 i2cAddress>
+|
+	getCardKB | c |
+		c <- self i2cByteAt: 95.
+		(c isNil or: [c > 127]) ifTrue: [c <- 0].
+		c = 13 ifTrue: [c <- 10].
+		^ c
 |
 	freeHeap
 		^ <170 100>
@@ -218,9 +228,16 @@ Methods Font 'all'
 		fontIndex = 11.
 ]
 Methods HttpRequest 'all'
-	getURL: urlString
+	getUrl: urlString
 		url <- urlString.
 		method <- 0
+|
+	postUrl: urlString contentType: typeString data: postData
+		"If contentType is nil, then type will be assumed JSON"
+		url <- urlString.
+		method <- 1.
+		contentType <- typeString.
+		body <- postData
 |
 	execute
 		^ <183 0 self>

@@ -8,8 +8,8 @@
 static const char *TAG = "httpESP32";
 
 int responseDataLen;   /*!< data length of data */
-char *responseData;     /*!< data of the event */
-
+// char *responseData;     /*!< data of the event */
+object contentStr;
 
 esp_err_t http_event_handle(esp_http_client_event_t *evt)
 {
@@ -31,8 +31,8 @@ esp_err_t http_event_handle(esp_http_client_event_t *evt)
             ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
             if (!esp_http_client_is_chunked_response(evt->client)) {
                 responseDataLen = evt->data_len;
-                responseData = (char*) evt->data;
-                printf("%.*s", responseDataLen, responseData);
+                contentStr = newStString(evt->data);
+                printf("%.*s", responseDataLen, charPtr(contentStr));
             }
 
             break;
@@ -82,13 +82,22 @@ object httpRequestFrom(object request)
     // Second inst var of a request object is the Method (GET = 0, POST = 1, PUT = 2, PATCH = 3, DELETE = 4)
     
     esp_http_client_set_method( client, method );
-    responseData = NULL;
+
+    if (method == HTTP_METHOD_POST) {
+        object contentType = basicAt(request, 3);
+        object body = basicAt(request, 4);
+        ESP_LOGI(TAG, "POST body %s length %d", charPtr(body), sizeField(body) - 2);
+        esp_http_client_set_header(client, "Content-Type", contentType == nilobj ? "application/json" : charPtr(contentType));
+        esp_http_client_set_post_field(client, charPtr(body), 15);
+    }
     object responseObj = nilobj;
+    contentStr = nilobj;
     httpError = esp_http_client_perform(client);
     if (httpError == ESP_OK) {
         int statusCode = esp_http_client_get_status_code(client);
         int contentLength = esp_http_client_get_content_length(client);
         ESP_LOGI(TAG, "Status = %d, content_length = %d", statusCode, contentLength);
+        ESP_LOGI(TAG, "=== BEGIN ===\n%s\n=== END ===", charPtr(contentStr));
         // create a response object
         responseObj = allocObject(3);
         setClass(responseObj, globalSymbol("HttpResponse"));
@@ -97,7 +106,8 @@ object httpRequestFrom(object request)
         // instVar 2 is content length
         basicAtPut(responseObj, 2, newInteger(contentLength));
         // instVar 3 is content string
-        basicAtPut(responseObj, 3, responseData == NULL ? nilobj : newStString(responseData));
+        basicAtPut(responseObj, 3, contentStr);
+        // basicAtPut(responseObj, 3, responseData == NULL ? nilobj : newStString(responseData));
     }
     // Instead maybe return the esp error code vs. nil
     return responseObj;
@@ -138,33 +148,6 @@ void http_doRequest(char *url, esp_http_client_method_t method)
     }    
 }
 
-object requestFrom(object request)
-{
-    // First inst var of a request object is the URL
-    esp_http_client_set_url( client, charPtr(basicAt(request, 1)) );
-    // Second inst var of a request object is the Method (GET = 0, POST = 1, PUT = 2, PATCH = 3, DELETE = 4)
-    esp_http_client_set_method( client, intValue(basicAt(request, 1)) );
-    responseData = NULL;
-    object responseObj = nilobj;
-    httpError = esp_http_client_perform(client);
-    if (httpError == ESP_OK) {
-        int statusCode = esp_http_client_get_status_code(client);
-        int contentLength = esp_http_client_get_content_length(client);
-        ESP_LOGI(TAG, "Status = %d, content_length = %d", statusCode, contentLength);
-        // create a response object
-        responseObj = allocObject(3);
-        setClass(responseObj, globalSymbol("HttpResponse"));
-        // instVar 1 is status code
-        basicAtPut(responseObj, 1, newInteger(statusCode));
-        // instVar 2 is content length
-        basicAtPut(responseObj, 2, newInteger(contentLength));
-        object contentStr = newStString(responseData);
-        basicAtPut(responseObj, 3, contentStr);
-        // basicAtPut(responseObj, 3, responseData == NULL ? nilobj : newStString(responseData));
-    }
-    // Instead maybe return the esp error code vs. nil
-    return responseObj;
-}
 
 void http_cleanup(void)
 {
@@ -174,7 +157,5 @@ void http_cleanup(void)
 void http_test(void)
 {
     http_init();
-    http_doGetRequest();
-    http_doRequest("http://httpbin.org/anything", HTTP_METHOD_DELETE);
     // http_cleanup();
 }

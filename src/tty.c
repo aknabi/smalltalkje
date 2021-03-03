@@ -21,6 +21,7 @@
 #ifdef TARGET_ESP32
 #include "wifi_connect.h"
 #include "driver/gpio.h"
+#include "driver/i2c.h"
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
 #include "ssd1306_oled.h"
@@ -86,6 +87,33 @@ void givepause()
 }
 
 #ifdef TARGET_ESP32
+
+esp_err_t readI2CByte(uint8_t i2c_addr, uint8_t *data_byte)
+{
+    esp_err_t e;
+    i2c_cmd_handle_t cmd;
+
+    // i2cInit(uint8_t i2c_num, int8_t sda, int8_t scl, uint32_t frequency);
+
+    cmd = i2c_cmd_link_create();
+
+    // i2c_master_start(cmd);
+    // i2c_master_write_byte(cmd, (i2c_addr << 1) | I2C_MASTER_WRITE, true);
+    // i2c_master_write_byte(cmd, 0x02, true);
+
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (i2c_addr << 1) | I2C_MASTER_READ, true);
+    i2c_master_read_byte(cmd, data_byte, I2C_MASTER_LAST_NACK);
+    i2c_master_stop(cmd);
+    e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 250/portTICK_PERIOD_MS);
+
+    if (e != ESP_OK) {
+        ESP_LOGE("ESP32", "error reading I2C byte (%s)", esp_err_to_name(e));
+    }
+    i2c_cmd_link_delete(cmd);
+
+    return e;
+}
 
 int counter = 0;
 
@@ -381,6 +409,10 @@ object sysPrimitive(int number, object *arguments)
                 wifi_set_ssid(charPtr(arguments[1]));
             if (arguments[2] != nilobj)
                 wifi_set_password(charPtr(arguments[2]));
+        } else if(argIndex == 20) {
+            uint8_t dataByte = 0;
+            esp_err_t e = readI2CByte(intValue(arguments[1]), &dataByte);
+            returnedObject = (e == ESP_OK) ? newInteger(dataByte) : newInteger(0);
         } else if (argIndex == 100) {
             returnedObject = newInteger(GET_FREE_HEAP_SIZE());
             break;
