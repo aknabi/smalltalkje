@@ -31,7 +31,7 @@ void setFreeLists(void);
 void sysDecr(object z);
 void visit(register object x);
 
-boolean debugging = false;
+boolean debugging = false; /* right now looks like this is not being used... use it or lose it */
 object sysobj; /* temporary used to avoid rereference in macros */
 object intobj;
 
@@ -48,6 +48,8 @@ object symbols; /* table of all symbols created */
 	In this case the object table must first be allocated via
 	calloc during the initialization of the memory manager.
 */
+
+// MOT: Will need a pointer to ROM OT, and this will be RAM OT
 
 #ifdef obtalloc
 struct objectStruct *objectTable;
@@ -98,6 +100,7 @@ noreturn initMemoryManager(void)
 		setObjTableSize(i, 0);
 	}
 
+	/* MOT: No need if we are starting with ROM OT, but then need to clean on image save */
 	/* make up the initial free lists */
 	setFreeLists();
 
@@ -120,6 +123,13 @@ noreturn setFreeLists(void)
 
 	objectFreeList[0] = nilobj;
 
+	/*
+		MOT: No need for ROM objects
+		For each object, check if the reference count is 0.
+		if so, adjust size (if byte obj), set the obj class
+		to the OFL[size] (?), set the OFL entry at the obj
+		size to the object and clear the object's inst var
+	 */
 	for (z = ObjectTableMax - 1; z > 0; z--)
 	{
 		if (objTableRefCount(z) == 0)
@@ -127,6 +137,7 @@ noreturn setFreeLists(void)
 			/* Unreferenced, so do a sort of sysDecr: */
 			p = &objectTable[z];
 			size = p->size;
+			// TODO: Rename this to adjustSizeIfByte()
 			adjustSizeIfNeg(size);
 			p->class = objectFreeList[size];
 			objectFreeList[size] = z;
@@ -166,6 +177,7 @@ object *mBlockAlloc(int memorySize)
 }
 #endif
 
+/* MOT: Check if "normal exec" (vs image building) requires any logic */
 /* allocate a new memory object */
 object allocObject(memorySize) int memorySize;
 {
@@ -300,7 +312,7 @@ void sysDecr(object z)
 	register int i;
 	int size;
 
-	p = &objectTable[z >> 1];
+	p =  &objectTable(z >> 1);
 	if (p->referenceCount < 0)
 	{
 		fprintf(stderr, "object %d has a negative reference count\n", z);
@@ -456,8 +468,8 @@ void visit(register object x)
 	object *p;
 
 	if (x && !isInteger(x))
-	{
-		if (++(objectTable[x >> 1].referenceCount) == 1)
+	{		
+		if (++(refCountField(x)) == 1)
 		{
 			/* first time we've visited it, so: */
 			visit(classField(x));
@@ -466,9 +478,7 @@ void visit(register object x)
 			{
 				p = sysMemPtr(x);
 				for (i = s; i; --i)
-				{
 					visit(*p++);
-				}
 			}
 		}
 	}
@@ -479,7 +489,7 @@ int objectCount()
 	register int i, j;
 	j = 0;
 	for (i = 0; i < ObjectTableMax; i++)
-		if (objectTable[i].referenceCount > 0)
+		if (objTableRefCount(i) > 0)
 			j++;
 	return j;
 }
@@ -489,7 +499,16 @@ int classInstCount(object aClass)
 	register int i, j;
 	j = 0;
 	for (i = 0; i < ObjectTableMax; i++)
-		if (objectTable[i].referenceCount > 0 && objectTable[i].class == aClass)
+		if (objTableRefCount(i) > 0 && objTableClass(i) == aClass)
 			j++;
 	return j;
 }
+
+int maxObjectSize()
+{
+	int max = 0;
+	for (int i = 0; i < FREELISTMAX; i++)
+		if (objectFreeList[i] != nilobj) max = i;
+	return max;
+}
+

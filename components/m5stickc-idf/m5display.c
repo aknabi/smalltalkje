@@ -15,6 +15,7 @@ TimerHandle_t m5display_timer;
 esp_err_t m5display_init() {
     esp_err_t e;
 
+    // TODO: M5STACK DISPLAY
     tft_disp_type = M5DISPLAY_TYPE;
     _width = 80;  // smaller dimension
     _height = 160; // larger dimension

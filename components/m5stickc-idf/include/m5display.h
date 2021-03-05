@@ -25,6 +25,11 @@ extern "C" {
 #define M5DISPLAY_WIDTH 160               /*!< Display width in pixels after rotation */
 #define M5DISPLAY_HEIGHT 80               /*!< Display height in pixels after rotation */
 
+// TODO: M5STACK DISPLAY
+// #define M5DISPLAY_TYPE DISP_TYPE_ILI9341  /*!< Display type for display driver */
+// #define M5DISPLAY_WIDTH 320               /*!< Display width in pixels after rotation */
+// #define M5DISPLAY_HEIGHT 240               /*!< Display height in pixels after rotation */
+
 // Defines for global variables of the TFT Library
 #define TFT_ORIENTATION orientation
 #define TFT_FONT_ROTATE font_rotate

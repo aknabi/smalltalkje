@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "96D020AD25DFD2D100087CC6"
-               BuildableName = "lst3"
-               BlueprintName = "lst3"
-               ReferencedContainer = "container:lst3.xcodeproj">
+               BuildableName = "Mac stje"
+               BlueprintName = "Mac stje"
+               ReferencedContainer = "container:smalltalkje.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "96D020AD25DFD2D100087CC6"
-            BuildableName = "lst3"
-            BlueprintName = "lst3"
-            ReferencedContainer = "container:lst3.xcodeproj">
+            BuildableName = "Mac stje"
+            BlueprintName = "Mac stje"
+            ReferencedContainer = "container:smalltalkje.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "96D020AD25DFD2D100087CC6"
-            BuildableName = "lst3"
-            BlueprintName = "lst3"
-            ReferencedContainer = "container:lst3.xcodeproj">
+            BuildableName = "Mac stje"
+            BlueprintName = "Mac stje"
+            ReferencedContainer = "container:smalltalkje.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

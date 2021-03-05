@@ -61,13 +61,20 @@ struct
 static int fr(FILE *fp, char *p, int s)
 {
 	int r;
-
 	r = (int) fread(p, s, 1, fp);
 	if (r && (r != 1))
 	{
 		sysError("imageRead count error", "");
 	}
 	return r;
+}
+
+noreturn cleanupImage(void)
+{
+	/* now restore ref counts, getting rid of unneeded junk */
+	visit(symbols);
+	/* toss out the old free lists, build new ones */
+	setFreeLists();
 }
 
 noreturn imageRead(FILE *fp)
@@ -107,10 +114,7 @@ noreturn imageRead(FILE *fp)
 		}
 	}
 
-	/* now restore ref counts, getting rid of unneeded junk */
-	visit(symbols);
-	/* toss out the old free lists, build new ones */
-	setFreeLists();
+	cleanupImage();
 }
 
 // #define INCLUDE_DEBUG_DATA_FILE
@@ -161,7 +165,7 @@ noreturn readTableWithObjects(FILE *fp, void *objectData)
 		{
 			int sizeInBytes = ((int)sizeof(object)) * (int)size;
 			// if (dummyObject.flags > 0) {
-			if (dummyObject.cl == BYTE_ARRAY_CLASS || dummyObject.cl == STRING_CLASS || dummyObject.cl == SYMBOL_CLASS || dummyObject.cl == BLOCK_CLASS || dummyObject.cl == METHOD_CLASS)
+			if (dummyObject.cl == BYTE_ARRAY_CLASS || dummyObject.cl == STRING_CLASS || dummyObject.cl == SYMBOL_CLASS || dummyObject.cl == BLOCK_CLASS)
 			{
 				setObjTableMemory(i, (object *)objectData);
 				setObjTableRefCount(i, 0x7F);
@@ -186,10 +190,7 @@ noreturn readTableWithObjects(FILE *fp, void *objectData)
 	fprintf(stderr, "Number of ROM Object read: %d size in bytes: %d\n", numROMObjects, totalROMBytes);
 	fprintf(stderr, "Number of RAM Object read: %d size in bytes: %d\n", numRAMObjects, totalRAMBytes);
 
-	/* now restore ref counts, getting rid of unneeded junk */
-	visit(symbols);
-	/* toss out the old free lists, build new ones */
-	setFreeLists();
+	cleanupImage();
 
 	object byteArrayClass = findClass("ByteArray");
 	fprintf(stderr, "ByteArray Class: %d\n", byteArrayClass);
@@ -203,6 +204,10 @@ noreturn readTableWithObjects(FILE *fp, void *objectData)
 	fprintf(stderr, "Set Class: %d\n", setClass);
 	object blockClass = findClass("Block");
 	fprintf(stderr, "Block Class: %d\n", blockClass);
+	object methodClass = findClass("Method");
+	fprintf(stderr, "Method Class: %d\n", methodClass);
+	object classClass = findClass("Class");
+	fprintf(stderr, "Class Class: %d\n", classClass);
 }
 
 noreturn readObjectFiles(FILE *fpObjTable, FILE *fpObjData)
@@ -260,10 +265,7 @@ noreturn readObjectFiles(FILE *fpObjTable, FILE *fpObjData)
 	fprintf(stderr, "Object Footer Debug Length: %d String: %s\n", strlen(debugString), debugString);
 #endif
 
-	/* now restore ref counts, getting rid of unneeded junk */
-	visit(symbols);
-	/* toss out the old free lists, build new ones */
-	setFreeLists();
+	cleanupImage();
 }
 
 /*

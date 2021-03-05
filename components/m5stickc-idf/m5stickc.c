@@ -47,6 +47,21 @@ esp_err_t m5_init(m5stickc_config_t * config) {
         ++error_count;
     }
 
+    // Config I2C_NUM_1 begin(sda=-0, int scl=-26)
+    conf.sda_io_num = 0;
+    conf.scl_io_num = 26;
+    ESP_LOGD(TAG, "Setting up I2C - #1");
+    e = i2c_param_config(I2C_NUM_1, &conf);
+    if(e == ESP_OK) {
+        e = i2c_driver_install(I2C_NUM_1, I2C_MODE_MASTER, 0, 0, 0);
+        if(e == ESP_OK) {
+            ESP_LOGE(TAG, "Error during I2C driver installation: %s", esp_err_to_name(e));
+        }
+    } else {
+        ESP_LOGE(TAG, "Error during I2C driver installation: %s", esp_err_to_name(e));
+    }
+
+
     // Init led
     e = m5led_init();
     if(e == ESP_OK) {
@@ -73,6 +88,15 @@ esp_err_t m5_init(m5stickc_config_t * config) {
         ESP_LOGE(TAG, "Error initializing display");
         ++error_count;
     }
+
+    // Init RTC
+    // e = m5rtc_init();
+    // if(e == ESP_OK) {
+    //     ESP_LOGD(TAG, "RTC initialized");
+    // } else {
+    //     ESP_LOGE(TAG, "Error initializing RTC");
+    //     ++error_count;
+    // }
 
     if(error_count == 0) {
         ESP_LOGD(TAG, "M5StickC initialized successfully");

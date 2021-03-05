@@ -19,8 +19,9 @@
 #include "build.h"
 
 #ifdef TARGET_ESP32
-
+#include "esp32wifi.h"
 #include "driver/gpio.h"
+#include "driver/i2c.h"
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
 #include "ssd1306_oled.h"
@@ -87,6 +88,33 @@ void givepause()
 
 #ifdef TARGET_ESP32
 
+esp_err_t readI2CByte(uint8_t i2c_addr, uint8_t *data_byte)
+{
+    esp_err_t e;
+    i2c_cmd_handle_t cmd;
+
+    // i2cInit(uint8_t i2c_num, int8_t sda, int8_t scl, uint32_t frequency);
+
+    cmd = i2c_cmd_link_create();
+
+    // i2c_master_start(cmd);
+    // i2c_master_write_byte(cmd, (i2c_addr << 1) | I2C_MASTER_WRITE, true);
+    // i2c_master_write_byte(cmd, 0x02, true);
+
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (i2c_addr << 1) | I2C_MASTER_READ, true);
+    i2c_master_read_byte(cmd, data_byte, I2C_MASTER_LAST_NACK);
+    i2c_master_stop(cmd);
+    e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 10/portTICK_PERIOD_MS);
+
+    if (e != ESP_OK) {
+        ESP_LOGE("ESP32", "error reading I2C byte (%s)", esp_err_to_name(e));
+    }
+    i2c_cmd_link_delete(cmd);
+
+    return e;
+}
+
 int counter = 0;
 
 object buttonProcesses[4] = {nilobj, nilobj, nilobj, nilobj};
@@ -131,6 +159,8 @@ extern void runBlockAfter(object block, object arg, int ticks);
 object sysPrimitive(int number, object *arguments)
 {
     object returnedObject = nilobj;
+    int argIndex;
+    int funcNum;
 
     /* someday there will be more here */
     switch (number - 150)
@@ -366,12 +396,35 @@ object sysPrimitive(int number, object *arguments)
                 gpio_set_level(getIntArg(0), getIntArg(1));
         break;
 
+    // Prim 170 ESP32 functions. First arg is function number, second and third are arguments to the function
+    case 20:
+        checkIntArg(0);
+        argIndex = getIntArg(0);
+        // function 0 wifi_start()
+        if (argIndex == 0)
+            wifi_start();
+        // function 1 is set wifi ssid and password
+        else if (argIndex == 1) {
+            if (arguments[1] != nilobj)
+                wifi_set_ssid(charPtr(arguments[1]));
+            if (arguments[2] != nilobj)
+                wifi_set_password(charPtr(arguments[2]));
+        } else if(argIndex == 20) {
+            uint8_t dataByte = 0;
+            esp_err_t e = readI2CByte(intValue(arguments[1]), &dataByte);
+            returnedObject = (e == ESP_OK) ? newInteger(dataByte) : newInteger(0);
+        } else if (argIndex == 100) {
+            returnedObject = newInteger(GET_FREE_HEAP_SIZE());
+            break;
+        }
+        break;
+
     // Prim 181 M5 functions. First arg is function number, second and third are arguments to the function
     // Index 0 means restart the SoC/system
     case 31:
         sysWarn("in primitive 181", "sysPrimitive");
         checkIntArg(0);
-        int argIndex = getIntArg(0);
+        argIndex = getIntArg(0);
         if (argIndex == 0)
             esp_restart();
         int funcIndex = argIndex - 1;
@@ -381,6 +434,21 @@ object sysPrimitive(int number, object *arguments)
         primFunc_t m5Func = m5PrimitiveFunctions[funcIndex];
         m5Func(arguments);
         break;
+
+    // Prim 182 ESP NVS functions. First arg is function number, rest are arguments to the function
+    case 32:
+        checkIntArg(0);
+        funcNum = getIntArg(0);
+        returnedObject = nvsPrim(funcNum, arguments);
+        break;
+
+    // Prim 183 ESP HTTP functions. First arg is function number, rest are arguments to the function
+    case 33:
+        checkIntArg(0);
+        funcNum = getIntArg(0);
+        returnedObject = httpPrim(funcNum, arguments);
+        break;
+
 #else
     case 1: /* prim 151 create a OS task with a ST process */
         break;

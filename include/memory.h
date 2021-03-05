@@ -1,4 +1,9 @@
 /*
+
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+	Based on:
+	
 	Little Smalltalk, version 2
 	Written by Tim Budd, Oregon State University, July 1987
 */
@@ -25,7 +30,7 @@ typedef int object;
 	replaced by macros generating in-line code.  For the latter approach
 	to work, the structure of the object table must be known.  For this reason,
 	it is given here.  Note, however, that outside of the files memory.c and
-	unixio.c (or macio.c on the macintosh) ONLY the macros described in this
+	image.c (or macio.c on the macintosh) ONLY the macros described in this
 	file make use of this structure: therefore modifications or even complete
 	replacement is possible as long as the interface remains consistent
 */
@@ -47,7 +52,7 @@ struct objectStruct
 	object *memory;
 };
 
-#define ObjectTableMax 6144
+#define ObjectTableMax 5000
 
 #ifdef obtalloc
 extern struct objectStruct *objectTable;
@@ -141,17 +146,23 @@ extern int f_i;
 	This allows for modification of the object table implemntation requiring
 	only changes to these macros
 
-	These are used internally in memory routines and in unixio.c
+	These are used internally in memory routines and in image.c
 */
+
+// MOT: Check for which OT: e.g. getObjectTable(x)[getObjectIndex(x)]
 #define objectTable(x) objectTable[x]
 
 #define objTableClass(x) objectTable(x).class
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setObjTableClass(x, y) (objectTable(x).class = y)
 #define objTableSize(x) objectTable(x).size
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setObjTableSize(x, y) (objectTable(x).size = y)
 #define objTableMemory(x) objectTable(x).memory
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setObjTableMemory(x, y) (objectTable(x).memory = y)
 #define objTableRefCount(x) objectTable(x).referenceCount
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setObjTableRefCount(x, y) (objectTable(x).referenceCount = y)
 
 /*
@@ -162,10 +173,14 @@ extern int f_i;
 */
 
 #define classField(x) objTableClass(x >> 1)
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setClass(x, y) incr(classField(x) = y)
-#define sizeField(x) objectTable[x >> 1].size
-#define sysMemPtr(x) objectTable[x >> 1].memory
+
+#define sizeField(x) objTableSize(x >> 1)
+#define sysMemPtr(x) objTableMemory(x >> 1)
+
 #define refCountField(x) objTableRefCount(x >> 1)
+// MOT: Check for ROM OT (will crash, but should never happen)
 #define setRefCountField(x, y) setObjTableRefCount(x >> 1, y)
 
 extern object sysobj;

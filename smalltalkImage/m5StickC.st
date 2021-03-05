@@ -1,5 +1,7 @@
 *
-* Little Smalltalk, version 3 - Oled Display support
+* m5StickC.st
+* 
+* Smalltalkje, version 1 - M5StickC, Oled Display support
 * Written by Abdul Nabi, code crafters, January 2021
 *
 *  M5StickC class representing the device...
@@ -9,6 +11,8 @@
 Class M5StickC Object display
 Class Color Object red green blue
 Class Font Object fontIndex
+Class HttpRequest Object url method contentType body
+Class HttpResponse Object statusCode contentLength content
 *
 Methods M5StickC 'all'
 	new
@@ -22,6 +26,9 @@ Methods M5StickC 'all'
         self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
         self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
         self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16].
+|
+	setupWifiHandlers
+	    self when: 'WifiConnected' do: [ display clear; string: 'Wifi Connected' x: 16 y: 16. [display clear] runAfter: 2000 ].
 |
     displayLoop
 		(1 to: 10) do: [:x | self afterDelay: 1000 do: [display clear; string: 'Big Click ', x asString x: 16 y: 16]].
@@ -42,6 +49,33 @@ Methods M5StickC 'all'
 |
     ledOff
         <160 10 1>
+|
+	wifiOn
+		<170 0>
+|
+	wifiSSID: ssid password: password
+		<170 1 ssid password>
+|
+	nvsAt: key put: object
+		^ <182 1 key object>
+|
+	nvsStringAtKey: key
+		^ <182 2 key String>
+|
+	nvsRemoveKey: key
+		^ <182 3 key>
+|
+	i2cByteAt: i2cAddress
+		^ <170 20 i2cAddress>
+|
+	getCardKB | c |
+		c <- self i2cByteAt: 95.
+		(c isNil or: [c > 127]) ifTrue: [c <- 0].
+		c = 13 ifTrue: [c <- 10].
+		^ c
+|
+	freeHeap
+		^ <170 100>
 |
 	display
 		^ display

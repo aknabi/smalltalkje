@@ -24,7 +24,7 @@ Circle new center: 64 @ 32 radius: 16; displayOn: oled
 
 circle <- Circle new center: 64 @ 32 radius: 16
 
-m5 <- M5StickC new. m5 setupButtonHandlers
+m5 <- M5StickC new. m5 setupButtonHandlers. m5 setupWifiHandlers.
 
 m5 afterDelay: 2000 do: [m5 ledOn. m5 afterDelay: 2000 do: [m5 ledOff] ]
 

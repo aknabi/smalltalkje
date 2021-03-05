@@ -1,8 +1,12 @@
 /*
+	Smalltalkje, version 1 based on:
+
 	Little Smalltalk, version 3
 	Written by Tim Budd, Oregon State University, June 1988
 
 	routines used in reading in textual descriptions of classes
+	
+	(This file has remained unchanged for Smalltalkje)
 */
 
 #include <stdio.h>

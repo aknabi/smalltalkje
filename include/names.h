@@ -1,4 +1,8 @@
 /*
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+	Based on:
+
 	Little Smalltalk, version 2
 	Written by Tim Budd, Oregon State University, July 1987
 */
@@ -76,4 +80,5 @@ extern object findClass(STR);
 
 #define globalSymbol(s) nameTableLookup(symbols, s)
 
-#define isObjectOfClassName(o, s) (getClass(firstarg) == globalSymbol(s))
+#define isClassNameEqual(c, s) (c == globalSymbol(s))
+#define isObjectOfClassName(o, s) isClassNameEqual(getClass(o), s)

@@ -34,7 +34,7 @@ Methods Block 'initialization'
 			ifTrue: [ context returnToBlock: bytePointer ]
 |
 	value: x
-		^ (self checkArgumentCount:  1)
+		^ (self checkArgumentCount: 1)
 			ifTrue: [ context at: argLoc put: x.
 				  context returnToBlock: bytePointer ]
 |
@@ -64,6 +64,10 @@ Methods Block 'initialization'
 |
 	evalWith: arg
 		<20 self arg>
+|
+	argCount
+		"For debugging... remove when interrupt block is sorted"
+		^ argCount
 ]
 Methods Boolean 'all'
 	ifTrue: trueBlock
