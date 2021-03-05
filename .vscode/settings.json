@@ -29,7 +29,7 @@
         "esp_partition.h": "c",
         "nvs.h": "c",
         "names.h": "c",
-        "wifi_connect.h": "c",
+        "esp32wifi.h": "c",
         "esp_sntp.h": "c",
         "esp_http_client.h": "c",
         "ssd1306_oled.h": "c",

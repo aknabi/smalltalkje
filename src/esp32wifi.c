@@ -21,8 +21,7 @@
 #include "memory.h"
 #include "names.h"
 
-#include "wifi_connect.h"
-#include "esp_http_client.h"
+#include "esp32wifi.h"
 
 /* The examples use WiFi configuration that you can set via project configuration menu
    If you'd rather not, just change the below entries to strings with
@@ -178,6 +177,7 @@ void wifi_set_ssid(char *ssid)
 {
     strcpy(wifi_ssid, ssid);
 }
+
 void wifi_set_password(char *password)
 {
     strcpy(wifi_password, password);

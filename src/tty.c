@@ -19,7 +19,7 @@
 #include "build.h"
 
 #ifdef TARGET_ESP32
-#include "wifi_connect.h"
+#include "esp32wifi.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
 
