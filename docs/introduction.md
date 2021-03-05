@@ -42,7 +42,6 @@ Smalltalk, besides being the "Grandfather" of modern object oriented languages, 
 
 In addition it's well known to have created rich, ahead-of-its time systems on the limited hardware of the 70's and 80's... that makes it ideal for very constrained, Arduino-like devices and it's natural syntanx makes it ideal for kids and adults who want to dive into programming (which was a main goal of the Smalltalk team).
 
-
 ### What is Little Smalltalk
 
 Again from Wikipedia:
