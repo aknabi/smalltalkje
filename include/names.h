@@ -1,4 +1,8 @@
 /*
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+	Based on:
+
 	Little Smalltalk, version 2
 	Written by Tim Budd, Oregon State University, July 1987
 */

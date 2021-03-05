@@ -33,7 +33,7 @@ noreturn startup()
     //#else
     setupObjectData();
 #endif
-    nvsInit();
+    nvs_init();
 #endif
     TT_LOG_INFO(TAG, "Pre-smalltalk start free heap size: %d", GET_FREE_HEAP_SIZE());
     launchSmalltalk();

@@ -31,9 +31,7 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "274"
-            endingLineNumber = "274"
-            landmarkName = "readObjectFiles(fpObjTable, fpObjData)"
-            landmarkType = "9">
+            endingLineNumber = "274">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

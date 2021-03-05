@@ -1,4 +1,9 @@
 /*
+
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+	Based on:
+	
 	Little Smalltalk, version 2
 	Written by Tim Budd, Oregon State University, July 1987
 */
@@ -25,7 +30,7 @@ typedef int object;
 	replaced by macros generating in-line code.  For the latter approach
 	to work, the structure of the object table must be known.  For this reason,
 	it is given here.  Note, however, that outside of the files memory.c and
-	unixio.c (or macio.c on the macintosh) ONLY the macros described in this
+	image.c (or macio.c on the macintosh) ONLY the macros described in this
 	file make use of this structure: therefore modifications or even complete
 	replacement is possible as long as the interface remains consistent
 */
@@ -141,7 +146,7 @@ extern int f_i;
 	This allows for modification of the object table implemntation requiring
 	only changes to these macros
 
-	These are used internally in memory routines and in unixio.c
+	These are used internally in memory routines and in image.c
 */
 
 // MOT: Check for which OT: e.g. getObjectTable(x)[getObjectIndex(x)]

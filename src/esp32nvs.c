@@ -1,3 +1,8 @@
+/*
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+*/
+
 #include "nvs_flash.h"
 #include "env.h"
 #include "memory.h"
@@ -11,7 +16,7 @@ object nvsPrim(int funcNumber, object *arguments)
     switch (funcNumber)
     {
         case 0:
-            return nvsInit();
+            return nvs_init();
             break;
 
         case 1:
@@ -42,7 +47,8 @@ object eraseKey(char *key)
 
 object writeObject(char *key, object obj)
 {
-    esp_err_t err;
+    // Default error if object pass isn't a supported class
+    esp_err_t err = ESP_ERR_INVALID_ARG;
     object c = getClass(obj);
     if (isClassNameEqual(c, "Integer")) {
         err = nvs_write_int32(key, intValue(obj));
@@ -50,8 +56,6 @@ object writeObject(char *key, object obj)
         err = nvs_write_string(key, charPtr(obj));
     } else if (isClassNameEqual(c, "ByteArray")) {
         err = nvs_write_byte_array(key, charPtr(obj), sizeField(obj));
-    } else {
-        return falseobj;
     }
     return err == ESP_OK ? trueobj : falseobj;
 }
@@ -69,14 +73,12 @@ object readObject(char *key, object c)
         // len will include the string zero terminator if c is String
         valLength = 0;
         err = isString ? nvs_read_string_length(key) : nvs_read_byte_array_length(key);
-        printf("Read key (%s) got length %d\n", key, valLength);
         if (valLength > 0) {
             obj = allocByte(valLength);
             // Because of the test we know that c is the correct class
             char* strPtr = charPtr(obj);
             err = isString ? nvs_read_string(key, strPtr) : nvs_read_byte_array(key, strPtr);
             setClass(obj, c);
-            printf("Read key (%s) got string %s read class is %d obj class is %d\n", key, strPtr, c, getClass(obj));
             if (err != ESP_OK) {
                 nvs_check_error(err, false);
                 obj = nilobj;  
@@ -96,7 +98,7 @@ esp_err_t nvs_read_int32(char *key, int32_t value)
 }
 
 // Initialize NVS
-object nvsInit(void)
+object nvs_init(void)
 {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -105,7 +107,6 @@ object nvsInit(void)
     }
 
     if (err == ESP_OK) {
-        printf("Opening Non-Volatile Storage (NVS) handle... ");
         err = nvs_open("nvs", NVS_READWRITE, &nvsHandle);
         if (err != ESP_OK) {
             printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
@@ -124,7 +125,6 @@ esp_err_t nvs_write_int32(char *key, int32_t value)
 esp_err_t nvs_read_string_length(char *key)
 {
     esp_err_t err = nvs_get_str(nvsHandle, key, NULL, &valLength);
-    printf("nvs_get_str key (%s) size %d\n", key, valLength);
     err = nvs_check_error(err, false);
     return err;
 }
@@ -132,14 +132,12 @@ esp_err_t nvs_read_string_length(char *key)
 esp_err_t nvs_read_string(char *key, char *string)
 {
     esp_err_t err = nvs_get_str(nvsHandle, key, string, &valLength);
-    printf("Read key (%s) value %s\n", key, string);
     err = nvs_check_error(err, false);
     return err;
 }
 
 esp_err_t nvs_write_string(char *key, char *value)
 {
-    printf("Write key (%s) value %s\n", key, value);
     esp_err_t err = nvs_set_str(nvsHandle, key, value);
     err = nvs_check_error(err, true);
     return err;
@@ -172,7 +170,6 @@ esp_err_t nvs_check_error(esp_err_t err, boolean doCommit)
     switch (err)
     {
         case ESP_OK:
-            printf("NVS: ESP_OK!\n");
             if (doCommit) newErr = nvs_commit(nvsHandle);
             break;
         case ESP_ERR_NVS_NOT_FOUND:

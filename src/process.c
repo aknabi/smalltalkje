@@ -20,6 +20,7 @@
 #define BLOCK_RUN_QUEUE_DEPTH       16
 
 // Note this does not use the interruptInterpreter mechanism.
+extern void runMethodOrBlock(object method, object block, object arg);
 extern void runBlock(object block, object arg);
 extern boolean execute(object aProcess, int maxsteps);
 

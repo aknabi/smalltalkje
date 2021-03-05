@@ -12,9 +12,9 @@ imageBuilder:
 	@cp source/build_image.h source/build.h
 	@rm source/main.c
 	@rm source/wifi_connect.*
-	@cd source && $(CC) -c memory.c names.c news.c interp.c process.c primitive.c filein.c lex.c parser.c unixio.c st.c initial.c uart.c tty.c
-	@cd source && $(CC) memory.o names.o news.o interp.o process.o primitive.o filein.o lex.o parser.o unixio.o st.o uart.o tty.o -o ../stje $(LIBS)
-	@cd source && $(CC) memory.o names.o news.o interp.o process.o primitive.o filein.o lex.o parser.o unixio.o initial.o uart.o tty.o -o ../imageBuilder $(LIBS)
+	@cd source && $(CC) -c memory.c names.c news.c interp.c process.c primitive.c filein.c lex.c parser.c unixio.c image.c st.c initial.c uart.c tty.c
+	@cd source && $(CC) memory.o names.o news.o interp.o process.o primitive.o filein.o lex.o parser.o unixio.o image.o st.o uart.o tty.o -o ../stje $(LIBS)
+	@cd source && $(CC) memory.o names.o news.o interp.o process.o primitive.o filein.o lex.o parser.o unixio.o image.o initial.o uart.o tty.o -o ../imageBuilder $(LIBS)
 
 image:
 	./buildImage basic.st mag.st collect.st file.st mult.st oled.st m5StickC.st http.st tty.st

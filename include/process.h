@@ -1,3 +1,8 @@
+/*
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+*/
+
 #include "memory.h"
 
 void initVMBlockToRunQueue();

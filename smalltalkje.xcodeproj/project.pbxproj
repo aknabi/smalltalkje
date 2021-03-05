@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		961F375525F2CC12008DD29A /* image.c in Sources */ = {isa = PBXBuildFile; fileRef = 961F375425F2CC12008DD29A /* image.c */; };
+		961F375625F2CC12008DD29A /* image.c in Sources */ = {isa = PBXBuildFile; fileRef = 961F375425F2CC12008DD29A /* image.c */; };
 		9635301625E66AB700D34CA9 /* filein.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635301525E66AB700D34CA9 /* filein.c */; };
 		9635301925E66ACF00D34CA9 /* interp.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635301825E66ACF00D34CA9 /* interp.c */; };
 		9635301D25E66AF900D34CA9 /* lex.c in Sources */ = {isa = PBXBuildFile; fileRef = 9635301C25E66AF900D34CA9 /* lex.c */; };
@@ -65,6 +67,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		961F375425F2CC12008DD29A /* image.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = image.c; path = src/image.c; sourceTree = "<group>"; };
 		9635301525E66AB700D34CA9 /* filein.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = filein.c; path = src/filein.c; sourceTree = "<group>"; };
 		9635301825E66ACF00D34CA9 /* interp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = interp.c; path = src/interp.c; sourceTree = "<group>"; };
 		9635301C25E66AF900D34CA9 /* lex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lex.c; path = src/lex.c; sourceTree = "<group>"; };
@@ -118,6 +121,7 @@
 				9635304E25E6E8DE00D34CA9 /* include */,
 				9635301525E66AB700D34CA9 /* filein.c */,
 				9635301C25E66AF900D34CA9 /* lex.c */,
+				961F375425F2CC12008DD29A /* image.c */,
 				9635301825E66ACF00D34CA9 /* interp.c */,
 				9635302425E66B3F00D34CA9 /* memory.c */,
 				9635302825E66B6800D34CA9 /* names.c */,
@@ -226,6 +230,7 @@
 				9635307025EA4C7B00D34CA9 /* interp.c in Sources */,
 				9635307125EA4C7B00D34CA9 /* lex.c in Sources */,
 				9635307225EA4C7B00D34CA9 /* uart.c in Sources */,
+				961F375625F2CC12008DD29A /* image.c in Sources */,
 				9635307325EA4C7B00D34CA9 /* tty.c in Sources */,
 				9635307425EA4C7B00D34CA9 /* unixio.c in Sources */,
 				9635307525EA4C7B00D34CA9 /* primitive.c in Sources */,
@@ -246,6 +251,7 @@
 				9635301925E66ACF00D34CA9 /* interp.c in Sources */,
 				9635301D25E66AF900D34CA9 /* lex.c in Sources */,
 				9635304325E66C2200D34CA9 /* uart.c in Sources */,
+				961F375525F2CC12008DD29A /* image.c in Sources */,
 				9635303E25E66C0700D34CA9 /* tty.c in Sources */,
 				9635304225E66C2200D34CA9 /* unixio.c in Sources */,
 				9635303325E66BB100D34CA9 /* primitive.c in Sources */,

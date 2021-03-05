@@ -20,11 +20,6 @@
 
 static const char *TAG = "uart_select_example";
 
-/* Can use project configuration menu (idf.py menuconfig) to choose the GPIO to blink,
-   or you can edit the following line and set a number here.
-*/
-#define BLINK_GPIO CONFIG_BLINK_GPIO
-
 #define TICKS_TO_WAIT_FOR_CHAR 5
 
 static int fd;
@@ -43,15 +38,9 @@ static void uart_close()
 
 int timeoutCounter = 0;
 
-/*
-    struct timeval {
-        long    tv_sec;         // seconds
-        long    tv_usec;        // and microseconds
-    };
-*/
 struct timeval tv = {
-    .tv_sec = 0,
-    .tv_usec = 10000,
+    .tv_sec = 0,        // seconds
+    .tv_usec = 10000,   // and microseconds
 };
 
 void uart_init()
@@ -82,7 +71,6 @@ static void uart_select_task()
     while (true)
     {
         int s;
-
         fd_set rfds;
 
         FD_ZERO(&rfds);

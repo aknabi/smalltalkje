@@ -1,11 +1,15 @@
 /*
+	Smalltalkje, version 1 based on:
+
 	Little Smalltalk, version 2
 	Written by Tim Budd, Oregon State University, July 1987
+
+
 */
+
 /*
 	values returned by the lexical analyzer
 */
-
 typedef enum tokensyms
 {
 	nothing,
