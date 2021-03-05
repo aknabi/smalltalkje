@@ -42,7 +42,8 @@ extern "C" {
 #define DISP_TYPE_ST7735S	7
 #define DISP_TYPE_MAX		8
 
-#define CONFIG_EXAMPLE_DISPLAY_TYPE 3
+// TODO: M5STACK DISPLAY
+#define CONFIG_EXAMPLE_DISPLAY_TYPE 4
 
 #if CONFIG_EXAMPLE_DISPLAY_TYPE == 1
 
@@ -107,8 +108,8 @@ extern "C" {
 // ** Set the correct configuration for M5Stack TFT
 // ---------------------------------------------------------
 #define DEFAULT_DISP_TYPE   DISP_TYPE_ILI9341
-#define DEFAULT_TFT_DISPLAY_WIDTH   240
-#define DEFAULT_TFT_DISPLAY_HEIGHT  320
+#define DEFAULT_TFT_DISPLAY_WIDTH   320
+#define DEFAULT_TFT_DISPLAY_HEIGHT  240
 #define DISP_COLOR_BITS_24          0x66
 #define DEFAULT_GAMMA_CURVE         0
 #define DEFAULT_SPI_CLOCK           26000000

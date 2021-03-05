@@ -15,9 +15,10 @@ TimerHandle_t m5display_timer;
 esp_err_t m5display_init() {
     esp_err_t e;
 
+    // TODO: M5STACK DISPLAY
     tft_disp_type = M5DISPLAY_TYPE;
-    _width = 240;  // smaller dimension
-    _height = 320; // larger dimension
+    _width = 80;  // smaller dimension
+    _height = 160; // larger dimension
     max_rdclock = 8000000;
 
     TFT_PinsInit();
