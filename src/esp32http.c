@@ -128,7 +128,7 @@ object httpRequestFrom(object request)
         object body = basicAt(request, 4);
         ESP_LOGI(TAG, "POST body %s length %d", charPtr(body), sizeField(body) - 2);
         esp_http_client_set_header(client, "Content-Type", contentType == nilobj ? "application/json" : charPtr(contentType));
-        esp_http_client_set_post_field(client, charPtr(body), 15);
+        esp_http_client_set_post_field(client, charPtr(body), strlen(charPtr(body)) );
     }
     object responseObj = nilobj;
     contentStr = nilobj;

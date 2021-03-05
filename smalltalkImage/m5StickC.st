@@ -1,7 +1,7 @@
 *
 * m5StickC.st
 * 
-* Little Smalltalk, version 3 - M5StickC, Oled Display support
+* Smalltalkje, version 1 - M5StickC, Oled Display support
 * Written by Abdul Nabi, code crafters, January 2021
 *
 *  M5StickC class representing the device...
@@ -18,7 +18,6 @@ Methods M5StickC 'all'
 	new
 		display <- Oled new.
         EventHandlerBlocks <- Dictionary new.
-		hp <- HttpRequest new; postUrl: 'http://httpbin.org/post' contentType: nil data: '{ "value" : 9 }'
 |
     setupButtonHandlers
         "self when: 'BigButtonClicked' do: [display clear; string: 'BigButtonClicked' x: 16 y: 16]."
@@ -226,41 +225,4 @@ Methods Font 'all'
 |
 	customEmbedded
 		fontIndex = 11.
-]
-Methods HttpRequest 'all'
-	getUrl: urlString
-		url <- urlString.
-		method <- 0
-|
-	postUrl: urlString contentType: typeString data: postData
-		"If contentType is nil, then type will be assumed JSON"
-		url <- urlString.
-		method <- 1.
-		contentType <- typeString.
-		body <- postData
-|
-	send
-		"Send the request and wait for the HttpResponse which will be returned"
-		^ <183 0 self>
-|
-	sendWhenDone: aBlock
-		"Do the request on a seperate thread and call aBlock when done with the HttpResponse"
-		^ <183 1 self aBlock>
-|
-	demo
-		"After this is set up 'H sendWhenDone: B' will run a get and save response in global R"
-		url <- 'http://httpbin.org/get'.
-		method <- 0.
-		B <- [:r | R <- r. '=== HTTP DEMO DONE ===' print ].
-		H <- self
-]
-Methods HttpResponse 'all'
-	statusCode
-		^ statusCode
-|
-	contentLength
-		^ contentLength
-|
-	content
-		^ content
 ]
