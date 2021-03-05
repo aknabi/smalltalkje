@@ -76,8 +76,6 @@ Methods Scheduler 'all'
 		"create a new scheduler with empty process list "
 		notdone <- true.
 		processList <- Set new.
-		"Global holding the block to execute from VM"
-		InterruptBlock <- nil.
 |
 	addProcess: aProcess
 		" add a process to the process list "
@@ -109,14 +107,31 @@ Methods Scheduler 'all'
 					currentProcess <- x.
 					x execute  ] ]
 |
-	checkInterruptBlock
-		InterruptBlock <- <6>.
-		InterruptBlock notNil ifTrue: [ scheduler critical: InterruptBlock ]		
+	checkInterruptBlockNEW | interruptBlock |
+		"If we get the arg stuffed into the interrupt block we can use this"
+		(interruptBlock <- <6>) notNil ifTrue: [
+			('interrupt argCount: ', interruptBlock argCount printString) print.
+			interruptBlock execute ]
+|
+	checkInterruptBlock | intQueueObj runBlock queuedBlock arg |
+		"Either a nil, a block, or a block with an argument"
+		intQueueObj <- <6>.
+		intQueueObj notNil ifTrue: [ 
+			(intQueueObj isMemberOf: Block)
+				ifTrue: [ scheduler critical: intQueueObj ]
+				ifFalse: [ 
+					queuedBlock <- intQueueObj at: 1.
+					arg <- intQueueObj at: 2.
+					scheduler critical: [queuedBlock value: arg] ] ]		
 |
 	yield
 		" set time slice counter to zero, thereby
 		yielding to next process "
 		<53 0>
+]
+Methods Block 'execute'
+	execute
+		context returnToBlock: bytePtr
 ]
 Methods Process 'creation'
 	new

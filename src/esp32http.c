@@ -2,7 +2,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 
-#include "memory.h"
+#include "process.h"
 #include "names.h"
 
 static const char *TAG = "httpESP32";
@@ -32,7 +32,7 @@ esp_err_t http_event_handle(esp_http_client_event_t *evt)
             if (!esp_http_client_is_chunked_response(evt->client)) {
                 responseDataLen = evt->data_len;
                 contentStr = newStString(evt->data);
-                printf("%.*s", responseDataLen, charPtr(contentStr));
+                // printf("%.*s", responseDataLen, charPtr(contentStr));
             }
 
             break;
@@ -50,37 +50,77 @@ esp_http_client_config_t config = {
    .url = "http://httpbin.org/get",
    .event_handler = http_event_handle,
 };
-
 esp_http_client_handle_t client;
 esp_err_t httpError;
+object httpTaskArgs[2] = { nilobj, nilobj };
+
+void http_init(char *url)
+{
+    config.url = url;
+    client = esp_http_client_init(&config);
+}
+
+void http_cleanup(void)
+{
+    esp_http_client_cleanup(client);
+}
 
 object httpRequestFrom(object request);
+
+void runHttpTask(object *taskArgs)
+{
+    object httpRequest = httpTaskArgs[0];
+    object httpBlock = httpTaskArgs[1];
+
+    object response = httpRequestFrom(httpRequest);
+    // object httpBlock =  basicAt(httpRequest, 5);
+    if (httpBlock != nilobj)
+    {
+        queueBlock(httpBlock, response);
+    }
+    /* delete a task when finish */
+    vTaskDelete(NULL);
+}
 
 object httpPrim(int funcNumber, object *arguments)
 {
     switch (funcNumber)
     {
+        // execute a HttpRequest (argument 1)
         case 0:
             return httpRequestFrom(arguments[1]);
             break;
 
+        // execute a HttpRequest in a seperate task
+        case 1:
+            httpTaskArgs[0] = arguments[1]; // HttpRequest
+            httpTaskArgs[1] = arguments[2]; // done block with response arg
+            xTaskCreatePinnedToCore(
+                runHttpTask,      /* Task function. */
+                "runHttpTask",    /* name of task. */
+                8096,         /* Stack size of task */
+                &httpTaskArgs, /* parameter of the task (the Smalltalk process to run) */
+                1,            /* priority of the task */
+                NULL,           /* Task handle to keep track of created task */
+                1);             /* Run on core 1 */       
+            break;
         default:
             break;
     }
     
-    return nilobj;
+    return trueobj;
 }
 
 object httpRequestFrom(object request)
 {
-    // First inst var of a request object is the URL
-    char *urlStr = charPtr(basicAt(request, 1));
-    int method = intValue(basicAt(request, 2));
-    ESP_LOGI(TAG, "Prim 183 URL = %s method: %d", urlStr, method);
-
-    esp_http_client_set_url( client, urlStr );
+    // First inst var of a HttpRequest object is the URL
+    char *url = charPtr(basicAt(request, 1));
     // Second inst var of a request object is the Method (GET = 0, POST = 1, PUT = 2, PATCH = 3, DELETE = 4)
-    
+   int method = intValue(basicAt(request, 2));
+
+    http_init(url);
+    // Reusing the client and just setting the url doesn't work despite the docs
+    // esp_http_client_set_url( client, urlStr );
     esp_http_client_set_method( client, method );
 
     if (method == HTTP_METHOD_POST) {
@@ -97,7 +137,6 @@ object httpRequestFrom(object request)
         int statusCode = esp_http_client_get_status_code(client);
         int contentLength = esp_http_client_get_content_length(client);
         ESP_LOGI(TAG, "Status = %d, content_length = %d", statusCode, contentLength);
-        ESP_LOGI(TAG, "=== BEGIN ===\n%s\n=== END ===", charPtr(contentStr));
         // create a response object
         responseObj = allocObject(3);
         setClass(responseObj, globalSymbol("HttpResponse"));
@@ -109,26 +148,11 @@ object httpRequestFrom(object request)
         basicAtPut(responseObj, 3, contentStr);
         // basicAtPut(responseObj, 3, responseData == NULL ? nilobj : newStString(responseData));
     }
+
+    http_cleanup();
+
     // Instead maybe return the esp error code vs. nil
     return responseObj;
-}
-
-void http_init(void)
-{
-    client = esp_http_client_init(&config);
-}
-
-void http_doGetRequest(void)
-{
-    esp_http_client_set_url(client, "http://httpbin.org/get?fname=Abdul&lname=Nabi");
-    esp_http_client_set_method(client, HTTP_METHOD_GET);
- 
-    httpError = esp_http_client_perform(client);
-    if (httpError == ESP_OK) {
-        ESP_LOGI(TAG, "Status = %d, content_length = %d",
-            esp_http_client_get_status_code(client),
-            esp_http_client_get_content_length(client));
-    }
 }
 
 /*
@@ -146,16 +170,4 @@ void http_doRequest(char *url, esp_http_client_method_t method)
             esp_http_client_get_status_code(client),
             esp_http_client_get_content_length(client));
     }    
-}
-
-
-void http_cleanup(void)
-{
-    esp_http_client_cleanup(client);
-}
-
-void http_test(void)
-{
-    http_init();
-    // http_cleanup();
 }

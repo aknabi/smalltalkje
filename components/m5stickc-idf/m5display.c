@@ -16,8 +16,8 @@ esp_err_t m5display_init() {
     esp_err_t e;
 
     tft_disp_type = M5DISPLAY_TYPE;
-    _width = 80;  // smaller dimension
-    _height = 160; // larger dimension
+    _width = 240;  // smaller dimension
+    _height = 320; // larger dimension
     max_rdclock = 8000000;
 
     TFT_PinsInit();

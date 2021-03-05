@@ -865,22 +865,3 @@ void forkEval(char *evalText, object arg)
 }
 
 #endif
-
-void runBlock(object block, object arg)
-{
-	/* put argument in block temps */
-	if (block != nilobj)
-	{
-		object argArray;
-
-		if (arg != nilobj) {
-			argArray = newArray(1);
-			// incr(argArray);
-			basicAtPut(argArray, 1, arg);
-			basicAtPut(basicAt(block, contextInBlock), temporariesInContext, argArray); // block
-		}
-
-		runMethodOrBlock(nilobj, block, arg);
-	}
-
-}

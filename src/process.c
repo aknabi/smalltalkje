@@ -15,6 +15,7 @@
 
 #include "build.h"
 #include "process.h"
+#include "names.h"
 
 #define BLOCK_RUN_QUEUE_DEPTH       16
 
@@ -31,6 +32,52 @@ void runSmalltalkProcess(object processToRun)
 	else
 	{
 		fprintf(stderr, "<%s>: %s\n", "runSmalltalkProcess", "trying to run nil process");
+	}
+}
+
+void addArgToBlock(object block, object arg)
+{
+	if (block != nilobj)
+	{
+		// object argArray;
+		// if (arg != nilobj) {
+			// argArray = newArray(1);
+			// basicAtPut(argArray, 1, arg);
+			basicAtPut(basicAt(block, contextInBlock), temporariesInContext, arg); // block
+		// }
+	}
+}
+
+void queueBlock(object block, object arg)
+{
+	if (block != nilobj)
+	{
+		object queueObject = block;
+		if (arg != nilobj) {
+			// aBlock - context at: argLoc put: x. ( context - temporaries at: argLoc put: value)
+			// This replicates what we do in Smalltalk, but doesn't seem to work :/
+			// object context = basicAt(queueObject, contextInBlock);
+			// object contextTemps = basicAt(context, temporariesInContext);
+			// object argLoc = basicAt(queueObject, argumentLocationInBlock);
+			// basicAtPut(contextTemps, argLoc, arg);
+
+			// Right now creating an Array and letting Smalltalk call value: with the arg... works...
+			queueObject = newArray(2);
+			basicAtPut(queueObject, 1, block);
+			basicAtPut(queueObject, 2, arg);
+		}
+		// addArgToBlock(block, arg);
+		queueVMBlockToRun(queueObject);
+	}
+}
+
+void runBlock(object block, object arg)
+{
+	/* put argument in block temps */
+	if (block != nilobj)
+	{
+		addArgToBlock(block, arg);
+		runMethodOrBlock(nilobj, block, arg);
 	}
 }
 

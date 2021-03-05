@@ -105,7 +105,7 @@ esp_err_t readI2CByte(uint8_t i2c_addr, uint8_t *data_byte)
     i2c_master_write_byte(cmd, (i2c_addr << 1) | I2C_MASTER_READ, true);
     i2c_master_read_byte(cmd, data_byte, I2C_MASTER_LAST_NACK);
     i2c_master_stop(cmd);
-    e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 250/portTICK_PERIOD_MS);
+    e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 10/portTICK_PERIOD_MS);
 
     if (e != ESP_OK) {
         ESP_LOGE("ESP32", "error reading I2C byte (%s)", esp_err_to_name(e));

@@ -78,7 +78,6 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                 queueVMBlockToRun(wifiBlock);
             }
         }
-        http_test();
 
         // Use SNTP to get and set the time from the Internet
         m5rtc_init();
@@ -152,7 +151,6 @@ void wifi_init_sta(void)
                 queueVMBlockToRun(wifiBlock);
             }
         }
-        http_test();
 
         m5rtc_init();
     } else if (bits & WIFI_FAIL_BIT) {

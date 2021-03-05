@@ -239,8 +239,20 @@ Methods HttpRequest 'all'
 		contentType <- typeString.
 		body <- postData
 |
-	execute
+	send
+		"Send the request and wait for the HttpResponse which will be returned"
 		^ <183 0 self>
+|
+	sendWhenDone: aBlock
+		"Do the request on a seperate thread and call aBlock when done with the HttpResponse"
+		^ <183 1 self aBlock>
+|
+	demo
+		"After this is set up 'H sendWhenDone: B' will run a get and save response in global R"
+		url <- 'http://httpbin.org/get'.
+		method <- 0.
+		B <- [:r | R <- r. '=== HTTP DEMO DONE ===' print ].
+		H <- self
 ]
 Methods HttpResponse 'all'
 	statusCode

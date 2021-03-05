@@ -32,7 +32,9 @@
         "wifi_connect.h": "c",
         "esp_sntp.h": "c",
         "esp_http_client.h": "c",
-        "ssd1306_oled.h": "c"
+        "ssd1306_oled.h": "c",
+        "time.h": "c",
+        "tft.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
