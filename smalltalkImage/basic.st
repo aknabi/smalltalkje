@@ -17,6 +17,7 @@ Class Smalltalk Object
 Class Switch Object const notdone
 Class Symbol Object
 Class UndefinedObject Object
+Class Error Object value
 *
 Methods Block 'initialization'
 	checkArgumentCount: count
@@ -426,4 +427,24 @@ Methods Object 'errors'
 	message: m notRecognizedWithArguments: a
 		^ smalltalk error: 'not recognized ', (self class printString),
 			' ', (m printString)
+|
+	isError
+		^ false
+|
+	notError
+		^ true
+]
+Methods Error 'all'
+	isError
+		^ true
+|
+	notError
+		^ false
+|
+	value: anObject
+		"Allowing for arbitrary objects to be stored in an error"
+		value <- anObject
+|
+	value
+		^ value
 ]

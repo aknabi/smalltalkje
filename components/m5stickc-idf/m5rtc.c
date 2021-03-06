@@ -45,7 +45,7 @@ time_t now;
 */
 struct tm timeinfo = { 0 };
 
-static void obtain_time(void)
+static void sntp_obtain_time(void)
 {
     // ESP_ERROR_CHECK( nvs_flash_init() );
     // ESP_ERROR_CHECK(esp_netif_init());
@@ -61,7 +61,7 @@ static void obtain_time(void)
 
     // wait for time to be set
     int retry = 0;
-    const int retry_count = 10;
+    const int retry_count = 3;
     while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
         ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -70,6 +70,13 @@ static void obtain_time(void)
     localtime_r(&now, &timeinfo);
 
     // ESP_ERROR_CHECK( example_disconnect() );
+}
+
+void setTimeZone(char *tzString)
+{
+    setenv("TZ", tzString, 1);
+    tzset();
+    localtime_r(&now, &timeinfo);
 }
 
 esp_err_t m5rtc_init(void) {
@@ -85,7 +92,7 @@ esp_err_t m5rtc_init(void) {
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_init();
 
-    obtain_time();
+    sntp_obtain_time();
 
     time(&now);
     localtime_r(&now, &timeinfo);
@@ -93,16 +100,12 @@ esp_err_t m5rtc_init(void) {
     char strftime_buf[64];
 
     // Set timezone to Eastern Standard Time and print local time
-    setenv("TZ", "EST5EDT,M3.2.0/2,M11.1.0", 1);
-    tzset();
-    localtime_r(&now, &timeinfo);
+    setTimeZone("EST5EDT,M3.2.0/2,M11.1.0");
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     ESP_LOGI(TAG, "The current date/time in New York is: %s", strftime_buf);
 
     // Set timezone to EU Central Time
-    setenv("TZ", "UTC-1", 1);
-    tzset();
-    localtime_r(&now, &timeinfo);
+    setTimeZone("UTC-1");
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     ESP_LOGI(TAG, "The current date/time in Amsterdam is: %s", strftime_buf);
 
@@ -139,7 +142,6 @@ esp_err_t m5rtc_init(void) {
     printf("M5 RTC Time Now: %d:%d:%d\n", rtcTimeNow.hours, rtcTimeNow.minutes, rtcTimeNow.seconds);
 
     return e;
-
 }
 
 esp_err_t getRTCTime(RTC_TimeTypeDef* rtcTimeStruct){
@@ -230,7 +232,6 @@ esp_err_t setRTCTime(RTC_TimeTypeDef* rtcTimeStruct){
     i2c_cmd_link_delete(cmd);
 
     return e;
-
 }
 
 esp_err_t getBM8563Time(void) {

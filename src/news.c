@@ -217,6 +217,16 @@ object newMethod()
     return newObj;
 }
 
+object newError(object value)
+{
+    object newObj;
+
+    newObj = allocObject(1);
+    setClass(newObj, globalSymbol("Error"));
+    basicAtPut(newObj, 1, value);
+    return newObj;
+}
+
 // This will copy the string passed to use as the object's data (not the)
 object newStString(char *value)
 {

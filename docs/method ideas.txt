@@ -47,9 +47,6 @@ event num mappings:
 	3 - Button B Hold
 
 
-someday have a HTTP prim
-<200 
-
 WiFi
 <201 bool> 
 	- turnOnOffWiFi

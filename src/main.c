@@ -11,7 +11,7 @@
 
 #include "target.h"
 
-static const char *TAG = "Smalltalk";
+static const char *TAG = "stje";
 
 void *objectData;
 
@@ -21,6 +21,7 @@ extern void initFileSystem();
 extern void writeObjectDataPartition();
 #endif
 
+// Initialize various subsystems (which can be chip/platform dependent)
 noreturn startup()
 {
     initFileSystem();
@@ -45,7 +46,7 @@ FILEP openFile(STR filename, STR mode)
     FILEP fp = fopen(filename, mode);
     if (fp == NULL)
     {
-        sysError("cannot open object table", filename);
+        sysError("cannot open object file %s", filename);
         exit(1);
     }
     return fp;
@@ -113,11 +114,11 @@ void launchSmalltalk()
         exit(1);
     }
 
-    printf("Smalltalk-e, Version 0.5\n");
+    printf("Smalltalkje, Version 1\n");
+    printf("Written by Abdul Nabi\n");
     printf("Based on Little Smalltalk, Version 3.1\n");
     printf("Written by Tim Budd, Oregon State University\n");
     printf("Updated for modern systems by Charles Childers\n");
-    printf("Updated for embedded systems by Abdul Nabi\n");
     printf("Free heap with ST running: %d\n", GET_FREE_HEAP_SIZE());
 
     // For now comment out running in a FreeRTOS task as it was cool, but for what benefit?

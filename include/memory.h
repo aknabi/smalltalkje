@@ -227,6 +227,7 @@ int classInstCount(object aClass);
 /*
 	finally some external declarations with prototypes
 */
+
 extern noreturn sysError(STR X STR);
 extern noreturn dspMethod(STR X STR);
 extern noreturn initSPIFFS();

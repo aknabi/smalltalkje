@@ -88,6 +88,127 @@ void givepause()
 
 #ifdef TARGET_ESP32
 
+/*
+ * I2C Interrupt Support Code
+ */
+
+#define CARD_KB_I2C_PORT I2C_NUM_1     /*!< for now just play with the Card KB */
+#define RW_TEST_LENGTH 32       /*!< Data length for r/w test, [0,DATA_LENGTH] */
+
+static xQueueHandle i2c_event_queue = NULL;
+intr_handle_t i2c_slave_intr_handle;
+
+SemaphoreHandle_t print_mux = NULL; /*!< So printing doesn't step over each other during interrupt handling */
+
+struct i2CQueueMessage{
+	int portNumber;
+} xMessage;
+
+void IRAM_ATTR i2c_interrupt(){
+	ets_printf("i2c_interrupt has been triggered\n");
+	
+	struct i2CQueueMessage *message;
+	message = (struct i2CQueueMessage*) malloc(sizeof(struct i2CQueueMessage));
+	message->portNumber = CARD_KB_I2C_PORT;
+		
+	if(i2c_isr_free(i2c_slave_intr_handle) == ESP_OK) {
+		i2c_slave_intr_handle = NULL;
+		ets_printf("Free-ed interrupt handler\n");
+	} else {
+		ets_printf("Failed to free interrupt handler\n");
+	}
+
+	BaseType_t ret = xQueueSendFromISR(i2c_event_queue, &message, NULL);
+	if(ret != pdTRUE){
+		ets_printf("Could not send event to queue (%d)\n", ret);
+	}
+}
+
+esp_err_t setupI2CInterrupt(i2c_port_t i2c_addr)
+{
+    if (i2c_event_queue == NULL) {
+        i2c_event_queue = xQueueCreate(5, sizeof(uint32_t *));
+    }
+    if (print_mux == NULL) {
+        print_mux = xSemaphoreCreateMutex();
+    }
+
+    // We could use the i2c address as the ESP_OK or ESP_ERR_INVALID_ARG returned
+    esp_err_t e = i2c_isr_register(CARD_KB_I2C_PORT, &i2c_interrupt, NULL, 0, &i2c_slave_intr_handle);
+    ets_printf("i2c_isr_register returned: %s\n", esp_err_to_name(e));
+    return e;
+}
+
+const char* TAG = "I2C";
+
+static void i2c_handle_interrupt_task(void *arg){
+	
+	xSemaphoreTake(print_mux, portMAX_DELAY);
+	ESP_LOGI(TAG, "Starting i2c_handle_interrupt task");
+	ESP_LOGI(TAG, "Waiting for i2c events in the event queue");
+	xSemaphoreGive(print_mux);
+	
+	while(1){
+		xSemaphoreTake(print_mux, portMAX_DELAY);
+		struct QueueMessage *message;
+		BaseType_t ret = xQueueReceive(i2c_event_queue, &(message), 1000 / portTICK_RATE_MS);
+		if(ret){
+			ESP_LOGI(TAG, "Found new I2C event to handle");
+			ESP_LOGI(TAG, "Resetting queue");
+		
+			free(message);
+		
+			int size;
+			uint8_t *data = (uint8_t *)malloc(RW_TEST_LENGTH);
+			
+			// This is the data length
+			int data_length = 0;
+			size = i2c_slave_read_buffer(CARD_KB_I2C_PORT, &data, 16, 1000 / portTICK_RATE_MS);
+			
+			if(size){
+				data_length = atoi((char*)data);
+				ESP_LOGI(TAG, "Master told me that there are a few bytes comming up");
+				printf("%d bytes to be precise", size);
+				disp_buf(data, size);
+			}else{
+				ESP_LOGW(TAG, "i2c_slave_read_buffer returned -1");
+			}
+						
+			size = i2c_slave_read_buffer(CARD_KB_I2C_PORT, &data, data_length, 1000 / portTICK_RATE_MS);
+			
+			if(size != data_length){
+				ESP_LOGW(TAG, "I2C expected data length vs read data length does not match");
+			}else{
+				disp_buf(data, size);
+			}
+			
+			ESP_LOGI(TAG, "Registering interrupt again");
+			
+			esp_err_t isr_register_ret = i2c_isr_register(CARD_KB_I2C_PORT, i2c_interrupt, NULL, 0,&i2c_slave_intr_handle);
+		
+			if(isr_register_ret == ESP_OK){
+				ESP_LOGI(TAG, "Registered interrupt handler");
+			}else{
+				ESP_LOGW(TAG, "Failed to register interrupt handler");
+			}			
+		}else{
+			ESP_LOGW(TAG, "Failed to get queued event");
+			printf("xQueueReceive() returned %d\n", ret);
+		}
+		
+		xSemaphoreGive(print_mux);
+		
+		vTaskDelay(portTICK_RATE_MS / 1000);
+	}
+	
+	vSemaphoreDelete(print_mux);	
+	vTaskDelete(NULL);
+}
+
+/*
+ * I2C Read/Setup Support Code
+ */
+
 esp_err_t readI2CByte(uint8_t i2c_addr, uint8_t *data_byte)
 {
     esp_err_t e;
@@ -105,10 +226,12 @@ esp_err_t readI2CByte(uint8_t i2c_addr, uint8_t *data_byte)
     i2c_master_write_byte(cmd, (i2c_addr << 1) | I2C_MASTER_READ, true);
     i2c_master_read_byte(cmd, data_byte, I2C_MASTER_LAST_NACK);
     i2c_master_stop(cmd);
-    e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 10/portTICK_PERIOD_MS);
+    e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 100/portTICK_PERIOD_MS);
 
     if (e != ESP_OK) {
         ESP_LOGE("ESP32", "error reading I2C byte (%s)", esp_err_to_name(e));
+    } else {
+        // ESP_LOGE("ESP32", "Reading I2C char (%c)", *data_byte);
     }
     i2c_cmd_link_delete(cmd);
 
@@ -354,7 +477,7 @@ object sysPrimitive(int number, object *arguments)
 
 #endif
 
-    // Prim 159 set GPIO pin in first arg to mode in second arg
+    // Prim 159 set GPIO pin mode and direction in first arg to mode in second arg
     case 9:
         checkIntArg(0)
             checkIntArg(1)
@@ -389,11 +512,11 @@ object sysPrimitive(int number, object *arguments)
         gpio_set_direction(getIntArg(0), gpioMode);
         break;
 
-    // Prim 160 set GPIO pin in first arg to value in second arg
+    // Prim 160 set GPIO pin level in first arg to value in second arg
     case 10:
         checkIntArg(0)
-            checkIntArg(1)
-                gpio_set_level(getIntArg(0), getIntArg(1));
+        checkIntArg(1)
+        gpio_set_level(getIntArg(0), getIntArg(1));
         break;
 
     // Prim 170 ESP32 functions. First arg is function number, second and third are arguments to the function
@@ -410,10 +533,17 @@ object sysPrimitive(int number, object *arguments)
             if (arguments[2] != nilobj)
                 wifi_set_password(charPtr(arguments[2]));
         } else if(argIndex == 20) {
+            // Get I2C Byte at the I2C Address in the second prim argument
             uint8_t dataByte = 0;
             esp_err_t e = readI2CByte(intValue(arguments[1]), &dataByte);
-            returnedObject = (e == ESP_OK) ? newInteger(dataByte) : newInteger(0);
-        } else if (argIndex == 100) {
+            if (e == ESP_OK)
+            returnedObject = (e == ESP_OK) ? newInteger(dataByte) : newError(newInteger(e));
+        } else if (argIndex == 21) {
+            // Setup an I2C hander at the I2C Address in the second prim argument
+            // For now let's just do it for the keyboard, then generalize it.
+            esp_err_t e = setupI2CInterrupt(intValue(arguments[1]));
+
+        }else if (argIndex == 100) {
             returnedObject = newInteger(GET_FREE_HEAP_SIZE());
             break;
         }
@@ -425,12 +555,14 @@ object sysPrimitive(int number, object *arguments)
         sysWarn("in primitive 181", "sysPrimitive");
         checkIntArg(0);
         argIndex = getIntArg(0);
+        // Function number 0 is restart the ESP32
         if (argIndex == 0)
             esp_restart();
+        // Lookup the function pointer in a primitive function table (trying vs. a switch)
+        // We'll normalize other prim function number based lookups to this if it feels better
         int funcIndex = argIndex - 1;
         if (funcIndex != 0)
             break;
-        sysWarn("181 register prim function", "sysPrimitive");
         primFunc_t m5Func = m5PrimitiveFunctions[funcIndex];
         m5Func(arguments);
         break;

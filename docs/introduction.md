@@ -58,7 +58,7 @@ As mentioned above Smalltalkje is based on a Little Smalltalk and runs on ESP32 
 
 ### Why is it called "Smalltalkje"
 
-Smalltalkje is based on a Little Smalltalk... I live in the Netherlands... in Dutch the ending "je" indicates the diminutive... so for example if you take Cat (Kat) and add "je" you get Katje, which is Dutch for kitten... so that's why it's Smalltalkje (oh and also for "Smalltalk j-ust e-mbedded). 
+Smalltalkje is based on a Little Smalltalk... I live in the Netherlands... in Dutch the ending "je" indicates the diminutive... so for example if you take Cat (Kat) and add "je" you get Katje, which is Dutch for kitten... so that's why it's Smalltalkje (oh and also for "Smalltalk ***j***ust ***e***mbedded). 
 
 ---
 

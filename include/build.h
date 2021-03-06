@@ -14,6 +14,9 @@
 
 */
 
+#ifndef __BUILD_H__
+#define __BUILD_H__
+
 // Use this block for building on the Mac
 // For calls to support threading, file init, etc use POSIX calls
 //#define TARGET_POSIX
@@ -52,6 +55,6 @@
 
 #define TARGET_DEVICE DEVICE_M5STICKC
 
-// M5StickC defines
+#endif // M5StickC defines
 
-#endif
+#endif // __BUILD_H__

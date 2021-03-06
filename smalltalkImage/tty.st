@@ -59,8 +59,8 @@ Methods Smalltalk 'all'
 		stdout printNoReturn: aString.
 		input <- ByteArray new: 255.
 		i <- 1.
-		"[ c <- <132>. c = 0 ifTrue: [c <- m5 getCardKB]. c = 10 ] whileFalse: ["
-		[ c <- <132>. c = 10 ] whileFalse: [
+		[ c <- <132>. c = 0 ifTrue: [c <- m5 getCardKBChar]. c = 10 ] whileFalse: [
+		"[ c <- <132>. c = 10 ] whileFalse: ["
 			c = 0 ifFalse: [ 
 				c = 8 ifTrue: [
 					i > 1 ifTrue: [ 

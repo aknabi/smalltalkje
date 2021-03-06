@@ -3,6 +3,8 @@
  *
  * (C) 2019 - Pablo Bacho <pablo@pablobacho.com>
  * This code is licensed under the MIT License.
+ * 
+ * Modified for Smalltalkje by Abdul Nabi <abdul@codekrafters.com
  */
 
 #include "m5stickc.h"
@@ -10,6 +12,12 @@
 static const char *TAG = "m5stickc";
 
 esp_event_loop_handle_t m5_event_loop;
+
+#define I2C_PORT_0_CLK_SPEED 1000000 /*!< The M5StickC display is on this I2C port 0 and can run fast */
+#define I2C_PORT_1_CLK_SPEED 100000 /*!< I2C port 1 is GPIO 0/26 and with the CardKB Hat needs to run slow (400K works) */
+
+#define I2C_PORT_1_SDA_GPIO_PIN 0 /*!< Assign SDA I2C port 1 to GPIO 0 (on the M5StickC 8-pin connector) */
+#define I2C_PORT_1_SCL_GPIO_PIN 26 /*!< Assign SCL I2C port 1 to GPIO 0 (on the M5StickC 8-pin connector) */
 
 esp_err_t m5_init(m5stickc_config_t * config) {
     esp_err_t e;
@@ -24,7 +32,7 @@ esp_err_t m5_init(m5stickc_config_t * config) {
     conf.scl_io_num = I2C_SCL_GPIO;
     conf.sda_pullup_en = GPIO_PULLUP_DISABLE;
     conf.scl_pullup_en = GPIO_PULLUP_DISABLE;
-    conf.master.clk_speed = 100000;
+    conf.master.clk_speed = I2C_PORT_0_CLK_SPEED;
     ESP_LOGD(TAG, "Setting up I2C");
     e = i2c_param_config(I2C_NUM_0, &conf);
     if(e == ESP_OK) {
@@ -47,18 +55,18 @@ esp_err_t m5_init(m5stickc_config_t * config) {
         ++error_count;
     }
 
-    // Config I2C_NUM_1 begin(sda=-0, int scl=-26)
-    conf.sda_io_num = 0;
-    conf.scl_io_num = 26;
-    ESP_LOGD(TAG, "Setting up I2C - #1");
+    // Config I2C_NUM_1 begin(sda=-0, int scl=-26), the M5StickC 8-pin connector GPIO PINS
+    conf.sda_io_num = I2C_PORT_1_SDA_GPIO_PIN;
+    conf.scl_io_num = I2C_PORT_1_SCL_GPIO_PIN;
+    conf.master.clk_speed = I2C_PORT_1_CLK_SPEED;
     e = i2c_param_config(I2C_NUM_1, &conf);
     if(e == ESP_OK) {
         e = i2c_driver_install(I2C_NUM_1, I2C_MODE_MASTER, 0, 0, 0);
-        if(e == ESP_OK) {
-            ESP_LOGE(TAG, "Error during I2C driver installation: %s", esp_err_to_name(e));
+        if(e != ESP_OK) {
+            ESP_LOGE(TAG, "Error during I2C 1 driver install: %s", esp_err_to_name(e));
         }
     } else {
-        ESP_LOGE(TAG, "Error during I2C driver installation: %s", esp_err_to_name(e));
+        ESP_LOGE(TAG, "Error during I2C 1 param config installation: %s", esp_err_to_name(e));
     }
 
 

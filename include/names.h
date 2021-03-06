@@ -10,7 +10,7 @@
 	names and sizes of internally object used internally in the system
 */
 
-#define classSize 5
+#define classSize 5 	/* Class object - 5 instance variables */
 #define nameInClass 1
 #define sizeInClass 2
 #define methodsInClass 3
@@ -49,8 +49,28 @@
 extern object trueobj;	/* the pseudo variable true */
 extern object falseobj; /* the pseudo variable false */
 
-extern object getClass(OBJ);
-extern object copyFrom(OBJ X INT X INT);
+/**
+ * @brief Get the class object of the object
+ *
+ * @param object an instance object to return the class for
+ * 
+ * @return  An object which is the class object of the receiver.
+ * 
+ */
+extern object getClass(object);
+
+/**
+ * @brief Copy elements of an array
+ *
+ * @param object Array to copy from
+ * @param start Start index to copy elements from (Smalltalk 1 based)
+ * @param size Number of elements to copy
+ * 
+ * @return  A new array object with the copied elements.
+ * 
+ */
+extern object copyFrom(object obj, int start, int size);
+
 extern object newArray(INT);
 extern object newBlock();
 extern object newByteArray(INT);

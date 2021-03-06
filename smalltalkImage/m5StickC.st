@@ -68,10 +68,29 @@ Methods M5StickC 'all'
 	i2cByteAt: i2cAddress
 		^ <170 20 i2cAddress>
 |
+	i2cInterruptAt: i2cAddress
+		^ <170 21 i2cAddress>
+|
+	cardKBConnected
+		^ (self i2cByteAt: 95) notError
+|
 	getCardKB | c |
+		c <- 0.
+		"Need the = test as noKB could be nil first time"
+		(noKB = true)
+			ifTrue: [ [ noKb <- false ] runAfter: 1000 ]
+			ifFalse: [ c <- self getCardKBChar ].
+		^ c
+|
+	getCardKBChar | c |
 		c <- self i2cByteAt: 95.
-		(c isNil or: [c > 127]) ifTrue: [c <- 0].
-		c = 13 ifTrue: [c <- 10].
+		"If an error then the keyboard is likely disconnected so don't read for a while"
+		c isError 
+			ifTrue: [ noKB <- true. c <- 0 ] 
+			ifFalse: [
+				c > 127
+					ifTrue: [c <- 0]
+					ifFalse: [ c = 13 ifTrue: [ c <- 10 ] ] ].
 		^ c
 |
 	freeHeap
