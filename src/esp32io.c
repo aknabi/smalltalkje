@@ -104,8 +104,9 @@ void m5StickInit()
     font_transparent = 0;
     font_forceFixed = 0;
     gray_scale = 0;
+    // Set up the LCD Display
     TFT_setGammaCurve(DEFAULT_GAMMA_CURVE);
-    TFT_setRotation(LANDSCAPE);
+    TFT_setRotation(LANDSCAPE_FLIP);
     TFT_setFont(DEFAULT_FONT, NULL);
     TFT_resetclipwin();
     _bg = TFT_BLACK;

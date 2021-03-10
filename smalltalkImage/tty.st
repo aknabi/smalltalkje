@@ -59,8 +59,8 @@ Methods Smalltalk 'all'
 		stdout printNoReturn: aString.
 		input <- ByteArray new: 255.
 		i <- 1.
-		[ c <- <132>. c = 0 ifTrue: [c <- m5 getCardKBChar]. c = 10 ] whileFalse: [
-		"[ c <- <132>. c = 10 ] whileFalse: ["
+		"[ c <- <132>. c = 0 ifTrue: [c <- m5 getCardKBChar]. c = 10 ] whileFalse: ["
+		[ c <- <132>. c = 10 ] whileFalse: [
 			c = 0 ifFalse: [ 
 				c = 8 ifTrue: [
 					i > 1 ifTrue: [ 
@@ -122,11 +122,14 @@ Methods Smalltalk 'doit'
 		scheduler currentProcess; trace; terminate.
 ]
 Methods Scheduler 'get commands'
-	initialize	| string |
+	initialize	| string res |
 		<2>.
-		(string <- smalltalk getPrompt: 'smalltalk> ') isNil
+		(string <- smalltalk getPrompt: 'stje> ') isNil
 			ifTrue: [ notdone <- false ]
-			ifFalse: [ (string size > 0) ifTrue: [ [string value print] fork ] ]
+			ifFalse: [ (string size > 0) 
+				ifTrue: [ 
+					[ res <- string value printString. 
+						m5 display clear; string: res x: 16 y: 16. res print ] fork ] ]
 ]
 Methods UndefinedObject 'initial image'
 	createGlobals	| aBlock |
@@ -154,6 +157,7 @@ Methods UndefinedObject 'initial image'
 	startupM5
 		m5 <- M5StickC new. 
 		m5 setupButtonHandlers.
+		m5 setupKeyboardHandlers.
 		self startWifi.
 		"TODO: Store blocks because if we inline in on/off methods those block contexts accumluate"
 		ledOnBlock <- [self ledBlinkOn].

@@ -13,6 +13,7 @@ Class Color Object red green blue
 Class Font Object fontIndex
 Class HttpRequest Object url method contentType body
 Class HttpResponse Object statusCode contentLength content
+Class M5Term Object y input i
 *
 Methods M5StickC 'all'
 	new
@@ -20,12 +21,17 @@ Methods M5StickC 'all'
         EventHandlerBlocks <- Dictionary new.
 |
     setupButtonHandlers
-        "self when: 'BigButtonClicked' do: [display clear; string: 'BigButtonClicked' x: 16 y: 16]."
-        "self when: 'BigButtonClicked' do: [(1 to: 10) do: [:i | display string: 'Big Click ', i asString x: 16 y: 16. m5 delayTaskFor: 200]]."
         self when: 'BigButtonClicked' do: [ display clear; string: 'BigButtonClicked' x: 16 y: 16. [display clear] runAfter: 2000 ].
         self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
         self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
         self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16].
+|
+	setupKeyboardHandlers
+		KeyboardSemaphore <- Semaphore new.
+		m5Term <- M5Term new initialize.
+		self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. m5Term addCharInt: c ].
+		"[ [true] whileTrue: [KeyboardSemaphore wait. KeyboardChar printAscii ] ] fork."
+		m5 runKBTask
 |
 	setupWifiHandlers
 	    self when: 'WifiConnected' do: [ display clear; string: 'Wifi Connected' x: 16 y: 16. [display clear] runAfter: 2000 ].
@@ -71,8 +77,8 @@ Methods M5StickC 'all'
 	i2cInterruptAt: i2cAddress
 		^ <170 21 i2cAddress>
 |
-	cardKBConnected
-		^ (self i2cByteAt: 95) notError
+	runKBTask
+		^ <170 22>
 |
 	getCardKB | c |
 		c <- 0.
@@ -244,4 +250,34 @@ Methods Font 'all'
 |
 	customEmbedded
 		fontIndex = 11.
+]
+Methods M5Term 'all'
+	initialize
+		i <- 1.
+		y <- 4.
+		input <- ByteArray new: 64.
+|
+	newLine | res |
+		y <- y + 12.
+		res <- input deepCopy asString value printString. 
+		m5 display string: res x: 4 y: y.
+		y <- y + 12.
+		i <- 1.
+		input <- ByteArray new: 64.
+		y > 70 ifTrue: [[m5 display clear. y <- 4] runAfter: 1000]
+|
+	addCharInt: c
+		(c = 8 and: [i > 1]) 
+			ifTrue: [
+				input at: i put: 0.
+				i <- i - 1. 
+				input at: i put: 13 ]
+			ifFalse: [
+				(c = 13 or: [c = 10])
+					ifTrue: [ scheduler critical: [self newLine]. ^ self ]
+					ifFalse: [
+						input at: i put: c.
+						i <- i + 1.
+						input at: i put: 0 ] ].
+		m5 display string: input deepCopy asString x: 4 y: y
 ]

@@ -25,7 +25,7 @@ Methods Oled 'all'
 		<155>.
 |
 	string: aString x: x y: y
-		<156 aString x y>.
+		<156 0 aString x y>.
 		self transfer.
 |
 	string: aString at: aPoint

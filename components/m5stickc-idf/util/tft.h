@@ -504,6 +504,26 @@ int TFT_getfontheight();
 void TFT_print(char *st, int x, int y);
 
 /*
+ * Write character to display.
+ *
+ * Params:
+ *	   	c:	character to be printed
+ *		x:	horizontal position of the upper left point in pixels
+ *				Special values can be entered:
+ *					CENTER, centers the text
+ *					RIGHT, right justifies the text
+ *					LASTX, continues from last X position; offset can be used: LASTX+n
+ *		y: vertical position of the upper left point in pixels
+ *				Special values can be entered:
+ *					CENTER, centers the text
+ *					BOTTOM, bottom justifies the text
+ *					LASTY, continues from last Y position; offset can be used: LASTY+n
+ *
+ */
+//-------------------------------------
+void TFT_print_char(char *c, int x, int y);
+
+/*
  * Set atributes for 7 segment vector font
  * == 7 segment font must be the current font to this function to have effect ==
  *
