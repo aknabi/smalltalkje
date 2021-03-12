@@ -22,16 +22,18 @@ Methods M5StickC 'all'
 |
     setupButtonHandlers
         self when: 'BigButtonClicked' do: [ display clear; string: 'BigButtonClicked' x: 16 y: 16. [display clear] runAfter: 2000 ].
-        self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
-        self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
-        self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16].
+		self deviceName = 'M5StickC' ifTrue: [
+        	self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
+        	self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
+        	self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16] ]
 |
 	setupKeyboardHandlers
-		KeyboardSemaphore <- Semaphore new.
-		m5Term <- M5Term new initialize.
-		self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. m5Term addCharInt: c ].
-		"[ [true] whileTrue: [KeyboardSemaphore wait. KeyboardChar printAscii ] ] fork."
-		m5 runKBTask
+		self deviceName = 'M5StickC' ifTrue: [
+			KeyboardSemaphore <- Semaphore new.
+			m5Term <- M5Term new initialize.
+			self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. m5Term addCharInt: c ].
+			"[ [true] whileTrue: [KeyboardSemaphore wait. KeyboardChar printAscii ] ] fork."
+			m5 runKBTask ]
 |
 	setupWifiHandlers
 	    self when: 'WifiConnected' do: [ display clear; string: 'Wifi Connected' x: 16 y: 16. [display clear] runAfter: 2000 ].
@@ -101,6 +103,9 @@ Methods M5StickC 'all'
 |
 	freeHeap
 		^ <170 100>
+|
+	deviceName
+		^ <200 0>
 |
 	display
 		^ display

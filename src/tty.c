@@ -25,7 +25,7 @@
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
 #include "ssd1306_oled.h"
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
 #include "tft.h"
 
 #define I2C_PORT_1_CLK_SPEED 100000 /*!< I2C port 1 is GPIO 0/26 and with the CardKB Hat needs to run slow (400K works) */
@@ -293,7 +293,7 @@ esp_err_t i2cReadByte(uint8_t i2c_addr, uint8_t *data_byte)
     e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 50/portTICK_PERIOD_MS);
 
     if (e != ESP_OK) {
-        ESP_LOGE("ESP32", "error reading I2C byte (%s)", esp_err_to_name(e));
+        ESP_LOGE("ESP32", "error reading I2C byte addr %d (%s)", i2c_addr, esp_err_to_name(e));
     } else {
         // ESP_LOGE("ESP32", "Reading I2C char (%c)", *data_byte);
     }
@@ -342,6 +342,8 @@ void runTask(void *process)
 #endif
 
 extern void runBlockAfter(object block, object arg, int ticks);
+
+object platformNameStStr = nilobj;
 
 object sysPrimitive(int number, object *arguments)
 {
@@ -392,7 +394,7 @@ object sysPrimitive(int number, object *arguments)
     case 3:
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_Begin();
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
 #ifndef TEST_M5STICK
         m5StickInit();
 #endif
@@ -403,7 +405,7 @@ object sysPrimitive(int number, object *arguments)
     case 4:
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_ClearDisplay();
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
         TFT_fillScreen(current_paint.backgroundColor);
 #endif
         break;
@@ -412,7 +414,7 @@ object sysPrimitive(int number, object *arguments)
     case 5:
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_Display();
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
         // M5StickC doesn't have offscren render
 #endif
 
@@ -434,7 +436,7 @@ object sysPrimitive(int number, object *arguments)
                 getIntArg(2),
                 charPtr(arguments[0]),
                 1);
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
             TFT_resetclipwin();
         // TFT_setFont(DEFAULT_FONT, NULL);
             TFT_print(charPtr(arguments[1]), getIntArg(2), getIntArg(3));
@@ -483,7 +485,7 @@ object sysPrimitive(int number, object *arguments)
                 getIntArg(2),
                 getIntArg(3));
         }
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
         if (arguments[4] == trueobj)
         {
             TFT_fillRect(
@@ -531,7 +533,7 @@ object sysPrimitive(int number, object *arguments)
                 getIntArg(1),
                 getIntArg(2));
         }
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
         if (arguments[4] == trueobj)
         {
             TFT_fillCircle(
@@ -712,6 +714,22 @@ object sysPrimitive(int number, object *arguments)
     case 31:
         break;
 #endif
+
+
+    // Prim 200 Platform Infomration functions (Argument is function number)
+    case 50:
+        checkIntArg(0);
+        funcNum = getIntArg(0);
+        // Function 0 Return Platform Name String
+        if (funcNum == 0) {
+            if (platformNameStStr == nilobj) {
+                platformNameStStr = newStString(PLATFORM_NAME_STRING);
+                // Since VM will keep a reference to it and we don't want it reused
+                incr(platformNameStStr);
+            }
+            returnedObject = platformNameStStr;
+        }
+        break;
 
     default:
         sysWarn("unknown primitive", "sysPrimitive");

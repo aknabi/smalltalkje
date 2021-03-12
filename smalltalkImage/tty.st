@@ -157,12 +157,13 @@ Methods UndefinedObject 'initial image'
 	startupM5
 		m5 <- M5StickC new. 
 		m5 setupButtonHandlers.
-		m5 setupKeyboardHandlers.
 		self startWifi.
-		"TODO: Store blocks because if we inline in on/off methods those block contexts accumluate"
-		ledOnBlock <- [self ledBlinkOn].
-		ledOffBlock <- [self ledBlinkOff].
-		self ledBlinkOn
+		m5 setupKeyboardHandlers.
+		m5 deviceName = 'M5StickC' ifTrue: [
+			"TODO: Store blocks because if we inline in on/off methods those block contexts accumluate"
+			ledOnBlock <- [self ledBlinkOn].
+			ledOffBlock <- [self ledBlinkOff].
+			self ledBlinkOn ]
 |
 	startWifi
 		| savedSSID savedPass ssid password |

@@ -24,6 +24,7 @@
 #ifdef TARGET_MAC
 
 #define TARGET_BUILD_IMAGE
+#define PLATFORM_NAME_STRING "MACOS"
 
 #else
 
@@ -36,8 +37,10 @@
 #define TARGET_ESP32
 
 
-/* Can use project configuration menu (idf.py menuconfig) to choose the GPIO to blink,
-   or you can edit the following line and set a number here.
+
+/* 
+ * Can use project configuration menu (idf.py menuconfig) to choose the GPIO to blink,
+ * or you can edit the following line and set a number here.
 */
 #define BLINK_GPIO CONFIG_BLINK_GPIO
 
@@ -50,11 +53,30 @@
 
 // Define device as ESP32 dev board with a SSD1306 I2C OLED
 #define DEVICE_ESP32_SSD1306 1
+
 // Define device as an M5StickC
 #define DEVICE_M5STICKC 2
 
-#define TARGET_DEVICE DEVICE_M5STICKC
+// Define device as an M5Atom Lite ESP32 Button (with LED)
+#define DEVICE_M5SATOM_LITE 3
+
+// Define device as the EPS32 Lilygo T-Wristband with a ST7735 160x80 I2C OLED
+#define DEVICE_T_WRISTBAND 4
+
+#define TARGET_DEVICE DEVICE_T_WRISTBAND
 
 #endif // M5StickC defines
+
+#if TARGET_DEVICE == DEVICE_M5STICKC
+#define PLATFORM_NAME_STRING "M5StickC"
+#elif TARGET_DEVICE == DEVICE_M5SATOM_LITE
+#define PLATFORM_NAME_STRING "M5AtomLite"
+#elif TARGET_DEVICE == DEVICE_ESP32_SSD1306
+#define PLATFORM_NAME_STRING "ESP32-1306"
+#elif TARGET_DEVICE == DEVICE_T_WRISTBAND
+#define PLATFORM_NAME_STRING "T-WRBD"
+#else
+#define PLATFORM_NAME_STRING "XXXX"
+#endif
 
 #endif // __BUILD_H__
