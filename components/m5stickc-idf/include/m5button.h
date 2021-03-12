@@ -22,7 +22,8 @@ extern "C" {
 #include "m5event.h"
 #include "driver/gpio.h"
 
-#include "build.h"
+// TODO: Either move build.h or figure out how to use in in components (though breaks component modularity)
+#include "../../../include/build.h"
 
 #if TARGET_DEVICE == DEVICE_T_WRISTBAND
 

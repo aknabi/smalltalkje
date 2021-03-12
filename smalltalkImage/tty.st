@@ -166,8 +166,13 @@ Methods UndefinedObject 'initial image'
 			self ledBlinkOn ]
 |
 	startWifi
+		m5 setupWifiHandlers; wifiOn.
+		m5 wifiAutoconnect
+			ifTrue: ['Autoconnected wifi' print ]
+			ifFalse: [self connectWifi]
+|
+	connectWifi
 		| savedSSID savedPass ssid password |
-		m5 setupWifiHandlers.
 		savedSSID <- m5 nvsStringAtKey: 'ssid'.
 		savedPass <- m5 nvsStringAtKey: 'password'.
 		ssid <- smalltalk getPrompt: ('WIFI SSID (', savedSSID, '): ').
@@ -179,7 +184,7 @@ Methods UndefinedObject 'initial image'
 			ifTrue: [ pass <- savedPass ]
 			ifFalse: [ m5 nvsAt: 'password' put: pass ].
 		m5 wifiSSID: ssid password: pass.
-		m5 wifiOn.
+		m5 wifiConnect
 |
 	ledBlinkOn
 		m5 ledOn.

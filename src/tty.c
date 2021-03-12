@@ -611,6 +611,10 @@ object sysPrimitive(int number, object *arguments)
                 wifi_set_ssid(charPtr(arguments[1]));
             if (arguments[2] != nilobj)
                 wifi_set_password(charPtr(arguments[2]));
+        } else if (funcNum == 2) {
+            wifi_connect();
+        } else if (funcNum == 3) {
+            returnedObject = wifi_scan();
         } else if(funcNum == 20) {
             // Get I2C Byte at the I2C Address in the second prim argument
             uint8_t dataByte = 0;
@@ -628,7 +632,23 @@ object sysPrimitive(int number, object *arguments)
                 ESP_LOGE(TAG, "Error creating button_task");
                 //return ESP_FAIL;
             }
-        } else if (funcNum == 100) {
+        // 50's functions are for ESP32 Date/Time
+        } else if (funcNum == 50) {
+            // Sync time with SNTP server (assumes Wifi connected
+            init_sntp_time();
+            returnedObject = trueobj;
+            break;
+        }  else if (funcNum == 51) {
+            // Get SNTP based time (assuming init_sntp_time has been called)
+            get_sntp_time();
+            returnedObject = trueobj;
+            break;
+        }  else if (funcNum == 52) {
+            // Get ESP32 time (assuming get_sntp_time has been called)
+            get_esp32_time();
+            returnedObject = trueobj;
+            break;
+        }  else if (funcNum == 100) {
             returnedObject = newInteger(GET_FREE_HEAP_SIZE());
             break;
         }

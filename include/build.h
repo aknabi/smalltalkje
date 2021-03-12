@@ -17,6 +17,8 @@
 #ifndef __BUILD_H__
 #define __BUILD_H__
 
+// TODO: build.h is also imported by some project components... for example search for m5button.h
+
 // Use this block for building on the Mac
 // For calls to support threading, file init, etc use POSIX calls
 //#define TARGET_POSIX

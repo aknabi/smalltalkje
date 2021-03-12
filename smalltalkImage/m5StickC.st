@@ -36,7 +36,7 @@ Methods M5StickC 'all'
 			m5 runKBTask ]
 |
 	setupWifiHandlers
-	    self when: 'WifiConnected' do: [ display clear; string: 'Wifi Connected' x: 16 y: 16. [display clear] runAfter: 2000 ].
+	    self when: 'WifiConnected' do: [ display clear; string: 'Wifi Connected' x: 16 y: 16. [display clear. self setupDate] runAfter: 2000 ].
 |
     displayLoop
 		(1 to: 10) do: [:x | self afterDelay: 1000 do: [display clear; string: 'Big Click ', x asString x: 16 y: 16]].
@@ -60,6 +60,38 @@ Methods M5StickC 'all'
 |
 	wifiOn
 		<170 0>
+|
+	wifiConnect
+		<170 2>
+|
+	initSNTP
+		^ <170 50>
+|
+	getSNTPTime
+		^ <170 51>
+|
+	getESP32Time
+		^ <170 52>
+|
+	setupDate
+		self initSNTP.
+		self getSNTPTime
+|
+	wifiAutoconnect | ssids savedSSID savedPass found |
+		found <- false.
+		savedSSID <- m5 nvsStringAtKey: 'ssid'.
+		savedSSID notNil ifTrue: [
+			ssids <- self wifiScan.
+			(found <- ssids includes: savedSSID)
+				ifTrue: [
+					savedPass <- m5 nvsStringAtKey: 'password'.
+					self wifiSSID: savedSSID password: savedPass.
+					self wifiConnect ]
+				ifFalse: ['Saved ssid not found' print] ].
+		^ found
+|
+	wifiScan
+		^ <170 3>
 |
 	wifiSSID: ssid password: password
 		<170 1 ssid password>
