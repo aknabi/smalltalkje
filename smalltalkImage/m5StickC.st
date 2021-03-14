@@ -10,7 +10,7 @@
 *
 Class M5StickC Object display
 Class Color Object red green blue
-Class Font Object fontIndex
+Class Font Object value
 Class HttpRequest Object url method contentType body
 Class HttpResponse Object statusCode contentLength content
 Class M5Term Object y input i
@@ -21,8 +21,10 @@ Methods M5StickC 'all'
         EventHandlerBlocks <- Dictionary new.
 |
     setupButtonHandlers
-        self when: 'BigButtonClicked' do: [ display clear; string: 'BigButtonClicked' x: 16 y: 16. [display clear] runAfter: 2000 ].
+		self deviceName = 'T-WRBD' ifTrue: [
+        	self when: 'BigButtonClicked' do: [ display backlightOn: true. [display backlightOn: false] runAfter: 5000 ] ].
 		self deviceName = 'M5StickC' ifTrue: [
+        	self when: 'BigButtonClicked' do: [ display clear; string: 'BigButtonClicked' x: 16 y: 16. [display clear] runAfter: 2000 ].
         	self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
         	self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
         	self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16] ]
@@ -53,10 +55,10 @@ Methods M5StickC 'all'
         <159 10 2>
 |
     ledOn
-        <160 10 0>
+        self gpioAt: 10 put: 0
 |
     ledOff
-        <160 10 1>
+        self gpioAt: 10 put: 1
 |
 	wifiOn
 		<170 0>
@@ -73,9 +75,30 @@ Methods M5StickC 'all'
 	getESP32Time
 		^ <170 52>
 |
+	getTimeString: format
+		"Return time as string based on linux strftime() format string"
+		"see linux.die.net/man/3/strftime"
+		^ <170 53 format>
+|
+	setTimeZone: tzString
+		"Set the timezone based on POSIX TZ string
+		"see www.gnu.org/software/libc/manual/html_node/TZ-Variable.html"
+		^ <170 54 tzString>
+|
+	updateDisplayTime
+		display set7Seg: 8 width: 1 outline: 1.
+		display string: (self getTimeString: '%T') x: -9003 y: 4.
+		display setFont: Font new default
+|
 	setupDate
 		self initSNTP.
-		self getSNTPTime
+		self getSNTPTime.
+		clockUpdateBlock <- [self clockUpdateLoop].
+		clockUpdateBlock value
+|
+	clockUpdateLoop
+		self updateDisplayTime.
+		clockUpdateBlock runAfter: 500
 |
 	wifiAutoconnect | ssids savedSSID savedPass found |
 		found <- false.
@@ -110,6 +133,9 @@ Methods M5StickC 'all'
 |
 	i2cInterruptAt: i2cAddress
 		^ <170 21 i2cAddress>
+|
+	gpioAt: pin put: anInteger
+		<160 pin anInteger>
 |
 	runKBTask
 		^ <170 22>
@@ -179,9 +205,6 @@ Methods String 'execute'
 Methods Color 'all'
 	new
 		^super new black
-|
-	initialize
-		display <- Oled new.
 |
 	red: redValue green: greenValue blue: blueValue
 		red <- redValue.
@@ -253,40 +276,43 @@ Methods Font 'all'
 		^super new default
 |
 	default
-		fontIndex = 0.
+		value <- 0.
 |
 	tiny
-		fontIndex = 1.
+		value <- 1.
 |
 	dejavu24
-		fontIndex = 2.
+		value <- 2.
 |
 	ubuntu16
-		fontIndex = 3.
+		value <- 3.
 |
 	comic24
-		fontIndex = 4.
+		value <- 4.
 |
 	minya24
-		fontIndex = 5.
+		value <- 5.
 |
 	tooney32
-		fontIndex = 6.
+		value <- 6.
 |
 	small
-		fontIndex = 7.
+		value <- 7.
 |
 	defautSmall
-		fontIndex = 8.
+		value <- 8.
 |
 	sevenSeg
-		fontIndex = 9.
+		value <- 9.
 |
 	user
-		fontIndex = 10.
+		value <- 10.
 |
 	customEmbedded
-		fontIndex = 11.
+		value <- 11.
+|
+	asInteger
+		^ value
 ]
 Methods M5Term 'all'
 	initialize

@@ -24,12 +24,23 @@ Methods Oled 'all'
 	transfer
 		<155>.
 |
+	backlightOn: aBoolean
+		m5 deviceName = 'T-WRBD'
+			ifTrue: [m5 gpioAt: 27 put: (aBoolean ifTrue: [1] ifFalse: [0]) ]
+|
 	string: aString x: x y: y
 		<156 0 aString x y>.
 		self transfer.
 |
 	string: aString at: aPoint
 		self string: aString x: aPoint x y: aPoint y.
+|
+	setFont: aFont | fontIndex |
+		fontIndex <- aFont asInteger.
+		<156 20 fontIndex>
+|
+	set7Seg: l width: w outline: o
+		<156 21 l w o>
 |
 	rectangleX: x y: y width: w height: h isFilled: aBoolean
 		<157 x y w h aBoolean>.

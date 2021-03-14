@@ -67,21 +67,31 @@ void setTimeZone(char *tzString)
     localtime_r(&now, &timeinfo);
 }
 
+char strftime_buf[64];
+
 void get_esp32_time(void) {
     time(&now);
     localtime_r(&now, &timeinfo);
 
-    char strftime_buf[64];
-
     // Set timezone to Eastern Standard Time and print local time
-    setTimeZone("EST5EDT,M3.2.0/2,M11.1.0");
-    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current date/time in New York is: %s", strftime_buf);
+    // setTimeZone("EST5EDT,M3.2.0/2,M11.1.0");
+    // strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+    // ESP_LOGI(TAG, "The current date/time in New York is: %s", strftime_buf);
 
-    // Set timezone to EU Central Time
-    setTimeZone("UTC-1");
+    // Set timezone to CET
+    // setTimeZone("UTC-1");
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current date/time in Amsterdam is: %s", strftime_buf);
+    // ESP_LOGI(TAG, "The current date/time in Amsterdam is: %s", strftime_buf);
+}
+
+char *current_time_string(char *format) {
+    get_esp32_time();
+    size_t n = strftime(strftime_buf, sizeof(strftime_buf), format, &timeinfo);
+    char *retStr = NULL;
+    if (n > 0) {
+      retStr = strftime_buf;
+    }
+    return retStr;
 }
 
 void get_sntp_time(void) {

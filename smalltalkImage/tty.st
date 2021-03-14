@@ -129,7 +129,7 @@ Methods Scheduler 'get commands'
 			ifFalse: [ (string size > 0) 
 				ifTrue: [ 
 					[ res <- string value printString. 
-						m5 display clear; string: res x: 16 y: 16. res print ] fork ] ]
+						"m5 display clear; string: res x: 16 y: 16." res print ] fork ] ]
 ]
 Methods UndefinedObject 'initial image'
 	createGlobals	| aBlock |

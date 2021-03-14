@@ -344,6 +344,7 @@ void runTask(void *process)
 extern void runBlockAfter(object block, object arg, int ticks);
 
 object platformNameStStr = nilobj;
+object currentTimeStStr = nilobj;
 
 object sysPrimitive(int number, object *arguments)
 {
@@ -448,6 +449,18 @@ object sysPrimitive(int number, object *arguments)
         } else if (funcNum == 2) {
             // Func 1 - Return the width of the string passed in
             returnedObject = newInteger(TFT_getStringWidth(charPtr(arguments[1])));
+        } else if (funcNum == 20) {
+            // Func 1 - Set font to the font number second argument 
+            checkIntArg(1)
+            TFT_setFont(intValue(arguments[1]), NULL);
+        } else if (funcNum == 21) {
+            // Func 1 - Set 7 Seg params to the l, w, o arguments passed in
+            _fg = TFT_ORANGE;
+            checkIntArg(1)
+            checkIntArg(2)
+            checkIntArg(3)
+            TFT_setFont(FONT_7SEG, NULL);
+            set_7seg_font_atrib(getIntArg(1), getIntArg(2), getIntArg(3), TFT_DARKGREY);
         }
 
 
@@ -460,9 +473,10 @@ object sysPrimitive(int number, object *arguments)
     // Prim 157 rectangleX: x y: y width: w height: h isFilled: aBoolean
     case 7:
         checkIntArg(0)
-            checkIntArg(1)
-                checkIntArg(2)
-                    checkIntArg(3) if (arguments[4] != trueobj && arguments[4] != falseobj)
+        checkIntArg(1)
+        checkIntArg(2)
+        checkIntArg(3)
+        if (arguments[4] != trueobj && arguments[4] != falseobj)
         {
             sysError("non boolean argument", "isFilled");
         }
@@ -559,7 +573,7 @@ object sysPrimitive(int number, object *arguments)
     // Prim 159 set GPIO pin mode and direction in first arg to mode in second arg
     case 9:
         checkIntArg(0)
-            checkIntArg(1)
+        checkIntArg(1)
 
                 gpio_mode_t gpioMode;
         gpio_pad_select_gpio(getIntArg(0));
@@ -648,9 +662,18 @@ object sysPrimitive(int number, object *arguments)
             get_esp32_time();
             returnedObject = trueobj;
             break;
+        }  else if (funcNum == 53) {
+            char *timeStr = current_time_string(charPtr(arguments[1]));
+            returnedObject = timeStr == NULL ? nilobj : newStString(timeStr);
+            // if (timeStr != NULL) {
+            //     currentTimeStStr = newStString(timeStr);
+            //     returnedObject = currentTimeStStr;
+            // }
+            break;
+        }   else if (funcNum == 54) {
+            setTimeZone(charPtr(arguments[1]));
         }  else if (funcNum == 100) {
             returnedObject = newInteger(GET_FREE_HEAP_SIZE());
-            break;
         }
         break;
 
