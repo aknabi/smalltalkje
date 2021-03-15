@@ -6,6 +6,7 @@
 *
 Class HttpRequest Object url method contentType body
 Class HttpResponse Object statusCode contentLength content
+Class Weather Object city temp feelsLike minTemp maxTemp wind desc
 *
 Methods HttpRequest 'all'
 	getUrl: urlString
@@ -34,6 +35,17 @@ Methods HttpRequest 'all'
 		B <- [:r | R <- r. '=== HTTP GET DEMO DONE ===' print ].
 		H <- self
 |
+	getWeather: urlEncodedCity
+		(url <- self getWeatherUrl) isNil ifTrue: [^ nil].
+		method <- 0.
+		B <- [:r | R <- r. '=== HTTP POST DEMO DONE content size: ', r contentLength print ].
+		H <- self
+|
+	getWeatherUrl | appId |
+		appId <- m5 nvsStringAtKey: 'weatherAppId'.
+		appId isNil ifTrue: [^ nil].
+		^ 'http://api.openweathermap.org/data/2.5/weather?units=metric&q=', city, '&appid=', appId
+|
 	demoPost
 		"After this is set up 'H sendWhenDone: B' will run a get and save response in global R"
 		url <- 'http://httpbin.org/post'.
@@ -52,4 +64,53 @@ Methods HttpResponse 'all'
 |
 	content
 		^ content
+]
+Methods Weather 'all'
+	city
+		^ city
+|
+	city: aString
+		city <- aString
+|
+	temp
+		^ temp
+|
+	feelsLike
+		^ feelsLike
+|
+	minTemp
+		^ minTemp
+|
+	maxTemp
+		^ maxTemp
+|
+	wind
+		^ wind
+|
+	desc
+		^ desc
+|
+	getRequest
+		^ HttpRequest new getUrl: 'http://thenabi.com/smalltalkje/weather/current.php?secret=stjerules!&city=', city
+|
+	update | req a |
+		req <- self getRequest.
+		req sendWhenDone: [:r | (r isError or: [(r statusCode = 200) not]) ifFalse: [
+			a <- r content asWords: $,.
+			self loadArray: a ] ]
+|
+	updateSync | req r a |
+		req <- self getRequest.
+		r <- req send.
+		(r isNil or: [(r statusCode = 200) not]) ifFalse: [
+			a <- r content asWords: $,.
+			self loadArray: a ]
+|
+	loadArray: anArray
+		temp <- anArray at: 1. 
+		feelsLike <- anArray at: 2.
+		minTemp <- anArray at: 3.
+		maxTemp <- anArray at: 4.
+		wind <- anArray at: 5.
+		desc <- anArray at: 6
 ]

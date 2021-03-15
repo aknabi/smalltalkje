@@ -15,6 +15,7 @@ static const char *TAG = "httpESP32";
 int responseDataLen;   /*!< data length of data */
 // char *responseData;     /*!< data of the event */
 object contentStr;
+char httpResponseBuff[512];
 
 esp_err_t http_event_handle(esp_http_client_event_t *evt)
 {
@@ -30,14 +31,21 @@ esp_err_t http_event_handle(esp_http_client_event_t *evt)
             break;
         case HTTP_EVENT_ON_HEADER:
             ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADER");
-            printf("%.*s", evt->data_len, (char*)evt->data);
+            ESP_LOGI(TAG, "%.*s", evt->data_len, (char*)evt->data);
             break;
         case HTTP_EVENT_ON_DATA:
             ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+            ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, data=%s", evt->data);
+           strcpy(httpResponseBuff, evt->data);
+           httpResponseBuff[evt->data_len] = 0;
             if (!esp_http_client_is_chunked_response(evt->client)) {
                 responseDataLen = evt->data_len;
-                contentStr = newStString(evt->data);
+                contentStr = newStString(httpResponseBuff);               
+                // contentStr = newStString(evt->data);
                 // printf("%.*s", responseDataLen, charPtr(contentStr));
+            } else {
+                responseDataLen = evt->data_len;
+                contentStr = newStString(httpResponseBuff);               
             }
 
             break;
@@ -72,10 +80,14 @@ void http_cleanup(void)
 
 object httpRequestFrom(object request);
 
+object httpRequest = nilobj;
+object httpBlock = nilobj;
+
 void runHttpTask(object *taskArgs)
 {
-    object httpRequest = httpTaskArgs[0];
-    object httpBlock = httpTaskArgs[1];
+    // object httpRequest = httpTaskArgs[0];
+    // object httpBlock = httpTaskArgs[1];
+    ESP_LOGI(TAG, "In runHttpTask()");
 
     object response = httpRequestFrom(httpRequest);
     // object httpBlock =  basicAt(httpRequest, 5);
@@ -98,16 +110,22 @@ object httpPrim(int funcNumber, object *arguments)
 
         // execute a HttpRequest in a seperate task
         case 1:
-            httpTaskArgs[0] = arguments[1]; // HttpRequest
-            httpTaskArgs[1] = arguments[2]; // done block with response arg
+            httpRequest = arguments[1];
+            httpBlock = arguments[2];
+            // httpTaskArgs[0] = arguments[1]; // HttpRequest
+            // httpTaskArgs[1] = arguments[2]; // done block with response arg
+
+            xTaskCreate(runHttpTask, "runHttpTask", 8096, &httpTaskArgs, 1, NULL);
+/*
             xTaskCreatePinnedToCore(
-                runHttpTask,      /* Task function. */
-                "runHttpTask",    /* name of task. */
-                8096,         /* Stack size of task */
-                &httpTaskArgs, /* parameter of the task (the Smalltalk process to run) */
-                1,            /* priority of the task */
-                NULL,           /* Task handle to keep track of created task */
-                1);             /* Run on core 1 */       
+                runHttpTask,
+                "runHttpTask", 
+                8096, 
+                &httpTaskArgs,
+                1,
+                NULL,
+                1);
+*/
             break;
         default:
             break;
@@ -118,8 +136,11 @@ object httpPrim(int funcNumber, object *arguments)
 
 object httpRequestFrom(object request)
 {
+    ESP_LOGI(TAG, "In httpRequestFrom()");
+
     // First inst var of a HttpRequest object is the URL
     char *url = charPtr(basicAt(request, 1));
+    ESP_LOGI(TAG, "Request URL: %s", url);
     // Second inst var of a request object is the Method (GET = 0, POST = 1, PUT = 2, PATCH = 3, DELETE = 4)
    int method = intValue(basicAt(request, 2));
 

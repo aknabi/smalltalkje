@@ -130,6 +130,9 @@ void app_main(void)
 
     startup();
 
+    // System seems to run smoother with this, not necessary, but need to dig in to details
+    vTaskStartScheduler();
+
     while (true)
     {
         vTaskDelay(200 / portTICK_PERIOD_MS);

@@ -38,7 +38,7 @@ Methods M5StickC 'all'
 			m5 runKBTask ]
 |
 	setupWifiHandlers
-	    self when: 'WifiConnected' do: [ display clear; string: 'Wifi Connected' x: 16 y: 16. [display clear. self setupDate] runAfter: 2000 ].
+	    self when: 'WifiConnected' do: [ display clear; string: 'Wifi Connected' x: 16 y: 16. [display clear. self setupDate. self setupWeather] runAfter: 100 ].
 |
     displayLoop
 		(1 to: 10) do: [:x | self afterDelay: 1000 do: [display clear; string: 'Big Click ', x asString x: 16 y: 16]].
@@ -81,7 +81,7 @@ Methods M5StickC 'all'
 		^ <170 53 format>
 |
 	setTimeZone: tzString
-		"Set the timezone based on POSIX TZ string
+		"Set the timezone based on POSIX TZ string and save in flash"
 		"see www.gnu.org/software/libc/manual/html_node/TZ-Variable.html"
 		^ <170 54 tzString>
 |
@@ -90,19 +90,31 @@ Methods M5StickC 'all'
 		display string: (self getTimeString: '%T') x: -9003 y: 4.
 		display setFont: Font new default
 |
-	setupDate
+	setupDate | tz |
 		self initSNTP.
 		self getSNTPTime.
+		(tz <- self nvsStringAtKey: 'TZ') notNil ifTrue: [self setTimeZone: tz].
 		clockUpdateBlock <- [self clockUpdateLoop].
 		clockUpdateBlock value
+|
+	setupWeather
+		weather <- Weather new city: 'Amsterdam'.
+		weatherUpdateBlock <- [self weatherUpdateLoop].
+		weatherUpdateBlock value
 |
 	clockUpdateLoop
 		self updateDisplayTime.
 		clockUpdateBlock runAfter: 500
 |
+	weatherUpdateLoop | s |
+		weather updateSync.
+		s <- 'Temp ', weather temp.
+		display string: s x: 16 y: 40; string: weather desc x: 16 y: 50.
+		weatherUpdateBlock runAfter: 10000
+|
 	wifiAutoconnect | ssids savedSSID savedPass found |
 		found <- false.
-		savedSSID <- m5 nvsStringAtKey: 'ssid'.
+		savedSSID <- self nvsStringAtKey: 'ssid'.
 		savedSSID notNil ifTrue: [
 			ssids <- self wifiScan.
 			(found <- ssids includes: savedSSID)
