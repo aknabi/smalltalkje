@@ -1,7 +1,7 @@
 *
 * m5StickC.st
 * 
-* Smalltalkje, version 1 - M5StickC, Oled Display support
+* Smalltalkje, version 1 - M5StickC support
 * Written by Abdul Nabi, code crafters, January 2021
 *
 *  M5StickC class representing the device...
@@ -9,15 +9,13 @@
 *  Usually create a global m5 object with an instance
 *
 Class M5StickC Object display
-Class Color Object red green blue
-Class Font Object value
 Class HttpRequest Object url method contentType body
 Class HttpResponse Object statusCode contentLength content
 Class M5Term Object y input i
 *
 Methods M5StickC 'all'
 	new
-		display <- Oled new.
+		display <- Display new.
         EventHandlerBlocks <- Dictionary new.
 |
     setupButtonHandlers
@@ -221,118 +219,6 @@ Methods M5StickC 'all'
 Methods String 'execute'
     evalWith: arg
         <20 self>
-]
-Methods Color 'all'
-	new
-		^super new black
-|
-	red: redValue green: greenValue blue: blueValue
-		red <- redValue.
-        green <- greenValue.
-        blue <- blueValue.
-|
-	black
-		^ self red: 0 green: 0 blue: 0
-|
-	navy
-		^ self red: 0 green: 0 blue: 128
-|
-	darkGreen
-		^ self red: 0 green: 128 blue: 0
-|
-	darkCyan
-		^ self red: 0 green: 128 blue: 128
-|
-	maroon
-		^ self red: 128 green: 0 blue: 0
-|
-	purple
-		^ self red: 128 green: 0 blue: 128
-|
-	olive
-		^ self red: 128 green: 128 blue: 0
-|
-	lightGray
-		^ self red: 192 green: 192 blue: 192
-|
-	gray
-		^ self red: 128 green: 128 blue: 128
-|
-	darkGray
-		^ self red: 64 green: 64 blue: 64
-|
-	blue
-		^ self red: 0 green: 0 blue: 255
-|
-	green
-		^ self red: 0 green: 255 blue: 0
-|
-	cyan
-		^ self red: 0 green: 255 blue: 255
-|
-	red
-		^ self red: 255 green: 0 blue: 0
-|
-	magenta
-		^ self red: 255 green: 0 blue: 255
-|
-	yellow
-		^ self red: 252 green: 255 blue: 0
-|
-	white
-		^ self red: 255 green: 255 blue: 255
-|
-	orange
-		^ self red: 255 green: 164 blue: 255
-|
-	puke
-		^ self red: 172 green: 252 blue: 44
-|
-	pink
-		^ self red: 255 green: 192 blue: 202
-]
-Methods Font 'all'
-	new
-		^super new default
-|
-	default
-		value <- 0.
-|
-	tiny
-		value <- 1.
-|
-	dejavu24
-		value <- 2.
-|
-	ubuntu16
-		value <- 3.
-|
-	comic24
-		value <- 4.
-|
-	minya24
-		value <- 5.
-|
-	tooney32
-		value <- 6.
-|
-	small
-		value <- 7.
-|
-	defautSmall
-		value <- 8.
-|
-	sevenSeg
-		value <- 9.
-|
-	user
-		value <- 10.
-|
-	customEmbedded
-		value <- 11.
-|
-	asInteger
-		^ value
 ]
 Methods M5Term 'all'
 	initialize

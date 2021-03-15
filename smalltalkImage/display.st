@@ -1,17 +1,19 @@
 *
-* Little Smalltalk, version 3 - Oled Display support
-* Written by Abdul Nabi, code crafters, January 2021
+* Smalltalkje, version 1 - Display and graphics support
+* Written by Abdul Nabi, code krafters, January 2021
 *
-*  Oled class for drawing to a SSD1306 OLED display
+*  Display class for drawing
 *
 *  Usually create a global display object with an instance
 *
-Class Oled Object font
+Class Display Object font
 Class Point Object x y
 Class Rectangle Object origin extent
 Class Circle Object center radius
+Class Color Object red green blue
+Class Font Object value
 *
-Methods Oled 'all'
+Methods Display 'all'
 	new
 		^super new initialize
 |
@@ -88,8 +90,8 @@ Methods Rectangle 'all'
 	corner
 		^ (origin x + extent x) @ (origin y + extent y)
 |
-	displayOn: anOled
-		anOled rectangle: self isFilled: false.
+	displayOn: aDisplay
+		aDisplay rectangle: self isFilled: false.
 ]
 Methods Circle 'all'
 	center: aPoint
@@ -108,8 +110,8 @@ Methods Circle 'all'
 	radius
 		^radius
 |
-	displayOn: anOled
-		anOled circle: self isFilled: false.
+	displayOn: aDisplay
+		aDisplay circle: self isFilled: false.
 ]
 Methods Point 'all'
 	x: xInteger
@@ -130,4 +132,116 @@ Methods Point 'all'
 Methods Integer 'all'
 	@ y
 		^ Point new x: self y: y
+]
+Methods Font 'all'
+	new
+		^super new default
+|
+	default
+		value <- 0.
+|
+	tiny
+		value <- 1.
+|
+	dejavu24
+		value <- 2.
+|
+	ubuntu16
+		value <- 3.
+|
+	comic24
+		value <- 4.
+|
+	minya24
+		value <- 5.
+|
+	tooney32
+		value <- 6.
+|
+	small
+		value <- 7.
+|
+	defautSmall
+		value <- 8.
+|
+	sevenSeg
+		value <- 9.
+|
+	user
+		value <- 10.
+|
+	customEmbedded
+		value <- 11.
+|
+	asInteger
+		^ value
+]
+Methods Color 'all'
+	new
+		^super new black
+|
+	red: redValue green: greenValue blue: blueValue
+		red <- redValue.
+        green <- greenValue.
+        blue <- blueValue.
+|
+	black
+		^ self red: 0 green: 0 blue: 0
+|
+	navy
+		^ self red: 0 green: 0 blue: 128
+|
+	darkGreen
+		^ self red: 0 green: 128 blue: 0
+|
+	darkCyan
+		^ self red: 0 green: 128 blue: 128
+|
+	maroon
+		^ self red: 128 green: 0 blue: 0
+|
+	purple
+		^ self red: 128 green: 0 blue: 128
+|
+	olive
+		^ self red: 128 green: 128 blue: 0
+|
+	lightGray
+		^ self red: 192 green: 192 blue: 192
+|
+	gray
+		^ self red: 128 green: 128 blue: 128
+|
+	darkGray
+		^ self red: 64 green: 64 blue: 64
+|
+	blue
+		^ self red: 0 green: 0 blue: 255
+|
+	green
+		^ self red: 0 green: 255 blue: 0
+|
+	cyan
+		^ self red: 0 green: 255 blue: 255
+|
+	red
+		^ self red: 255 green: 0 blue: 0
+|
+	magenta
+		^ self red: 255 green: 0 blue: 255
+|
+	yellow
+		^ self red: 252 green: 255 blue: 0
+|
+	white
+		^ self red: 255 green: 255 blue: 255
+|
+	orange
+		^ self red: 255 green: 164 blue: 255
+|
+	puke
+		^ self red: 172 green: 252 blue: 44
+|
+	pink
+		^ self red: 255 green: 192 blue: 202
 ]
