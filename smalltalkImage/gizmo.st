@@ -55,15 +55,6 @@ Methods Gizmo 'all'
         display clear; string: aString x: 16 y: yPos.
         self delayTaskFor: milliseconds.
 |
-    initializeLED
-        <159 10 2>
-|
-    ledOn
-        self gpioAt: 10 put: 0
-|
-    ledOff
-        self gpioAt: 10 put: 1
-|
 	wifiOn
 		<170 0>
 |
@@ -136,7 +127,9 @@ Methods Gizmo 'all'
 |
 	wifiSSID: ssid password: password
 		<170 1 ssid password>
-|
+]
+*
+Methods Gizmo 'NVS'
 	nvsAt: key put: object
 		^ <182 1 key object>
 |
@@ -145,7 +138,9 @@ Methods Gizmo 'all'
 |
 	nvsRemoveKey: key
 		^ <182 3 key>
-|
+]
+*
+Methods Gizmo 'gpio-i2c'
 	i2cByteAt: i2cAddress
 		^ <170 20 i2cAddress>
 |
@@ -155,6 +150,17 @@ Methods Gizmo 'all'
 	gpioAt: pin put: anInteger
 		<160 pin anInteger>
 |
+    initializeLED
+        <159 10 2>
+|
+    ledOn
+        self gpioAt: 10 put: 0
+|
+    ledOff
+        self gpioAt: 10 put: 1
+]
+*
+Methods Gizmo 'keyboard'
 	runKBTask
 		^ <170 22>
 |
@@ -216,10 +222,12 @@ Methods Gizmo 'all'
     when: anEventString do: aBlock
         EventHandlerBlocks at: anEventString put: aBlock
 ]
+*
 Methods String 'execute'
     evalWith: arg
         <20 self>
 ]
+*
 Methods GizmoTerm 'all'
 	initialize
 		i <- 1.

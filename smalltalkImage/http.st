@@ -7,6 +7,7 @@
 Class HttpRequest Object url method contentType body
 Class HttpResponse Object statusCode contentLength content
 Class Weather Object city temp feelsLike minTemp maxTemp wind desc
+Class Cloud Object
 *
 Methods HttpRequest 'all'
 	getUrl: urlString
@@ -113,4 +114,23 @@ Methods Weather 'all'
 		maxTemp <- anArray at: 4.
 		wind <- anArray at: 5.
 		desc <- anArray at: 6
+]
+Methods Cloud 'all'
+	getStringAt: url | req resp |
+		req <- HttpRequest new getUrl: url.
+		^ (resp <- req send) isNil
+			ifTrue: [nil]
+			ifFalse: [resp statusCode = 200 ifTrue: [resp content] ifFalse: [nil] ]
+|
+	download: url filename: filename | f s |
+		" get response content from url and save to filename. Return boolean with success "
+		f <- File new; name: '/spiffs/', filename; open: 'w'.
+		^ (s <- self getStringAt: url) notNil
+			ifTrue: [ f printNoReturn: s. f close. true]
+			ifFalse: [Error new]
+|
+	fileIn: url | e |
+		^ (e <- self download: url filename: 'download.st') notError
+			ifTrue: [ File new fileIn: '/spiffs/download.st']
+			ifFalse: [e]
 ]
