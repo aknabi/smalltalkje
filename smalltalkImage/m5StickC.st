@@ -22,7 +22,11 @@ Methods M5StickC 'all'
 |
     setupButtonHandlers
 		self deviceName = 'T-WRBD' ifTrue: [
-        	self when: 'BigButtonClicked' do: [ display backlightOn: true. [display backlightOn: false] runAfter: 5000 ] ].
+			DisplayUpdateBlock <- [ 
+				display backlightOn: true. 
+				self updateDisplayTime; updateDisplayWeather. 
+				[display backlightOn: false] runAfter: 5000 ].
+        	self when: 'BigButtonClicked' do: DisplayUpdateBlock ].
 		self deviceName = 'M5StickC' ifTrue: [
         	self when: 'BigButtonClicked' do: [ display clear; string: 'BigButtonClicked' x: 16 y: 16. [display clear] runAfter: 2000 ].
         	self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
@@ -38,7 +42,9 @@ Methods M5StickC 'all'
 			m5 runKBTask ]
 |
 	setupWifiHandlers
-	    self when: 'WifiConnected' do: [ display clear; string: 'Wifi Connected' x: 16 y: 16. [display clear. self setupDate. self setupWeather] runAfter: 100 ].
+	    self when: 'WifiConnected' do: [ 
+			display clear; string: 'Wifi Connected' x: 16 y: 16.
+			[ display clear. self setupDate; setupWeather. DisplayUpdateBlock value] runAfter: 100 ]
 |
     displayLoop
 		(1 to: 10) do: [:x | self afterDelay: 1000 do: [display clear; string: 'Big Click ', x asString x: 16 y: 16]].
@@ -90,26 +96,28 @@ Methods M5StickC 'all'
 		display string: (self getTimeString: '%T') x: -9003 y: 4.
 		display setFont: Font new default
 |
+	updateDisplayWeather
+		weather updateSync.
+		display string: 'Temp:' x: 16 y: 40; string: weather temp x: 60 y: 40; string: weather desc x: 16 y: 54.
+|
 	setupDate | tz |
 		self initSNTP.
 		self getSNTPTime.
 		(tz <- self nvsStringAtKey: 'TZ') notNil ifTrue: [self setTimeZone: tz].
-		clockUpdateBlock <- [self clockUpdateLoop].
-		clockUpdateBlock value
+		"clockUpdateBlock <- [self clockUpdateLoop]."
+		"clockUpdateBlock value"
 |
 	setupWeather
 		weather <- Weather new city: 'Amsterdam'.
-		weatherUpdateBlock <- [self weatherUpdateLoop].
-		weatherUpdateBlock value
+		"weatherUpdateBlock <- [self weatherUpdateLoop]."
+		"weatherUpdateBlock value"
 |
 	clockUpdateLoop
 		self updateDisplayTime.
 		clockUpdateBlock runAfter: 500
 |
 	weatherUpdateLoop | s |
-		weather updateSync.
-		s <- 'Temp ', weather temp.
-		display string: s x: 16 y: 40; string: weather desc x: 16 y: 50.
+		self updateDisplayWeather.
 		weatherUpdateBlock runAfter: 10000
 |
 	wifiAutoconnect | ssids savedSSID savedPass found |
