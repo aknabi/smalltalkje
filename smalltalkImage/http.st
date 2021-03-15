@@ -42,7 +42,7 @@ Methods HttpRequest 'all'
 		H <- self
 |
 	getWeatherUrl | appId |
-		appId <- m5 nvsStringAtKey: 'weatherAppId'.
+		appId <- gizmo nvsStringAtKey: 'weatherAppId'.
 		appId isNil ifTrue: [^ nil].
 		^ 'http://api.openweathermap.org/data/2.5/weather?units=metric&q=', city, '&appid=', appId
 |

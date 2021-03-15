@@ -59,7 +59,7 @@ Methods Smalltalk 'all'
 		stdout printNoReturn: aString.
 		input <- ByteArray new: 255.
 		i <- 1.
-		"[ c <- <132>. c = 0 ifTrue: [c <- m5 getCardKBChar]. c = 10 ] whileFalse: ["
+		"[ c <- <132>. c = 0 ifTrue: [c <- gizmo getCardKBChar]. c = 10 ] whileFalse: ["
 		[ c <- <132>. c = 10 ] whileFalse: [
 			c = 0 ifFalse: [ 
 				c = 8 ifTrue: [
@@ -129,7 +129,7 @@ Methods Scheduler 'get commands'
 			ifFalse: [ (string size > 0) 
 				ifTrue: [ 
 					[ res <- string value printString. 
-						"m5 display clear; string: res x: 16 y: 16." res print ] fork ] ]
+						"gizmo display clear; string: res x: 16 y: 16." res print ] fork ] ]
 ]
 Methods UndefinedObject 'initial image'
 	createGlobals	| aBlock |
@@ -155,43 +155,43 @@ Methods UndefinedObject 'initial image'
 		systemProcess <- aBlock newProcess.
 |
 	startupM5
-		m5 <- M5StickC new. 
-		m5 setupButtonHandlers.
+		gizmo <- Gizmo new. 
+		gizmo setupButtonHandlers.
 		self startWifi.
-		m5 setupKeyboardHandlers.
-		m5 deviceName = 'M5StickC' ifTrue: [
+		gizmo setupKeyboardHandlers.
+		gizmo deviceName = 'M5StickC' ifTrue: [
 			"TODO: Store blocks because if we inline in on/off methods those block contexts accumluate"
 			ledOnBlock <- [self ledBlinkOn].
 			ledOffBlock <- [self ledBlinkOff].
 			self ledBlinkOn ]
 |
 	startWifi
-		m5 setupWifiHandlers; wifiOn.
-		m5 wifiAutoconnect
+		gizmo setupWifiHandlers; wifiOn.
+		gizmo wifiAutoconnect
 			ifTrue: ['Autoconnected wifi' print ]
 			ifFalse: [self connectWifi]
 |
 	connectWifi
 		| savedSSID savedPass ssid password |
-		savedSSID <- m5 nvsStringAtKey: 'ssid'.
-		savedPass <- m5 nvsStringAtKey: 'password'.
+		savedSSID <- gizmo nvsStringAtKey: 'ssid'.
+		savedPass <- gizmo nvsStringAtKey: 'password'.
 		ssid <- smalltalk getPrompt: ('WIFI SSID (', savedSSID, '): ').
 		ssid size = 0
 			ifTrue: [ ssid <- savedSSID ]
-			ifFalse: [ m5 nvsAt: 'ssid' put: ssid ].
+			ifFalse: [ gizmo nvsAt: 'ssid' put: ssid ].
 		pass <- smalltalk getPrompt: ('WIFI PASS (', savedPass, '): ').
 		pass size = 0
 			ifTrue: [ pass <- savedPass ]
-			ifFalse: [ m5 nvsAt: 'password' put: pass ].
-		m5 wifiSSID: ssid password: pass.
-		m5 wifiConnect
+			ifFalse: [ gizmo nvsAt: 'password' put: pass ].
+		gizmo wifiSSID: ssid password: pass.
+		gizmo wifiConnect
 |
 	ledBlinkOn
-		m5 ledOn.
+		gizmo ledOn.
 		ledOffBlock runAfter: 20
 |
 	ledBlinkOff
-		m5 ledOff.
+		gizmo ledOff.
 		ledOnBlock runAfter: 5000
 |
 	createStdFiles

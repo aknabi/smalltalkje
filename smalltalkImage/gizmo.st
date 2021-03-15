@@ -1,19 +1,19 @@
 *
-* m5StickC.st
+* gizmo.st
 * 
-* Smalltalkje, version 1 - M5StickC support
+* Smalltalkje, version 1 - Gizmo support
 * Written by Abdul Nabi, code crafters, January 2021
 *
-*  M5StickC class representing the device...
+*  Gizmo class representing the device...
 *
-*  Usually create a global m5 object with an instance
+*  Usually create a global gizmo object with an instance
 *
-Class M5StickC Object display
+Class Gizmo Object display
 Class HttpRequest Object url method contentType body
 Class HttpResponse Object statusCode contentLength content
 Class M5Term Object y input i
 *
-Methods M5StickC 'all'
+Methods Gizmo 'all'
 	new
 		display <- Display new.
         EventHandlerBlocks <- Dictionary new.
@@ -37,7 +37,7 @@ Methods M5StickC 'all'
 			m5Term <- M5Term new initialize.
 			self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. m5Term addCharInt: c ].
 			"[ [true] whileTrue: [KeyboardSemaphore wait. KeyboardChar printAscii ] ] fork."
-			m5 runKBTask ]
+			gizmo runKBTask ]
 |
 	setupWifiHandlers
 	    self when: 'WifiConnected' do: [ 
@@ -125,7 +125,7 @@ Methods M5StickC 'all'
 			ssids <- self wifiScan.
 			(found <- ssids includes: savedSSID)
 				ifTrue: [
-					savedPass <- m5 nvsStringAtKey: 'password'.
+					savedPass <- gizmo nvsStringAtKey: 'password'.
 					self wifiSSID: savedSSID password: savedPass.
 					self wifiConnect ]
 				ifFalse: ['Saved ssid not found' print] ].
@@ -229,11 +229,11 @@ Methods M5Term 'all'
 	newLine | res |
 		y <- y + 12.
 		res <- input deepCopy asString value printString. 
-		m5 display string: res x: 4 y: y.
+		gizmo display string: res x: 4 y: y.
 		y <- y + 12.
 		i <- 1.
 		input <- ByteArray new: 64.
-		y > 70 ifTrue: [[m5 display clear. y <- 4] runAfter: 1000]
+		y > 70 ifTrue: [[gizmo display clear. y <- 4] runAfter: 1000]
 |
 	addCharInt: c
 		(c = 8 and: [i > 1]) 
@@ -248,5 +248,5 @@ Methods M5Term 'all'
 						input at: i put: c.
 						i <- i + 1.
 						input at: i put: 0 ] ].
-		m5 display string: input deepCopy asString x: 4 y: y
+		gizmo display string: input deepCopy asString x: 4 y: y
 ]

@@ -4,7 +4,8 @@
 *
 *  Display class for drawing
 *
-*  Usually create a global display object with an instance
+*  This is meant to be a singleton... ususally accessed via
+*  the device (e.g. gizmo display)
 *
 Class Display Object font
 Class Point Object x y
@@ -27,8 +28,8 @@ Methods Display 'all'
 		<155>.
 |
 	backlightOn: aBoolean
-		m5 deviceName = 'T-WRBD'
-			ifTrue: [m5 gpioAt: 27 put: (aBoolean ifTrue: [1] ifFalse: [0]) ]
+		gizmo deviceName = 'T-WRBD'
+			ifTrue: [gizmo gpioAt: 27 put: (aBoolean ifTrue: [1] ifFalse: [0]) ]
 |
 	string: aString x: x y: y
 		<156 0 aString x y>.

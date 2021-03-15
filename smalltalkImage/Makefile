@@ -17,7 +17,7 @@ imageBuilder:
 	@cd source && $(CC) memory.o names.o news.o interp.o process.o primitive.o filein.o lex.o parser.o unixio.o image.o initial.o uart.o tty.o -o ../imageBuilder $(LIBS)
 
 image:
-	./buildImage basic.st mag.st collect.st file.st mult.st display.st m5StickC.st http.st tty.st
+	./buildImage basic.st mag.st collect.st file.st mult.st display.st gizmo.st http.st tty.st
 	@cp ./systemImage ../data/systemImage
 	@cp ./objectTable ../data/objectTable
 	@cp ./objectData ../data/objectData

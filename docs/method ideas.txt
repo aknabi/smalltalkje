@@ -9,9 +9,9 @@ esp32 do: [aBlock] after: milliseconds
 Make M5StickC a subclass of ESP32
 
 
-smalltalk after: 10 seconds do: [m5 ledOn]
-smalltalk every: 1 minute do: [m5 blink]
-smalltalk at: 1 oClock do: [m5 blink]
+smalltalk after: 10 seconds do: [gizmo ledOn]
+smalltalk every: 1 minute do: [gizmo blink]
+smalltalk at: 1 oClock do: [gizmo blink]
 
 
 aBlock runAfter: 10 seconds
