@@ -314,6 +314,9 @@ Methods IndexedCollection 'all'
 	do: aBlock
 		self binaryDo: [:i :x | aBlock value: x ]
 |
+	first
+		^ self at: 1
+|
 	keys
 		^ self binaryInject: Set new 
 			into: [:s :i :x | s add: i ]
@@ -326,6 +329,9 @@ Methods IndexedCollection 'all'
 		self binaryDo: [:i :x | (aBlock value: x)
 				ifTrue: [ ^ i ] ].
 		^ exceptionBlock value
+|
+	last
+		^self at: self size
 |
 	select: aBlock
 		^ self binaryInject: Dictionary new
@@ -564,6 +570,9 @@ Methods String 'all'
 			  list addLast: (text copyFrom: 1 to: index - 1).
 			  text <- text copyFrom: index to: text size ].
 		^ list asArray
+|
+	asWords: seperatorChar
+		^ self words: [:c | (c == seperatorChar) not]
 |
 	value
 		" evaluate self as an expression "

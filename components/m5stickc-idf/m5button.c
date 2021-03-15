@@ -13,7 +13,7 @@ ESP_EVENT_DEFINE_BASE(M5BUTTON_A_EVENT_BASE);
 ESP_EVENT_DEFINE_BASE(M5BUTTON_B_EVENT_BASE);
 
 m5button_t m5button_a = {
-    .gpio = M5BUTTON_BUTTON_A_GPIO,
+    .gpio = BUTTON_BUTTON_A_GPIO,
     .debounce_time = M5BUTTON_DEBOUNCE_TIME,
     .hold_time = M5BUTTON_HOLD_TIME
 };
@@ -37,6 +37,14 @@ void IRAM_ATTR m5button_button_isr_handler(void* arg)
     }
 }
 
+esp_err_t t_wristband_touch_button_power(bool powerOn) {
+    gpio_pad_select_gpio(25);
+    esp_err_t e = gpio_set_direction(25, GPIO_MODE_OUTPUT);
+    gpio_set_level(25, powerOn);
+    // gpio_set_drive_capability
+    return e;
+}
+
 esp_err_t m5button_init()
 {
     esp_err_t e;
@@ -52,6 +60,8 @@ esp_err_t m5button_init()
         ESP_LOGE(TAG, "Error installing ISR service");
         return ESP_FAIL;
     }
+
+    t_wristband_touch_button_power(true);
 
     e = m5button_enable(&m5button_a);
     if(e == ESP_OK) {

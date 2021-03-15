@@ -36,7 +36,7 @@
 
 static const char *ESP_TAG = "ESP32";
 
-#if TARGET_DEVICE == DEVICE_M5STICKC
+#if TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
 
 extern object buttonProcesses[4];
 extern void runBlockAfter(object block, object arg, int ticks);
@@ -104,8 +104,9 @@ void m5StickInit()
     font_transparent = 0;
     font_forceFixed = 0;
     gray_scale = 0;
+    // Set up the LCD Display
     TFT_setGammaCurve(DEFAULT_GAMMA_CURVE);
-    TFT_setRotation(LANDSCAPE);
+    TFT_setRotation(LANDSCAPE_FLIP);
     TFT_setFont(DEFAULT_FONT, NULL);
     TFT_resetclipwin();
     _bg = TFT_BLACK;
@@ -119,7 +120,7 @@ void m5StickInit()
     esp_event_handler_register_with(m5_event_loop, M5BUTTON_B_EVENT_BASE, M5BUTTON_BUTTON_HOLD_EVENT, m5ButtonHandler, NULL);
 }
 
-#endif // DEVICE_M5STICKC
+#endif // DEVICE_M5STICKC || DEVICE_T_WRISTBAND
 
 void app_main(void)
 {
@@ -128,6 +129,9 @@ void app_main(void)
     ESP_LOGI(ESP_TAG, "Fresh free heap size: %d", esp_get_free_heap_size());
 
     startup();
+
+    // System seems to run smoother with this, not necessary, but need to dig in to details
+    vTaskStartScheduler();
 
     while (true)
     {

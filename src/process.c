@@ -49,6 +49,8 @@ void addArgToBlock(object block, object arg)
 	}
 }
 
+object queueBlockArray = nilobj;
+
 void queueBlock(object block, object arg)
 {
 	if (block != nilobj)
@@ -63,9 +65,12 @@ void queueBlock(object block, object arg)
 			// basicAtPut(contextTemps, argLoc, arg);
 
 			// Right now creating an Array and letting Smalltalk call value: with the arg... works...
-			queueObject = newArray(2);
-			basicAtPut(queueObject, 1, block);
-			basicAtPut(queueObject, 2, arg);
+
+			// TODO: Create the array once and reuse as these accumulate in the obj table... revisit
+			if (queueBlockArray == nilobj) queueBlockArray = newArray(2);
+			basicAtPut(queueBlockArray, 1, block);
+			basicAtPut(queueBlockArray, 2, arg);
+			queueObject = queueBlockArray;
 		}
 		// addArgToBlock(block, arg);
 		queueVMBlockToRun(queueObject);
@@ -139,6 +144,7 @@ void initVMBlockToRunQueue()
 
 boolean queueVMBlockToRun(object block)
 {
+	// TODO: Don't think we need to inc the ref count on the block.
     incr(block);
     BaseType_t result = xQueueSend( vmBlockToRunQueue, &block, portMAX_DELAY);
     return result == pdPASS;

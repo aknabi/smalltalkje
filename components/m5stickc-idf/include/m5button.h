@@ -22,7 +22,19 @@ extern "C" {
 #include "m5event.h"
 #include "driver/gpio.h"
 
-#define M5BUTTON_BUTTON_A_GPIO      GPIO_NUM_37
+// TODO: Either move build.h or figure out how to use in in components (though breaks component modularity)
+#include "../../../include/build.h"
+
+#if TARGET_DEVICE == DEVICE_T_WRISTBAND
+
+#define BUTTON_BUTTON_A_GPIO      GPIO_NUM_33
+
+#else
+
+#define BUTTON_BUTTON_A_GPIO      GPIO_NUM_37
+
+#endif
+
 #define M5BUTTON_BUTTON_B_GPIO      GPIO_NUM_39
 
 ESP_EVENT_DECLARE_BASE(M5BUTTON_A_EVENT_BASE); /*!< BASE event of button A */

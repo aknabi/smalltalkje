@@ -47,16 +47,6 @@ struct tm timeinfo = { 0 };
 
 static void sntp_obtain_time(void)
 {
-    // ESP_ERROR_CHECK( nvs_flash_init() );
-    // ESP_ERROR_CHECK(esp_netif_init());
-    // ESP_ERROR_CHECK( esp_event_loop_create_default() );
-
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    // ESP_ERROR_CHECK(example_connect());
-
     // initialize_sntp();
 
     // wait for time to be set
@@ -68,8 +58,6 @@ static void sntp_obtain_time(void)
     }
     time(&now);
     localtime_r(&now, &timeinfo);
-
-    // ESP_ERROR_CHECK( example_disconnect() );
 }
 
 void setTimeZone(char *tzString)
@@ -77,6 +65,44 @@ void setTimeZone(char *tzString)
     setenv("TZ", tzString, 1);
     tzset();
     localtime_r(&now, &timeinfo);
+}
+
+char strftime_buf[64];
+
+void get_esp32_time(void) {
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    // Set timezone to Eastern Standard Time and print local time
+    // setTimeZone("EST5EDT,M3.2.0/2,M11.1.0");
+    // strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+    // ESP_LOGI(TAG, "The current date/time in New York is: %s", strftime_buf);
+
+    // Set timezone to CET
+    // setTimeZone("UTC-1");
+    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+    // ESP_LOGI(TAG, "The current date/time in Amsterdam is: %s", strftime_buf);
+}
+
+char *current_time_string(char *format) {
+    get_esp32_time();
+    size_t n = strftime(strftime_buf, sizeof(strftime_buf), format, &timeinfo);
+    char *retStr = NULL;
+    if (n > 0) {
+      retStr = strftime_buf;
+    }
+    return retStr;
+}
+
+void get_sntp_time(void) {
+    sntp_obtain_time();
+    get_esp32_time();
+}
+
+void init_sntp_time(void) {
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_init();
 }
 
 esp_err_t m5rtc_init(void) {
@@ -87,27 +113,6 @@ esp_err_t m5rtc_init(void) {
 //   Wire1.write(0x00);  // Status reset
 //   Wire1.write(0x00);  // Status2 reset
 //   Wire1.endTransmission();
-
-    sntp_setservername(0, "pool.ntp.org");
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_init();
-
-    sntp_obtain_time();
-
-    time(&now);
-    localtime_r(&now, &timeinfo);
-
-    char strftime_buf[64];
-
-    // Set timezone to Eastern Standard Time and print local time
-    setTimeZone("EST5EDT,M3.2.0/2,M11.1.0");
-    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current date/time in New York is: %s", strftime_buf);
-
-    // Set timezone to EU Central Time
-    setTimeZone("UTC-1");
-    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current date/time in Amsterdam is: %s", strftime_buf);
 
     esp_err_t e;
     i2c_cmd_handle_t cmd;

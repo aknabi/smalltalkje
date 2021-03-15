@@ -1,5 +1,7 @@
 *
-* Little Smalltalk, version 3
+* Smallatlkje, version 1
+*
+* Based on Little Smalltalk, version 3
 * basic methods needed for execution, including
 *	object creation
 *	block creation, execution and return

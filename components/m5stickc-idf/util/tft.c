@@ -2053,6 +2053,13 @@ void TFT_print(char *st, int x, int y) {
 	}
 }
 
+//======================================
+void TFT_print_char(char *ch, int x, int y) {
+	if (font_rotate == 0) {
+		printChar(ch, x, y);
+	}
+	// else rotateChar(ch, x, y, i);
+}
 
 // ================ Service functions ==========================================
 

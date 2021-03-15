@@ -25,8 +25,14 @@
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
 #include "ssd1306_oled.h"
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
 #include "tft.h"
+
+#define I2C_PORT_1_CLK_SPEED 100000 /*!< I2C port 1 is GPIO 0/26 and with the CardKB Hat needs to run slow (400K works) */
+
+#define I2C_PORT_1_SDA_GPIO_PIN 0 /*!< Assign SDA I2C port 1 to GPIO 0 (on the M5StickC 8-pin connector) */
+#define I2C_PORT_1_SCL_GPIO_PIN 26 /*!< Assign SCL I2C port 1 to GPIO 0 (on the M5StickC 8-pin connector) */
+
 #endif
 
 #endif
@@ -104,7 +110,7 @@ struct i2CQueueMessage{
 	int portNumber;
 } xMessage;
 
-void IRAM_ATTR i2c_interrupt(){
+void IRAM_ATTR i2c_interrupt(void *args){
 	ets_printf("i2c_interrupt has been triggered\n");
 	
 	struct i2CQueueMessage *message;
@@ -124,8 +130,35 @@ void IRAM_ATTR i2c_interrupt(){
 	}
 }
 
+const char* TAG = "I2C";
+
+esp_err_t installI2CPort1Driver()
+{
+    esp_err_t e;
+    i2c_config_t conf;
+    conf.mode = I2C_MODE_MASTER;
+    conf.sda_io_num = I2C_PORT_1_SDA_GPIO_PIN;
+    conf.scl_io_num = I2C_PORT_1_SCL_GPIO_PIN;
+    conf.sda_pullup_en = GPIO_PULLUP_DISABLE;
+    conf.scl_pullup_en = GPIO_PULLUP_DISABLE;
+    conf.master.clk_speed = I2C_PORT_1_CLK_SPEED;
+    e = i2c_param_config(I2C_NUM_1, &conf);
+    if(e == ESP_OK) {
+        e = i2c_driver_install(I2C_NUM_1, I2C_MODE_MASTER, 0, 0, 0);
+        if(e != ESP_OK) {
+            ESP_LOGE(TAG, "Error during I2C 1 driver install: %s", esp_err_to_name(e));
+        }
+    } else {
+        ESP_LOGE(TAG, "Error during I2C 1 param config installation: %s", esp_err_to_name(e));
+    }
+
+    return e;
+}
+
 esp_err_t setupI2CInterrupt(i2c_port_t i2c_addr)
 {
+    esp_err_t e;
+
     if (i2c_event_queue == NULL) {
         i2c_event_queue = xQueueCreate(5, sizeof(uint32_t *));
     }
@@ -133,13 +166,44 @@ esp_err_t setupI2CInterrupt(i2c_port_t i2c_addr)
         print_mux = xSemaphoreCreateMutex();
     }
 
+    e = i2c_driver_delete(CARD_KB_I2C_PORT);
+    ets_printf("i2c_driver_delete returned: %s\n", esp_err_to_name(e));
+
     // We could use the i2c address as the ESP_OK or ESP_ERR_INVALID_ARG returned
-    esp_err_t e = i2c_isr_register(CARD_KB_I2C_PORT, &i2c_interrupt, NULL, 0, &i2c_slave_intr_handle);
+    e = i2c_isr_register(CARD_KB_I2C_PORT, &i2c_interrupt, NULL, 0, &i2c_slave_intr_handle);
     ets_printf("i2c_isr_register returned: %s\n", esp_err_to_name(e));
+
+    e = installI2CPort1Driver();
+    ets_printf("installI2CPort1Driver returned: %s\n", esp_err_to_name(e));
+
     return e;
 }
 
-const char* TAG = "I2C";
+esp_err_t i2cReadByte(uint8_t i2c_addr, uint8_t *data_byte);
+
+static void read_card_kb_task(void *arg) {
+    if (i2c_event_queue == NULL) {
+        i2c_event_queue = xQueueCreate(5, sizeof(uint8_t *));
+    }
+    uint8_t dataByte = 0;
+    uint8_t kbPort = 95;
+
+    while(1) {
+        esp_err_t e = i2cReadByte(kbPort, &dataByte);
+        if (e == ESP_OK && dataByte > 0) {
+            object kbBlock = nameTableLookup(globalSymbol("EventHandlerBlocks"), "KeyboardChar");
+            if (kbBlock != nilobj)
+            {
+                queueBlock(kbBlock, newInteger((int)dataByte));
+            }
+        }
+		
+		vTaskDelay(portTICK_RATE_MS * 2 / 1000);
+	}
+	
+	vTaskDelete(NULL);
+
+}
 
 static void i2c_handle_interrupt_task(void *arg){
 	
@@ -209,7 +273,7 @@ static void i2c_handle_interrupt_task(void *arg){
  * I2C Read/Setup Support Code
  */
 
-esp_err_t readI2CByte(uint8_t i2c_addr, uint8_t *data_byte)
+esp_err_t i2cReadByte(uint8_t i2c_addr, uint8_t *data_byte)
 {
     esp_err_t e;
     i2c_cmd_handle_t cmd;
@@ -226,10 +290,10 @@ esp_err_t readI2CByte(uint8_t i2c_addr, uint8_t *data_byte)
     i2c_master_write_byte(cmd, (i2c_addr << 1) | I2C_MASTER_READ, true);
     i2c_master_read_byte(cmd, data_byte, I2C_MASTER_LAST_NACK);
     i2c_master_stop(cmd);
-    e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 100/portTICK_PERIOD_MS);
+    e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 50/portTICK_PERIOD_MS);
 
     if (e != ESP_OK) {
-        ESP_LOGE("ESP32", "error reading I2C byte (%s)", esp_err_to_name(e));
+        ESP_LOGE("ESP32", "error reading I2C byte addr %d (%s)", i2c_addr, esp_err_to_name(e));
     } else {
         // ESP_LOGE("ESP32", "Reading I2C char (%c)", *data_byte);
     }
@@ -279,10 +343,12 @@ void runTask(void *process)
 
 extern void runBlockAfter(object block, object arg, int ticks);
 
+object platformNameStStr = nilobj;
+object currentTimeStStr = nilobj;
+
 object sysPrimitive(int number, object *arguments)
 {
     object returnedObject = nilobj;
-    int argIndex;
     int funcNum;
 
     /* someday there will be more here */
@@ -329,7 +395,7 @@ object sysPrimitive(int number, object *arguments)
     case 3:
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_Begin();
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
 #ifndef TEST_M5STICK
         m5StickInit();
 #endif
@@ -340,7 +406,7 @@ object sysPrimitive(int number, object *arguments)
     case 4:
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_ClearDisplay();
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
         TFT_fillScreen(current_paint.backgroundColor);
 #endif
         break;
@@ -349,28 +415,54 @@ object sysPrimitive(int number, object *arguments)
     case 5:
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_Display();
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
         // M5StickC doesn't have offscren render
 #endif
 
         break;
 
-    // Prim 156 Display the string at the x,y location passed in
+    // Prim 156 String functions (arg 0 is function num) 
     case 6:
-        checkIntArg(1)
+        checkIntArg(0)
+        int funcNum = getIntArg(0);
+
+        if (funcNum == 0) {
+            // Func 0 Display the string at the x,y location passed in
             checkIntArg(2)
+            checkIntArg(3)
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
-                SSD1306_DrawText(
-                    getIntArg(1),
-                    getIntArg(2),
-                    charPtr(arguments[0]),
-                    1);
-#elif TARGET_DEVICE == DEVICE_M5STICKC
-                TFT_resetclipwin();
-        TFT_setFont(DEFAULT_FONT, NULL);
-        TFT_print(charPtr(arguments[0]), getIntArg(1), getIntArg(2));
+            SSD1306_DrawText(
+                getIntArg(1),
+                getIntArg(2),
+                charPtr(arguments[0]),
+                1);
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
+            TFT_resetclipwin();
+        // TFT_setFont(DEFAULT_FONT, NULL);
+            TFT_print(charPtr(arguments[1]), getIntArg(2), getIntArg(3));
 #endif
+
+        } else if (funcNum == 1) {
+            // Func 1 - Display the character at the x,y location passed in
+
+        } else if (funcNum == 2) {
+            // Func 1 - Return the width of the string passed in
+            returnedObject = newInteger(TFT_getStringWidth(charPtr(arguments[1])));
+        } else if (funcNum == 20) {
+            // Func 1 - Set font to the font number second argument 
+            checkIntArg(1)
+            TFT_setFont(intValue(arguments[1]), NULL);
+        } else if (funcNum == 21) {
+            // Func 1 - Set 7 Seg params to the l, w, o arguments passed in
+            _fg = TFT_ORANGE;
+            checkIntArg(1)
+            checkIntArg(2)
+            checkIntArg(3)
+            TFT_setFont(FONT_7SEG, NULL);
+            set_7seg_font_atrib(getIntArg(1), getIntArg(2), getIntArg(3), TFT_DARKGREY);
+        }
+
 
         /* Set GPIO PIN in first argument to value in second argument */
         // gpio_set_level(intValue(arguments[0]), intValue(arguments[1]));
@@ -381,9 +473,10 @@ object sysPrimitive(int number, object *arguments)
     // Prim 157 rectangleX: x y: y width: w height: h isFilled: aBoolean
     case 7:
         checkIntArg(0)
-            checkIntArg(1)
-                checkIntArg(2)
-                    checkIntArg(3) if (arguments[4] != trueobj && arguments[4] != falseobj)
+        checkIntArg(1)
+        checkIntArg(2)
+        checkIntArg(3)
+        if (arguments[4] != trueobj && arguments[4] != falseobj)
         {
             sysError("non boolean argument", "isFilled");
         }
@@ -406,7 +499,7 @@ object sysPrimitive(int number, object *arguments)
                 getIntArg(2),
                 getIntArg(3));
         }
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
         if (arguments[4] == trueobj)
         {
             TFT_fillRect(
@@ -454,7 +547,7 @@ object sysPrimitive(int number, object *arguments)
                 getIntArg(1),
                 getIntArg(2));
         }
-#elif TARGET_DEVICE == DEVICE_M5STICKC
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
         if (arguments[4] == trueobj)
         {
             TFT_fillCircle(
@@ -480,7 +573,7 @@ object sysPrimitive(int number, object *arguments)
     // Prim 159 set GPIO pin mode and direction in first arg to mode in second arg
     case 9:
         checkIntArg(0)
-            checkIntArg(1)
+        checkIntArg(1)
 
                 gpio_mode_t gpioMode;
         gpio_pad_select_gpio(getIntArg(0));
@@ -522,30 +615,65 @@ object sysPrimitive(int number, object *arguments)
     // Prim 170 ESP32 functions. First arg is function number, second and third are arguments to the function
     case 20:
         checkIntArg(0);
-        argIndex = getIntArg(0);
+        funcNum = getIntArg(0);
         // function 0 wifi_start()
-        if (argIndex == 0)
+        if (funcNum == 0)
             wifi_start();
         // function 1 is set wifi ssid and password
-        else if (argIndex == 1) {
+        else if (funcNum == 1) {
             if (arguments[1] != nilobj)
                 wifi_set_ssid(charPtr(arguments[1]));
             if (arguments[2] != nilobj)
                 wifi_set_password(charPtr(arguments[2]));
-        } else if(argIndex == 20) {
+        } else if (funcNum == 2) {
+            wifi_connect();
+        } else if (funcNum == 3) {
+            returnedObject = wifi_scan();
+        } else if(funcNum == 20) {
             // Get I2C Byte at the I2C Address in the second prim argument
             uint8_t dataByte = 0;
-            esp_err_t e = readI2CByte(intValue(arguments[1]), &dataByte);
-            if (e == ESP_OK)
+            esp_err_t e = i2cReadByte(intValue(arguments[1]), &dataByte);
             returnedObject = (e == ESP_OK) ? newInteger(dataByte) : newError(newInteger(e));
-        } else if (argIndex == 21) {
+        } else if (funcNum == 21) {
             // Setup an I2C hander at the I2C Address in the second prim argument
             // For now let's just do it for the keyboard, then generalize it.
             esp_err_t e = setupI2CInterrupt(intValue(arguments[1]));
 
-        }else if (argIndex == 100) {
-            returnedObject = newInteger(GET_FREE_HEAP_SIZE());
+        } else if (funcNum == 22) {
+            // Start the Card Keyboard input task
+            BaseType_t r = xTaskCreate(read_card_kb_task, "card_kb_task", 2048, NULL, 20, NULL);
+            if(r != pdPASS) {
+                ESP_LOGE(TAG, "Error creating button_task");
+                //return ESP_FAIL;
+            }
+        // 50's functions are for ESP32 Date/Time
+        } else if (funcNum == 50) {
+            // Sync time with SNTP server (assumes Wifi connected
+            init_sntp_time();
+            returnedObject = trueobj;
             break;
+        }  else if (funcNum == 51) {
+            // Get SNTP based time (assuming init_sntp_time has been called)
+            get_sntp_time();
+            returnedObject = trueobj;
+            break;
+        }  else if (funcNum == 52) {
+            // Get ESP32 time (assuming get_sntp_time has been called)
+            get_esp32_time();
+            returnedObject = trueobj;
+            break;
+        }  else if (funcNum == 53) {
+            char *timeStr = current_time_string(charPtr(arguments[1]));
+            returnedObject = timeStr == NULL ? nilobj : newStString(timeStr);
+            // if (timeStr != NULL) {
+            //     currentTimeStStr = newStString(timeStr);
+            //     returnedObject = currentTimeStStr;
+            // }
+            break;
+        }   else if (funcNum == 54) {
+            setTimeZone(charPtr(arguments[1]));
+        }  else if (funcNum == 100) {
+            returnedObject = newInteger(GET_FREE_HEAP_SIZE());
         }
         break;
 
@@ -554,13 +682,13 @@ object sysPrimitive(int number, object *arguments)
     case 31:
         sysWarn("in primitive 181", "sysPrimitive");
         checkIntArg(0);
-        argIndex = getIntArg(0);
+        funcNum = getIntArg(0);
         // Function number 0 is restart the ESP32
-        if (argIndex == 0)
+        if (funcNum == 0)
             esp_restart();
         // Lookup the function pointer in a primitive function table (trying vs. a switch)
         // We'll normalize other prim function number based lookups to this if it feels better
-        int funcIndex = argIndex - 1;
+        int funcIndex = funcNum - 1;
         if (funcIndex != 0)
             break;
         primFunc_t m5Func = m5PrimitiveFunctions[funcIndex];
@@ -629,6 +757,22 @@ object sysPrimitive(int number, object *arguments)
     case 31:
         break;
 #endif
+
+
+    // Prim 200 Platform Infomration functions (Argument is function number)
+    case 50:
+        checkIntArg(0);
+        funcNum = getIntArg(0);
+        // Function 0 Return Platform Name String
+        if (funcNum == 0) {
+            if (platformNameStStr == nilobj) {
+                platformNameStStr = newStString(PLATFORM_NAME_STRING);
+                // Since VM will keep a reference to it and we don't want it reused
+                incr(platformNameStStr);
+            }
+            returnedObject = platformNameStStr;
+        }
+        break;
 
     default:
         sysWarn("unknown primitive", "sysPrimitive");
