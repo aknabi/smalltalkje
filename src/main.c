@@ -29,12 +29,15 @@ noreturn startup()
     initVMBlockToRunQueue();
 
 #ifdef TARGET_ESP32
+    nvs_init();
 #ifdef WRITE_OBJECT_PARTITION
-    writeObjectDataPartition();
-    //#else
+    int value;
+    esp_err_t err = nvs_read_int32("_writeODP", &value);
+    if (err != ESP_OK || value == 0) {
+        writeObjectDataPartition();
+    }
     setupObjectData();
 #endif
-    nvs_init();
 #endif
     TT_LOG_INFO(TAG, "Pre-smalltalk start free heap size: %d", GET_FREE_HEAP_SIZE());
     launchSmalltalk();
@@ -85,7 +88,7 @@ void launchSmalltalk()
     object firstProcess;
     char *p, buffer[120];
 
-    TT_LOG_INFO(TAG, "Starting TinyTalk Smalltalk, Version 3.1\n");
+    TT_LOG_INFO(TAG, "Starting Smalltalkje, Version 1\n");
 
     initMemoryManager();
 

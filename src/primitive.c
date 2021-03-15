@@ -782,45 +782,7 @@ object primitive(register int primitiveNumber, object *arguments)
 	return (returnedObject);
 }
 
-/*
- * Execute either a method or block (the other param will be nilobj)
- * Used by functions to wrap common code
- * The argument arg will be passed in as a block temp.
- * TODO: Arg should also be passed to method... also check to see block/method takes args
- */
-void runMethodOrBlock(object method, object block, object arg)
-{
-	object process, stack;
-
-	process = allocObject(processSize);
-	// incr(process);
-	stack = newArray(50);
-	// incr(stack);
-
-	/* make a process */
-	basicAtPut(process, stackInProcess, stack);
-	basicAtPut(process, stackTopInProcess, newInteger(10));
-	basicAtPut(process, linkPtrInProcess, newInteger(2));
-
-	basicAtPut(stack, 1, method == nilobj ? nilobj : arg); /* argument if method */
-
-	/* now make a linkage area in stack */
-	basicAtPut(stack, 2, nilobj); /* previous link */
-
-	object ctxObj = method == nilobj ? basicAt(block, contextInBlock) : nilobj;
-	basicAtPut(stack, 3, ctxObj); /* context object (nil = stack) */
-
-	basicAtPut(stack, 4, newInteger(1)); /* return point */
-
-	basicAtPut(stack, 5, method); /* method if there is one (otherwise nil) */
-
-	object bytecountPos = method == nilobj ? basicAt(block, bytecountPositionInBlock) : newInteger(1);
-	basicAtPut(stack, 6, bytecountPos); /* byte offset */
-
-	/* now go execute it */
-	while (execute(process, 15000));
-	// unaryPrims(9, process);
-}
+extern void runMethodOrBlock(object method, object block, object arg);
 
 void doIt(char *text, object arg)
 {
@@ -834,34 +796,3 @@ void doIt(char *text, object arg)
 	runMethodOrBlock(method, nilobj, arg);
 }
 
-/// TODO: FOR NOW DISABLE CREATING RTOS TASKS AS IT CRASHES,
-#ifdef TARGET_ESP32
-//#ifdef TARGET_ESP32_DISABLED_THIS
-
-void evalTask(void *evalText, object arg)
-{
-	doIt(evalText, arg);
-	vTaskDelete(NULL);
-}
-
-extern boolean interruptInterpreter();
-
-void forkEval(char *evalText, object arg)
-{
-	xTaskCreate(
-		evalTask,	/* Task function. */
-		"evalTask", /* name of task. */
-		8096,		/* Stack size of task */
-		evalText,	/* parameter of the task (the Smalltalk exec string to run) */
-		1,			/* priority of the task */
-		NULL);		/* Task handle to keep track of created task */
-}
-
-#else // When not running on a ESP32 do single thread versions
-
-void forkEval(char *evalText, object arg)
-{
-	doIt(evalText, arg);
-}
-
-#endif
