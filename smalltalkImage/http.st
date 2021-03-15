@@ -95,7 +95,7 @@ Methods Weather 'all'
 |
 	update | req a |
 		req <- self getRequest.
-		req sendWhenDone: [:r | (r isError or: [(r statusCode = 200) not]) ifFalse: [
+		req sendWhenDone: [:r | (r isNil or: [(r statusCode = 200) not]) ifFalse: [
 			a <- r content asWords: $,.
 			self loadArray: a ] ]
 |
