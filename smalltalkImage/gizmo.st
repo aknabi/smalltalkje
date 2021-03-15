@@ -11,7 +11,7 @@
 Class Gizmo Object display
 Class HttpRequest Object url method contentType body
 Class HttpResponse Object statusCode contentLength content
-Class M5Term Object y input i
+Class GizmoTerm Object y input i
 *
 Methods Gizmo 'all'
 	new
@@ -34,8 +34,8 @@ Methods Gizmo 'all'
 	setupKeyboardHandlers
 		self deviceName = 'M5StickC' ifTrue: [
 			KeyboardSemaphore <- Semaphore new.
-			m5Term <- M5Term new initialize.
-			self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. m5Term addCharInt: c ].
+			gizmoTerm <- GizmoTerm new initialize.
+			self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. gizmoTerm addCharInt: c ].
 			"[ [true] whileTrue: [KeyboardSemaphore wait. KeyboardChar printAscii ] ] fork."
 			gizmo runKBTask ]
 |
@@ -220,7 +220,7 @@ Methods String 'execute'
     evalWith: arg
         <20 self>
 ]
-Methods M5Term 'all'
+Methods GizmoTerm 'all'
 	initialize
 		i <- 1.
 		y <- 4.
