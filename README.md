@@ -1,6 +1,6 @@
 # smalltalkje
 ## An embedded smalltalk (based on Tim Budd's Little Smalltalk)
-**(currently with ESP32, SSD1306 OLED, M5StickC, Mac support)**
+**(currently with ESP32 DevKit, SSD1306 OLED, M5StickC, Lilygo T-Wristband, Mac support)**
 
 Based on:
 
