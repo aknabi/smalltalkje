@@ -130,7 +130,8 @@ Methods Cloud 'all'
 			ifFalse: [Error new]
 |
 	fileIn: url | e |
+		fileInEvalStr <- nil.
 		^ (e <- self download: url filename: 'download.st') notError
-			ifTrue: [ File new fileIn: '/spiffs/download.st']
-			ifFalse: [e]
+			ifTrue: [ File new fileIn: '/spiffs/download.st'. fileInEvalStr value ]
+			ifFalse: [ e ]
 ]

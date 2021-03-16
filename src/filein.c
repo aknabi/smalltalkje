@@ -56,8 +56,64 @@ object findClass(name) char *name;
 	return newobj;
 }
 
+void justDoIt(text)
+char *text;
+{
+    object process, stack, method;
+
+    method = newMethod();
+    incr(method);
+    setInstanceVariables(nilobj);
+    ignore parse(method, text, false);
+
+    process = allocObject(processSize);
+    incr(process);
+    stack = newArray(50);
+    incr(stack);
+
+    /* make a process */
+    basicAtPut(process, stackInProcess, stack);
+    basicAtPut(process, stackTopInProcess, newInteger(10));
+    basicAtPut(process, linkPtrInProcess, newInteger(2));
+
+    /* put argument on stack */
+    basicAtPut(stack, 1, nilobj);	/* argument */
+    /* now make a linkage area in stack */
+    basicAtPut(stack, 2, nilobj);	/* previous link */
+    basicAtPut(stack, 3, nilobj);	/* context object (nil = stack) */
+    basicAtPut(stack, 4, newInteger(1));	/* return point */
+    basicAtPut(stack, 5, method);	/* method */
+    basicAtPut(stack, 6, newInteger(1));	/* byte offset */
+
+    /* now go execute it */
+    while (execute(process, 15000))
+	fprintf(stderr, "..");
+}
+
 /*
-	readDeclaration reads a declaration of a class
+	readAndExecute reads the rest of the current line and executes it
+*/
+
+const char *fileInEvalKeyStr = "fileInEvalStr";
+
+static void readAndExecute()
+{
+	char *execLine = toEndOfLine();
+	// TODO: evaluating the text (as we do in image building) crashes, so for now
+	// store in a global and let Smalltalk look for the global to run.
+	// The only issue is that this only allows for a single evaluation line in a filein
+
+	// Broken :(
+	// justDoIt(execLine);
+
+	/* now make name */
+    object nameObj = newSymbol(fileInEvalKeyStr);
+    /* now put in global symbols table */
+    nameTableInsert(symbols, strHash(fileInEvalKeyStr), nameObj, newStString(execLine));
+}
+
+/*
+	readClassDeclaration reads a declaration of a class
 */
 static void readClassDeclaration()
 {
@@ -174,6 +230,8 @@ void fileIn(FILE *fd, boolean printit)
 			; /* do nothing, get next line */
 		else if ((token == binary) && streq(tokenString, "*"))
 			; /* do nothing, its a comment */
+		else if ((token == binary) && streq(tokenString, "!"))
+			readAndExecute();
 		else if ((token == nameconst) && streq(tokenString, "Class"))
 			readClassDeclaration();
 		else if ((token == nameconst) && streq(tokenString, "Methods"))

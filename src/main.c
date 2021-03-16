@@ -32,7 +32,7 @@ noreturn startup()
     nvs_init();
 #ifdef WRITE_OBJECT_PARTITION
     int value;
-    esp_err_t err = nvs_read_int32("_writeODP", &value);
+    esp_err_t err = nvs_read_int32("_skipODP", &value);
     if (err != ESP_OK || value == 0) {
         writeObjectDataPartition();
     }

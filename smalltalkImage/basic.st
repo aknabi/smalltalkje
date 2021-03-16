@@ -424,6 +424,9 @@ Methods UndefinedObject 'all'
 |
 	printString
 		^ 'nil'
+|
+	value
+		^ self
 ]
 Methods Object 'errors'
 	message: m notRecognizedWithArguments: a

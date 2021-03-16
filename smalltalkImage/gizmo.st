@@ -82,7 +82,7 @@ Methods Gizmo 'all'
 |
 	updateDisplayTime
 		display set7Seg: 8 width: 1 outline: 1.
-		display string: (self getTimeString: '%T') x: -9003 y: 4.
+		display string: (self getTimeString: '%R') x: -9003 y: 4.
 		display setFont: Font new default
 |
 	updateDisplayWeather
@@ -138,6 +138,13 @@ Methods Gizmo 'NVS'
 |
 	nvsRemoveKey: key
 		^ <182 3 key>
+]
+*
+Methods Gizmo 'configuration'
+	skipObjectDataOnBoot: aBoolean
+		aBoolean
+			ifTrue: [self nvsAt: '_skipODP' put: 100]
+			ifFalse: [self nvsRemoveKey: '_skipODP']
 ]
 *
 Methods Gizmo 'gpio-i2c'

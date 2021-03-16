@@ -13,7 +13,7 @@
 
 int initial = 1;		/* making initial image */
 
-void goDoIt(char *text);
+// void goDoIt(char *text);
 void makeInitialImage();
 boolean parse(object method, char *text, boolean savetext);
 boolean execute(object aProcess, int maxsteps);
@@ -32,13 +32,13 @@ int main(int argc, char **argv)
 	fprintf(stderr, "%s:\n", argv[i]);
 	ignore sprintf(methbuf,
 		       "x <120 1 '%s' 'r'>. <123 1>. <121 1>", argv[i]);
-	goDoIt(methbuf);
+	justDoIt(methbuf);
     }
 
     /* when we are all done looking at the arguments, do initialization */
     fprintf(stderr, "initialization\n");
     /*debugging = true; */
-    goDoIt("x nil initialize\n");
+    justDoIt("x nil initialize\n");
     fprintf(stderr, "finished\n");
 
     /* exit and return - belt and suspenders, but it keeps lint happy */
@@ -46,39 +46,39 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void goDoIt(text)
-char *text;
-{
-    object process, stack, method;
+// void goDoIt(text)
+// char *text;
+// {
+//     object process, stack, method;
 
-    method = newMethod();
-    incr(method);
-    setInstanceVariables(nilobj);
-    ignore parse(method, text, false);
+//     method = newMethod();
+//     incr(method);
+//     setInstanceVariables(nilobj);
+//     ignore parse(method, text, false);
 
-    process = allocObject(processSize);
-    incr(process);
-    stack = newArray(50);
-    incr(stack);
+//     process = allocObject(processSize);
+//     incr(process);
+//     stack = newArray(50);
+//     incr(stack);
 
-    /* make a process */
-    basicAtPut(process, stackInProcess, stack);
-    basicAtPut(process, stackTopInProcess, newInteger(10));
-    basicAtPut(process, linkPtrInProcess, newInteger(2));
+//     /* make a process */
+//     basicAtPut(process, stackInProcess, stack);
+//     basicAtPut(process, stackTopInProcess, newInteger(10));
+//     basicAtPut(process, linkPtrInProcess, newInteger(2));
 
-    /* put argument on stack */
-    basicAtPut(stack, 1, nilobj);	/* argument */
-    /* now make a linkage area in stack */
-    basicAtPut(stack, 2, nilobj);	/* previous link */
-    basicAtPut(stack, 3, nilobj);	/* context object (nil = stack) */
-    basicAtPut(stack, 4, newInteger(1));	/* return point */
-    basicAtPut(stack, 5, method);	/* method */
-    basicAtPut(stack, 6, newInteger(1));	/* byte offset */
+//     /* put argument on stack */
+//     basicAtPut(stack, 1, nilobj);	/* argument */
+//     /* now make a linkage area in stack */
+//     basicAtPut(stack, 2, nilobj);	/* previous link */
+//     basicAtPut(stack, 3, nilobj);	/* context object (nil = stack) */
+//     basicAtPut(stack, 4, newInteger(1));	/* return point */
+//     basicAtPut(stack, 5, method);	/* method */
+//     basicAtPut(stack, 6, newInteger(1));	/* byte offset */
 
-    /* now go execute it */
-    while (execute(process, 15000))
-	fprintf(stderr, "..");
-}
+//     /* now go execute it */
+//     while (execute(process, 15000))
+// 	fprintf(stderr, "..");
+// }
 
 /*
 	there is a sort of chicken and egg problem with regards to making

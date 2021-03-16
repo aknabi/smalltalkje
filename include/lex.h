@@ -33,3 +33,5 @@ extern char tokenString[]; /* text of current token */
 extern int tokenInteger;   /* integer (or character) value of token */
 extern double tokenFloat;  /* floating point value of token */
 extern noreturn lexinit(); /* initialization routine */
+extern char* toEndOfLine();/* the rest of the current line */
+

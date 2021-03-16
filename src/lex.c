@@ -23,7 +23,7 @@ double tokenFloat;	  /* floating point value of token */
 
 /* local variables used only by lexical analyser */
 
-static char *cp;			/* character pointer */
+static char *cp;			/* character pointer to current line */
 static char pushBuffer[10]; /* pushed back buffer */
 static int pushindex;		/* index of last pushed back char */
 static char cc;				/* current character */
@@ -54,6 +54,12 @@ static char nextChar()
 	else
 		cc = '\0';
 	return (cc);
+}
+
+/* toEndOfLine - return the rest of the current line */
+char* toEndOfLine()
+{
+	return cp;
 }
 
 /* peek - take a peek at the next character */
