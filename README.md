@@ -46,3 +46,5 @@ An OLED display class has been added (very early work... all this will change)..
 There's also intial support for the M5StickC (and will add M5Atom/Lite, M5Stack support next)... these is actually the "real" targets for this project (the ESP32 dev board allowed be to use JTAG debugging, which the M5 doesn't have... but now getting to a point where it's not needed). I'll try to keep the ESP32 dev support going... will be doable for the core, but color displays and other features may just be stubbed on the ESP32 dev and left as a porting effort for anyone using other peripherals.
 
 Again... this is just a commit after getting the M5Stick drawing basic graphics and things will be fast moving from here for a bit.
+
+For getting started and more detailed developer documentation refer to the [Smalltalkje Wiki](https://github.com/aknabi/smalltalkje/wiki) - Currently in progress so very light and incomplete
