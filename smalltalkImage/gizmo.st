@@ -80,6 +80,9 @@ Methods Gizmo 'all'
 		"see www.gnu.org/software/libc/manual/html_node/TZ-Variable.html"
 		^ <170 54 tzString>
 |
+    getEpochSeconds
+        ^ <170 55>
+|
 	updateDisplayTime
 		display set7Seg: 8 width: 1 outline: 1.
 		display string: (self getTimeString: '%R') x: -9003 y: 4.

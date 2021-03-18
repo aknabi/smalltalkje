@@ -22,6 +22,7 @@
 #include "esp32wifi.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
+#include "esp_sntp.h"
 
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
 #include "ssd1306_oled.h"
@@ -632,7 +633,16 @@ object sysPrimitive(int number, object *arguments)
             break;
         }   else if (funcNum == 54) {
             setTimeZone(charPtr(arguments[1]));
-        }  else if (funcNum == 100) {
+        } else if (funcNum == 55) {
+            returnedObject = newFloat((FLOAT) getEpochSeconds());
+        } else if (funcNum == 56) {
+            time_t epochSecs = (time_t) floatValue(arguments[1]);
+            returnedObject = newInteger( get_time_component(&epochSecs, intValue(arguments[2])) );
+        } else if (funcNum = 57) {
+            time_t epochSecs = (time_t) floatValue(arguments[1]);
+            char *timeStr = time_string(epochSecs, charPtr(arguments[2]));
+            returnedObject = timeStr == NULL ? nilobj : newStString(timeStr);
+        } else if (funcNum == 100) {
             returnedObject = newInteger(GET_FREE_HEAP_SIZE());
         }
         break;

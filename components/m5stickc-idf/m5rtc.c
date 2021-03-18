@@ -45,6 +45,37 @@ time_t now;
 */
 struct tm timeinfo = { 0 };
 
+char strftime_buf[64];
+
+char *time_string(time_t* epochSeconds, char *format) {
+    struct tm *local_time = localtime(&epochSeconds);
+    size_t n = strftime(strftime_buf, sizeof(strftime_buf), format, local_time);
+    char *retStr = NULL;
+    if (n > 0) {
+      retStr = strftime_buf;
+    }
+    return retStr;
+}
+
+int get_time_component(time_t* epochSeconds, int component)
+{
+    struct tm *local_time = localtime(&epochSeconds);
+    if (component == 1) {
+        return timeinfo.tm_sec;
+    } else if (component == 2) {
+        return  timeinfo.tm_min;
+    } else if (component == 3) {
+        return timeinfo.tm_hour;
+    } else if (component == 4) {
+        return timeinfo.tm_mday;
+    } else if (component == 5) {
+        return timeinfo.tm_mon;
+    } else if (component == 6) {
+        return timeinfo.tm_year;
+    }
+    return 0;
+}
+
 static void sntp_obtain_time(void)
 {
     // initialize_sntp();
@@ -60,14 +91,18 @@ static void sntp_obtain_time(void)
     localtime_r(&now, &timeinfo);
 }
 
+time_t getEpochSeconds(void)
+{
+    get_esp32_time();
+    return now;
+}
+
 void setTimeZone(char *tzString)
 {
     setenv("TZ", tzString, 1);
     tzset();
     localtime_r(&now, &timeinfo);
 }
-
-char strftime_buf[64];
 
 void get_esp32_time(void) {
     time(&now);
