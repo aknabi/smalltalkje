@@ -638,10 +638,23 @@ object sysPrimitive(int number, object *arguments)
         } else if (funcNum == 56) {
             time_t epochSecs = (time_t) floatValue(arguments[1]);
             returnedObject = newInteger( get_time_component(&epochSecs, intValue(arguments[2])) );
-        } else if (funcNum = 57) {
+        } else if (funcNum == 57) {
             time_t epochSecs = (time_t) floatValue(arguments[1]);
             char *timeStr = time_string(epochSecs, charPtr(arguments[2]));
             returnedObject = timeStr == NULL ? nilobj : newStString(timeStr);
+        } else if (funcNum == 58) {
+            time_t epochSecs = (time_t) floatValue(arguments[1]);
+            time_t newEpoch = setNewDate(&epochSecs, getIntArg(2), getIntArg(3), getIntArg(4));
+            returnedObject = newFloat((FLOAT) newEpoch);
+        } else if(funcNum == 59) {
+            time_t epochSecs = (time_t) floatValue(arguments[1]);
+		    fprintf(stderr, "epochSecs: %d\n", epochSecs);
+		    fprintf(stderr, "hour: %d\n", getIntArg(2));
+		    fprintf(stderr, "minutes: %d\n", getIntArg(3));
+		    fprintf(stderr, "seconds: %d\n", getIntArg(4));
+            fflush(stderr);
+            time_t newEpoch = setNewTime(&epochSecs, getIntArg(2),getIntArg(3), getIntArg(4));
+            returnedObject = newFloat((FLOAT) newEpoch);
         } else if (funcNum == 100) {
             returnedObject = newInteger(GET_FREE_HEAP_SIZE());
         }

@@ -7,13 +7,24 @@ Class Date Object epochSeconds
 *
 Methods Date 'all'
 	new
-		^super new initialize
+		^super new now
 |
-	initialize
+	now
 		epochSeconds <- <170 55>
 |
     epochSeconds
         ^ epochSeconds
+|
+    epochSeconds: aNumber
+        epochSeconds <- aNumber asFloat
+|
+    day: day month: month year: year
+        "Set new values for the receiver day, month, year"
+        epochSeconds <- <170 58 epochSeconds day month year>
+|
+    hour: hour minutes: minutes seconds: seconds
+        "Set new values for the receiver day, month, year"
+        epochSeconds <- <170 59 epochSeconds hour minutes seconds>
 |
     seconds
         ^ <170 56 epochSeconds 1>
@@ -35,6 +46,12 @@ Methods Date 'all'
 |
     asString: format
         ^ <170 57 epochSeconds format>
+|
+    printString
+        ^ self asString
+|
+    asString
+        ^ self asString: '%FT%TZ'
 |
 	initSNTP
 		^ <170 50>

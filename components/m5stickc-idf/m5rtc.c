@@ -57,7 +57,7 @@ char *time_string(time_t* epochSeconds, char *format) {
     return retStr;
 }
 
-int get_time_component(time_t* epochSeconds, int component)
+int get_time_component(time_t *epochSeconds, int component)
 {
     struct tm *local_time = localtime(&epochSeconds);
     if (component == 1) {
@@ -69,7 +69,7 @@ int get_time_component(time_t* epochSeconds, int component)
     } else if (component == 4) {
         return timeinfo.tm_mday;
     } else if (component == 5) {
-        return timeinfo.tm_mon;
+        return timeinfo.tm_mon + 1;
     } else if (component == 6) {
         return timeinfo.tm_year;
     }
@@ -119,7 +119,28 @@ void get_esp32_time(void) {
     // ESP_LOGI(TAG, "The current date/time in Amsterdam is: %s", strftime_buf);
 }
 
-char *current_time_string(char *format) {
+time_t setNewDate(time_t *epochSeconds, int day, int month, int year)
+{
+    struct tm *newTime = localtime(&epochSeconds);
+    newTime->tm_mday = day;
+    newTime->tm_mon = month - 1;
+    newTime->tm_year = year - 1900;
+    newTime->tm_isdst = -1;
+    return mktime(newTime);
+}
+
+time_t setNewTime(time_t *epochSeconds, int hour, int minutes, int seconds)
+{
+    struct tm *newTime = localtime(&epochSeconds);
+    // newTime->tm_hour = hour;
+    // newTime->tm_min = minutes;
+    // newTime->tm_sec = seconds;
+    // newTime->tm_isdst = -1;
+    return mktime(newTime);
+}
+
+char *current_time_string(char *format)
+{
     get_esp32_time();
     size_t n = strftime(strftime_buf, sizeof(strftime_buf), format, &timeinfo);
     char *retStr = NULL;
@@ -129,18 +150,21 @@ char *current_time_string(char *format) {
     return retStr;
 }
 
-void get_sntp_time(void) {
+void get_sntp_time(void) 
+{
     sntp_obtain_time();
     get_esp32_time();
 }
 
-void init_sntp_time(void) {
+void init_sntp_time(void) 
+{
     sntp_setservername(0, "pool.ntp.org");
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_init();
 }
 
-esp_err_t m5rtc_init(void) {
+esp_err_t m5rtc_init(void) 
+{
 //   Wire1.begin(21,22);
 
 //   Wire1.beginTransmission(0x51);
@@ -184,8 +208,8 @@ esp_err_t m5rtc_init(void) {
     return e;
 }
 
-esp_err_t getRTCTime(RTC_TimeTypeDef* rtcTimeStruct){
-    
+esp_err_t getRTCTime(RTC_TimeTypeDef* rtcTimeStruct)
+{    
     uint8_t buf[3] = {0};
 
 //     Wire1.beginTransmission(0x51);
