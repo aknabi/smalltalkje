@@ -17,6 +17,7 @@
 
 #include "build.h"
 #include "tty.h"
+#include "datetime.h"
 
 #ifdef TARGET_ESP32
 #include "esp32wifi.h"
@@ -729,6 +730,55 @@ object sysPrimitive(int number, object *arguments)
 
     // Prim 160 set GPIO pin in first arg to value in second arg
     case 10:
+        break;
+
+    // Prim 170 ESP32 Prim functions (support Date time with POSIX)
+    // TODO: breakout generic POSIX date time into a seperate prim
+    case 20:
+        checkIntArg(0);
+        funcNum = getIntArg(0);
+        // 50's functions are for ESP32 Date/Time
+        if (funcNum == 50) {
+            // Sync time with SNTP server (assumes Wifi connected
+            returnedObject = trueobj;
+            break;
+        }  else if (funcNum == 51) {
+            // Get SNTP based time (assuming init_sntp_time has been called)
+            returnedObject = trueobj;
+            break;
+        }  else if (funcNum == 52) {
+            // Get ESP32 time (assuming get_sntp_time has been called)
+            get_esp32_time();
+            returnedObject = trueobj;
+            break;
+        }  else if (funcNum == 53) {
+            char *timeStr = current_time_string(charPtr(arguments[1]));
+            returnedObject = timeStr == NULL ? nilobj : newStString(timeStr);
+            // if (timeStr != NULL) {
+            //     currentTimeStStr = newStString(timeStr);
+            //     returnedObject = currentTimeStStr;
+            // }
+            break;
+        }   else if (funcNum == 54) {
+            setTimeZone(charPtr(arguments[1]));
+        } else if (funcNum == 55) {
+            returnedObject = newFloat((FLOAT) getEpochSeconds());
+        } else if (funcNum == 56) {
+            time_t epochSecs = (time_t) floatValue(arguments[1]);
+            returnedObject = newInteger( get_time_component(&epochSecs, intValue(arguments[2])) );
+        } else if (funcNum == 57) {
+            time_t epochSecs = (time_t) floatValue(arguments[1]);
+            char *timeStr = time_string(&epochSecs, charPtr(arguments[2]));
+            returnedObject = timeStr == NULL ? nilobj : newStString(timeStr);
+        } else if (funcNum == 58) {
+            time_t epochSecs = (time_t) floatValue(arguments[1]);
+            time_t newEpoch = setNewDate(&epochSecs, getIntArg(2), getIntArg(3), getIntArg(4));
+            returnedObject = newFloat((FLOAT) newEpoch);
+        } else if(funcNum == 59) {
+            time_t epochSecs = (time_t) floatValue(arguments[1]);
+            time_t newEpoch = setNewTime(&epochSecs, getIntArg(2),getIntArg(3), getIntArg(4));
+            returnedObject = newFloat((FLOAT) newEpoch);
+        }
         break;
 
     // Prim 181 M5 functions. First arg is function number, second and third are arguments to the function
