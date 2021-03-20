@@ -3,6 +3,8 @@
  *
  * (C) 2019 - Pablo Bacho <pablo@pablobacho.com>
  * This code is licensed under the MIT License.
+ * 
+ * TODO: Already have T-Wristband Code here... make buttons configuarble based on target
  */
 
 #include "include/m5button.h"

@@ -61,52 +61,14 @@ Methods Gizmo 'all'
 	wifiConnect
 		<170 2>
 |
-	initSNTP
-		^ <170 50>
-|
-	getSNTPTime
-		^ <170 51>
-|
-	getESP32Time
-		^ <170 52>
-|
-	getTimeString: format
-		"Return time as string based on linux strftime() format string"
-		"see linux.die.net/man/3/strftime"
-		^ <170 53 format>
-|
-	setTimeZone: tzString
-		"Set the timezone based on POSIX TZ string and save in flash"
-		"see www.gnu.org/software/libc/manual/html_node/TZ-Variable.html"
-		^ <170 54 tzString>
-|
-    getEpochSeconds
-        ^ <170 55>
-|
-	updateDisplayTime
-		display set7Seg: 8 width: 1 outline: 1.
-		display string: (self getTimeString: '%R') x: -9003 y: 4.
-		display setFont: Font new default
-|
 	updateDisplayWeather
 		weather updateSync.
 		display string: 'Temp:' x: 16 y: 40; string: weather temp x: 60 y: 40; string: weather desc x: 16 y: 54.
-|
-	setupDate | tz |
-		self initSNTP.
-		self getSNTPTime.
-		(tz <- self nvsStringAtKey: 'TZ') notNil ifTrue: [self setTimeZone: tz].
-		"clockUpdateBlock <- [self clockUpdateLoop]."
-		"clockUpdateBlock value"
 |
 	setupWeather
 		weather <- Weather new city: 'Amsterdam'.
 		"weatherUpdateBlock <- [self weatherUpdateLoop]."
 		"weatherUpdateBlock value"
-|
-	clockUpdateLoop
-		self updateDisplayTime.
-		clockUpdateBlock runAfter: 500
 |
 	weatherUpdateLoop | s |
 		self updateDisplayWeather.

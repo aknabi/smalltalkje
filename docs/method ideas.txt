@@ -3,7 +3,9 @@ m5Stick when: #alarmGoesOff do:
 
 wifi connect: ssid password: password whenDone: aBlock 
 
-esp32 whenGPIO: pin do: aBlock
+esp32 whenGPIO: pin goes: (lowOrHigh) do: aBlock
+// Define globals low as true and high as false
+
 esp32 do: [aBlock] after: milliseconds
 
 Make M5StickC a subclass of ESP32

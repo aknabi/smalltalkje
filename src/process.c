@@ -234,6 +234,8 @@ object getNextVMBlockToRun() { return nilobj; }
 boolean queueVMBlockToRun(object block) { return true; }
 boolean isVMBlockQueued() { return false; }
 
+extern void doIt(char *text, object arg);
+
 // When not running on a ESP32 do single thread versions
 void forkEval(char *evalText, object arg)
 {

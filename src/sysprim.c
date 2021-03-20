@@ -1,11 +1,10 @@
 /*
-	Little Smalltalk, version 3
-	Written by Tim Budd, January 1989
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
 
-	tty interface routines
-	this is used by those systems that have a bare tty interface
-	systems using another interface, such as the stdwin interface
-	will replace this file with another.
+	ESP32 system primitives
+    TODO: Structure this so that the target (e.g. ESP32, nRF53, Dialog) code
+    is in a target file and the prim definitions are here calling those.
 */
 
 #include <stdio.h>
@@ -17,6 +16,7 @@
 #include "names.h"
 
 #include "build.h"
+#include "tty.h"
 
 #ifdef TARGET_ESP32
 #include "esp32wifi.h"
@@ -353,6 +353,7 @@ object sysPrimitive(int number, object *arguments)
         break;
 
     /* prim 153 initializes the OLED display. Must be called before displaying */
+    // TODO: This should be in Smalltalk initialization as it inits more than the display on some targets
     case 3:
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
         SSD1306_Begin();
@@ -648,11 +649,6 @@ object sysPrimitive(int number, object *arguments)
             returnedObject = newFloat((FLOAT) newEpoch);
         } else if(funcNum == 59) {
             time_t epochSecs = (time_t) floatValue(arguments[1]);
-		    fprintf(stderr, "epochSecs: %d\n", epochSecs);
-		    fprintf(stderr, "hour: %d\n", getIntArg(2));
-		    fprintf(stderr, "minutes: %d\n", getIntArg(3));
-		    fprintf(stderr, "seconds: %d\n", getIntArg(4));
-            fflush(stderr);
             time_t newEpoch = setNewTime(&epochSecs, getIntArg(2),getIntArg(3), getIntArg(4));
             returnedObject = newFloat((FLOAT) newEpoch);
         } else if (funcNum == 100) {
