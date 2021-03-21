@@ -80,7 +80,7 @@ Methods Smalltalk 'all'
 		c printAscii.
 		input asString.
 		input = 'restart' ifTrue: [
-			(self inquire: 'Restart system?') ifTrue: [ <181 0> ]
+			(self inquire: 'Restart system?') ifTrue: [ gizmo restart ]
 		].
 		^ input
 |

@@ -880,7 +880,7 @@ static void _fillArcOffsetted(uint16_t cx, uint16_t cy, uint16_t radius, uint16_
 	disp_deselect();
 }
 
-
+// TFT_drawArc Draw circle arc on screen, from ~ to given angles, with given thickness. Can be outlined with different color
 //===========================================================================================================================
 void TFT_drawArc(uint16_t cx, uint16_t cy, uint16_t r, uint16_t th, float start, float end, color_t color, color_t fillcolor)
 {
@@ -928,6 +928,7 @@ void TFT_drawArc(uint16_t cx, uint16_t cy, uint16_t r, uint16_t th, float start,
 	}
 }
 
+// TFT_drawPolygon Draw poligon on screen with given number of sides (3~60). Can be outlined with different color and rotated by given angle.
 //=============================================================================================================
 void TFT_drawPolygon(int cx, int cy, int sides, int diameter, color_t color, color_t fill, int rot, uint8_t th)
 {

@@ -113,6 +113,9 @@ Methods Gizmo 'configuration'
 		aBoolean
 			ifTrue: [self nvsAt: '_skipODP' put: 100]
 			ifFalse: [self nvsRemoveKey: '_skipODP']
+|
+	restart
+		<181 0>
 ]
 *
 Methods Gizmo 'gpio-i2c'
