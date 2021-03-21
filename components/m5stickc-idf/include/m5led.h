@@ -15,11 +15,23 @@ extern "C" {
 #include "esp_log.h"
 #include "driver/gpio.h"
 
+// TODO: Either move build.h or figure out how to use in in components (though breaks component modularity)
+#include "../../../include/build.h"
+
 #define M5LED_ON 0
 #define M5LED_OFF 1
 
 #define M5LED_DEFAULT_STATE M5LED_OFF
+
+#if TARGET_DEVICE == DEVICE_M5STICKC
+
 #define M5LED_GPIO          GPIO_NUM_10
+
+#elif TARGET_DEVICE == DEVICE_T_WRISTBAND
+
+#define M5LED_GPIO          GPIO_NUM_4
+
+#endif
 
 /**
  * @brief   Initialize led

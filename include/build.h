@@ -65,7 +65,7 @@
 // Define device as the EPS32 Lilygo T-Wristband with a ST7735 160x80 I2C OLED
 #define DEVICE_T_WRISTBAND 4
 
-#define TARGET_DEVICE DEVICE_T_WRISTBAND
+#define TARGET_DEVICE DEVICE_M5STICKC
 
 #endif // M5StickC defines
 

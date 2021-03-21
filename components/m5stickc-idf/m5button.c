@@ -9,6 +9,9 @@
 
 #include "include/m5button.h"
 
+// TODO: Either move build.h or figure out how to use in in components (though breaks component modularity)
+#include "../../include/build.h"
+
 static const char * TAG = "m5button";
 
 ESP_EVENT_DEFINE_BASE(M5BUTTON_A_EVENT_BASE);
@@ -39,14 +42,6 @@ void IRAM_ATTR m5button_button_isr_handler(void* arg)
     }
 }
 
-esp_err_t t_wristband_touch_button_power(bool powerOn) {
-    gpio_pad_select_gpio(25);
-    esp_err_t e = gpio_set_direction(25, GPIO_MODE_OUTPUT);
-    gpio_set_level(25, powerOn);
-    // gpio_set_drive_capability
-    return e;
-}
-
 esp_err_t m5button_init()
 {
     esp_err_t e;
@@ -63,7 +58,14 @@ esp_err_t m5button_init()
         return ESP_FAIL;
     }
 
-    t_wristband_touch_button_power(true);
+#if TARGET_DEVICE == DEVICE_T_WRISTBAND
+
+    // Set T-Wristband touch button power
+    gpio_pad_select_gpio(25);
+    e = gpio_set_direction(25, GPIO_MODE_OUTPUT);
+    if (e == ESP_OK) gpio_set_level(25, powerOn);
+
+#endif
 
     e = m5button_enable(&m5button_a);
     if(e == ESP_OK) {

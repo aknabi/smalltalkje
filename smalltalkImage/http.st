@@ -94,7 +94,11 @@ Methods Weather 'all'
 	getRequest
 		^ HttpRequest new getUrl: 'http://thenabi.com/smalltalkje/weather/current.php?secret=stjerules!&city=', city
 |
-	update | req a |
+	update 
+		self updateSync
+|
+	updateBackground | req a |
+		"TODO: sendWhenDone crashes right now"
 		req <- self getRequest.
 		req sendWhenDone: [:r | (r isNil or: [(r statusCode = 200) not]) ifFalse: [
 			a <- r content asWords: $,.

@@ -77,7 +77,9 @@ Methods Gizmo 'Date'
 	setupDate | tz |
 		self initSNTP.
 		self getSNTPTime.
-		(tz <- self nvsStringAtKey: 'TZ') notNil ifTrue: [self setTimeZone: tz].
+		tz <- self nvsStringAtKey: 'TZ'.
+		tz isNil ifTrue: [tz <- 'UTC-1'].
+		self setTimeZone: tz.
 		"clockUpdateBlock <- [self clockUpdateLoop]."
 		"clockUpdateBlock value"
 |

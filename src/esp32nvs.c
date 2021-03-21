@@ -41,7 +41,7 @@ object nvsPrim(int funcNumber, object *arguments)
 object eraseKey(char *key)
 {
     esp_err_t err = nvs_erase_key(nvsHandle, key);
-    err = nvs_check_error(err, true);
+    err = nvs_check_error(err, true, key);
     return err == ESP_OK ? trueobj : falseobj;
 }
 
@@ -80,11 +80,11 @@ object readObject(char *key, object c)
             err = isString ? nvs_read_string(key, strPtr) : nvs_read_byte_array(key, strPtr);
             setClass(obj, c);
             if (err != ESP_OK) {
-                nvs_check_error(err, false);
+                nvs_check_error(err, false, key);
                 obj = nilobj;  
             }         
         } else {
-            nvs_check_error(err, false);
+            nvs_check_error(err, false, key);
         }
     }
     return obj;
@@ -93,7 +93,7 @@ object readObject(char *key, object c)
 esp_err_t nvs_read_int32(char *key, int32_t value)
 {
     esp_err_t err = nvs_get_i32(nvsHandle, key, &value);
-    err = nvs_check_error(err, false);
+    err = nvs_check_error(err, false, key);
     return err;
 }
 
@@ -118,53 +118,53 @@ object nvs_init(void)
 esp_err_t nvs_write_int32(char *key, int32_t value)
 {
     esp_err_t err = nvs_set_i32(nvsHandle, key, value);
-    err = nvs_check_error(err, true);
+    err = nvs_check_error(err, true, key);
     return err;
 }
 
 esp_err_t nvs_read_string_length(char *key)
 {
     esp_err_t err = nvs_get_str(nvsHandle, key, NULL, &valLength);
-    err = nvs_check_error(err, false);
+    err = nvs_check_error(err, false, key);
     return err;
 }
 
 esp_err_t nvs_read_string(char *key, char *string)
 {
     esp_err_t err = nvs_get_str(nvsHandle, key, string, &valLength);
-    err = nvs_check_error(err, false);
+    err = nvs_check_error(err, false), key;
     return err;
 }
 
 esp_err_t nvs_write_string(char *key, char *value)
 {
     esp_err_t err = nvs_set_str(nvsHandle, key, value);
-    err = nvs_check_error(err, true);
+    err = nvs_check_error(err, true, key);
     return err;
 }
 
 esp_err_t nvs_read_byte_array_length(char *key)
 {
     esp_err_t err = nvs_get_blob(nvsHandle, key, NULL, &valLength);
-    err = nvs_check_error(err, false);
+    err = nvs_check_error(err, false, key);
     return err;
 }
 
 esp_err_t nvs_read_byte_array(char *key, uint8_t *ba)
 {
     esp_err_t err = nvs_get_blob(nvsHandle, key, ba, &valLength);
-    err = nvs_check_error(err, false);
+    err = nvs_check_error(err, false, key);
     return err;
 }
 
 esp_err_t nvs_write_byte_array(char *key, void *value, size_t length)
 {
     esp_err_t err = nvs_set_blob(nvsHandle, key, value, length);
-    err = nvs_check_error(err, true);
+    err = nvs_check_error(err, true, key);
     return err;
 }
 
-esp_err_t nvs_check_error(esp_err_t err, boolean doCommit)
+esp_err_t nvs_check_error(esp_err_t err, boolean doCommit, char *key)
 {
     esp_err_t newErr = err;
     switch (err)
@@ -173,10 +173,10 @@ esp_err_t nvs_check_error(esp_err_t err, boolean doCommit)
             if (doCommit) newErr = nvs_commit(nvsHandle);
             break;
         case ESP_ERR_NVS_NOT_FOUND:
-            printf("NVS: ESP_ERR_NVS_NOT_FOUND!\n");
+            printf("NVS: ESP_ERR_NVS_NOT_FOUND Key: %s!\n", key);
             break;
         default :
-            printf("Error (%s) reading!\n", esp_err_to_name(err));
+            printf("Error (%s) reading! Key: %s\n", esp_err_to_name(err), key);
     }
     return newErr;
 }

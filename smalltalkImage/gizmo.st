@@ -32,7 +32,7 @@ Methods Gizmo 'all'
         	self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16] ]
 |
 	setupKeyboardHandlers
-		self deviceName = 'M5StickC' ifTrue: [
+		self deviceName = 'M5StickCCCC' ifTrue: [
 			KeyboardSemaphore <- Semaphore new.
 			gizmoTerm <- GizmoTerm new initialize.
 			self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. gizmoTerm addCharInt: c ].
@@ -66,7 +66,9 @@ Methods Gizmo 'all'
 		display string: 'Temp:' x: 16 y: 40; string: weather temp x: 60 y: 40; string: weather desc x: 16 y: 54.
 |
 	setupWeather
-		weather <- Weather new city: 'Amsterdam'.
+		city <- self nvsStringAtKey: 'weatherCity'.
+		city isNil ifTrue: [city <- 'Amsterdam'].
+		weather <- Weather new city: city.
 		"weatherUpdateBlock <- [self weatherUpdateLoop]."
 		"weatherUpdateBlock value"
 |

@@ -35,7 +35,7 @@ esp_err_t m5led_init()
         return ESP_FAIL;
     }
 
-    ESP_LOGD(TAG, "LED G10 enabled");
+    ESP_LOGD(TAG, "LED GP10 enabled");
     return ESP_OK;
 }
 

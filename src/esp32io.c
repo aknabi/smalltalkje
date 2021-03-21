@@ -89,8 +89,7 @@ bool isM5InitCalled = false;
 
 void m5StickInit()
 {
-    if (isM5InitCalled)
-        return;
+    if (isM5InitCalled) return;
     isM5InitCalled = true;
 
     // Initialize M5StickC
