@@ -12,6 +12,9 @@
 #include "sdkconfig.h"
 #include "stmpe610.h"
 
+// TODO: Either move build.h or figure out how to use in in components (though breaks component modularity)
+#include "../../../include/build.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,7 +46,19 @@ extern "C" {
 #define DISP_TYPE_MAX		8
 
 // TODO: M5STACK DISPLAY
+#if TARGET_DEVICE == DEVICE_T_WRISTBAND
+
 #define CONFIG_EXAMPLE_DISPLAY_TYPE 6
+
+#elif TARGET_DEVICE == DEVICE_M5STICKC
+
+#define CONFIG_EXAMPLE_DISPLAY_TYPE 4
+
+#else
+
+#define CONFIG_EXAMPLE_DISPLAY_TYPE 6
+
+#endif 
 
 #if CONFIG_EXAMPLE_DISPLAY_TYPE == 1
 
