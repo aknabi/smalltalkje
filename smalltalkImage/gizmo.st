@@ -26,14 +26,14 @@ Methods Gizmo 'all'
 				[display backlightOn: false] runAfter: 5000 ].
         	self when: 'BigButtonClicked' do: DisplayUpdateBlock ].
 		self deviceName = 'M5StickC' ifTrue: [
-			DisplayUpdateBlock <- [ 'BigButtonClicked' print. display clear; string: 'BigButtonClicked' x: 16 y: 16. [display clear] runAfter: 2000 ].
+			DisplayUpdateBlock <- [ self updateDisplayTime; updateDisplayWeather. [display clear] runAfter: 2000 ].
         	self when: 'BigButtonClicked' do: DisplayUpdateBlock.
         	self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
         	self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
         	self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16] ]
 |
 	setupKeyboardHandlers
-		self deviceName = 'M5StickCCCC' ifTrue: [
+		self deviceName = 'M5StickC' ifTrue: [
 			KeyboardSemaphore <- Semaphore new.
 			gizmoTerm <- GizmoTerm new initialize.
 			self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. gizmoTerm addCharInt: c ].
