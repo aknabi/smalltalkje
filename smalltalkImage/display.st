@@ -19,7 +19,7 @@ Methods Display 'all'
 		^super new initialize
 |
 	initialize
-		<153>.
+		<153 0>.
 |
 	clear
 		<154>.
@@ -28,8 +28,7 @@ Methods Display 'all'
 		<155>.
 |
 	backlightOn: aBoolean
-		gizmo deviceName = 'T-WRBD'
-			ifTrue: [gizmo gpioAt: 27 put: (aBoolean ifTrue: [1] ifFalse: [0]) ]
+		<153 1 aBoolean>
 |
 	string: aString x: x y: y
 		<156 0 aString x y>.

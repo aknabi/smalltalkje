@@ -26,7 +26,7 @@ Methods Gizmo 'all'
 				[display backlightOn: false] runAfter: 5000 ].
         	self when: 'BigButtonClicked' do: DisplayUpdateBlock ].
 		self deviceName = 'M5StickC' ifTrue: [
-			DisplayUpdateBlock <- [ self updateDisplayTime; updateDisplayWeather. [display clear] runAfter: 2000 ].
+			DisplayUpdateBlock <- [ display clear; backlightOn: true. self updateDisplayTime; updateDisplayWeather. [display clear; backlightOn: false] runAfter: 2000 ].
         	self when: 'BigButtonClicked' do: DisplayUpdateBlock.
         	self when: 'BigButtonHeld' do: [display clear; string: 'BigButtonHeld' x: 16 y: 16].
         	self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
@@ -219,6 +219,7 @@ Methods GizmoTerm 'all'
 		y > 70 ifTrue: [[gizmo display clear. y <- 4] runAfter: 1000]
 |
 	addCharInt: c
+		gizmo display backlightOn: true.
 		(c = 8 and: [i > 1]) 
 			ifTrue: [
 				input at: i put: 0.

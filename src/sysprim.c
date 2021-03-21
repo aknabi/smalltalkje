@@ -353,16 +353,30 @@ object sysPrimitive(int number, object *arguments)
         // We'd like to return the handle in order to manage the process.
         break;
 
-    /* prim 153 initializes the OLED display. Must be called before displaying */
+    /* prim 153 calls a display function (first arg). E.g. 0 is init display and must be called before displaying */
     // TODO: This should be in Smalltalk initialization as it inits more than the display on some targets
     case 3:
+        checkIntArg(0)
+        int funcNum = getIntArg(0);
+
+        if (funcNum == 0) {
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
-        SSD1306_Begin();
+            SSD1306_Begin();
 #elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
 #ifndef TEST_M5STICK
-        m5StickInit();
+            m5StickInit();
 #endif
 #endif
+        } else if (funcNum == 1) {
+            // Set backlight on or off based on arg(1)
+            object backlightOn = arguments[1];
+#if TARGET_DEVICE == DEVICE_M5STICKC
+            m5display_set_backlight_level(backlightOn == falseobj ? 0 : 7);
+#elif TARGET_DEVICE == DEVICE_T_WRISTBAND
+            gpio_set_level(27, backlightOn == falseobj ? 0 : 1);
+#endif
+        }
+
         break;
 
     // prim 154 Clear the display
@@ -387,7 +401,7 @@ object sysPrimitive(int number, object *arguments)
     // Prim 156 String functions (arg 0 is function num) 
     case 6:
         checkIntArg(0)
-        int funcNum = getIntArg(0);
+        funcNum = getIntArg(0);
 
         if (funcNum == 0) {
             // Func 0 Display the string at the x,y location passed in
