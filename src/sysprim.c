@@ -366,6 +366,7 @@ object sysPrimitive(int number, object *arguments)
 #ifndef TEST_M5STICK
             m5StickInit();
 #endif
+
 #endif
         } else if (funcNum == 1) {
             // Set backlight on or off based on arg(1)
@@ -375,27 +376,29 @@ object sysPrimitive(int number, object *arguments)
 #elif TARGET_DEVICE == DEVICE_T_WRISTBAND
             gpio_set_level(27, backlightOn == falseobj ? 0 : 1);
 #endif
+        } else if (funcNum == 2) {
+            // Clear the display
+#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
+            SSD1306_ClearDisplay();
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
+            TFT_fillScreen(current_paint.backgroundColor);
+#endif
+        } else if (funcNum == 3) {
+            // Render the buffer to the display
+#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
+            SSD1306_Display();
+#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
+            // M5StickC doesn't have offscren render
+#endif
         }
-
         break;
 
-    // prim 154 Clear the display
+    // prim 154 Available for use
     case 4:
-#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
-        SSD1306_ClearDisplay();
-#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
-        TFT_fillScreen(current_paint.backgroundColor);
-#endif
         break;
 
-    // Prim 155 Render the buffer to the display
+    // Prim 155 Available for use
     case 5:
-#if TARGET_DEVICE == DEVICE_ESP32_SSD1306
-        SSD1306_Display();
-#elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
-        // M5StickC doesn't have offscren render
-#endif
-
         break;
 
     // Prim 156 String functions (arg 0 is function num) 
@@ -439,12 +442,6 @@ object sysPrimitive(int number, object *arguments)
             TFT_setFont(FONT_7SEG, NULL);
             set_7seg_font_atrib(getIntArg(1), getIntArg(2), getIntArg(3), TFT_DARKGREY);
         }
-
-
-        /* Set GPIO PIN in first argument to value in second argument */
-        // gpio_set_level(intValue(arguments[0]), intValue(arguments[1]));
-
-        // We'd like to return the handle in order to manage the process.
         break;
 
     // Prim 157 rectangleX: x y: y width: w height: h isFilled: aBoolean
@@ -500,10 +497,10 @@ object sysPrimitive(int number, object *arguments)
     // Prim 158 circleX: x y: y radius: r isFilled: aBoolean
     case 8:
         checkIntArg(0)
-            checkIntArg(1)
-                checkIntArg(2)
+        checkIntArg(1)
+        checkIntArg(2)
 
-                    if (arguments[3] != trueobj && arguments[3] != falseobj)
+        if (arguments[3] != trueobj && arguments[3] != falseobj)
         {
             sysError("non boolean argument", "isFilled");
         }

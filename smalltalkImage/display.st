@@ -4,7 +4,7 @@
 *
 *  Display class for drawing
 *
-*  This is meant to be a singleton... ususally accessed via
+*  Display is meant to be a singleton... ususally accessed via
 *  the device (e.g. gizmo display)
 *
 Class Display Object font
@@ -22,10 +22,10 @@ Methods Display 'all'
 		<153 0>.
 |
 	clear
-		<154>.
+		<153 2>.
 |
 	transfer
-		<155>.
+		<153 3>.
 |
 	backlightOn: aBoolean
 		<153 1 aBoolean>
