@@ -58,6 +58,7 @@
 
 // Define device as an M5StickC
 #define DEVICE_M5STICKC 2
+#define DEVICE_M5STICKC_PLUS // Add the Plus variant
 
 // Define device as an M5Atom Lite ESP32 Button (with LED)
 #define DEVICE_M5SATOM_LITE 3
@@ -67,7 +68,7 @@
 
 #define TARGET_DEVICE DEVICE_M5STICKC
 
-#endif // M5StickC defines
+#endif // TARGET_MAC
 
 #if TARGET_DEVICE == DEVICE_M5STICKC
 #define PLATFORM_NAME_STRING "M5StickC"

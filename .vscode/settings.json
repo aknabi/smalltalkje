@@ -34,7 +34,8 @@
         "esp_http_client.h": "c",
         "ssd1306_oled.h": "c",
         "time.h": "c",
-        "tft.h": "c"
+        "tft.h": "c",
+        "esp_spi_flash.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

@@ -6,6 +6,8 @@
  */
 
 #include "m5display.h"
+// TODO: Either move build.h or figure out how to use in in components (though breaks component modularity)
+#include "../../include/build.h"
 
 static const char * TAG = "m5display";
 
@@ -71,7 +73,7 @@ esp_err_t m5display_init() {
     TFT_setRotation(LANDSCAPE);
     TFT_setFont(DEFAULT_FONT, NULL);
     TFT_resetclipwin();
-
+ 
     return ESP_OK;
 }
 

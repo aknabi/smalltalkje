@@ -52,7 +52,11 @@ extern "C" {
 
 #elif TARGET_DEVICE == DEVICE_M5STICKC
 
+#ifdef DEVICE_M5STICKC_PLUS
+#define CONFIG_EXAMPLE_DISPLAY_TYPE 5
+#else
 #define CONFIG_EXAMPLE_DISPLAY_TYPE 4
+#endif
 
 #else
 
@@ -181,16 +185,16 @@ extern "C" {
 
 // ** Set the correct configuration for M5StickC Plus TFT
 // ---------------------------------------------------------
-#define DEFAULT_DISP_TYPE DISP_TYPE_ST7789V
+#define DEFAULT_DISP_TYPE           DISP_TYPE_ST7789V
 #define DEFAULT_TFT_DISPLAY_WIDTH   135
 #define DEFAULT_TFT_DISPLAY_HEIGHT  240
-#define DISP_COLOR_BITS_24          0x66
+#define DISP_COLOR_BITS_24          0x55
 #define DEFAULT_GAMMA_CURVE         0
-#define DEFAULT_SPI_CLOCK           26000000
+#define DEFAULT_SPI_CLOCK           40000000
 #define TFT_INVERT_ROTATION         0
 #define TFT_INVERT_ROTATION1        1
-#define TFT_INVERT_ROTATION2        1
-#define TFT_RGB_BGR                 0x08
+#define TFT_INVERT_ROTATION2        0
+#define TFT_RGB_BGR                 0x00
 
 #define USE_TOUCH                   TOUCH_TYPE_NONE
 
@@ -199,10 +203,10 @@ extern "C" {
 #define PIN_NUM_CLK  13		// SPI CLOCK pin
 #define PIN_NUM_CS   5		// Display CS pin
 #define PIN_NUM_DC   23		// Display command/data pin
-#define PIN_NUM_TCS  0		// Touch screen CS pin (NOT used if USE_TOUCH=0)
+#define PIN_NUM_TCS  -1		// Touch screen CS pin (NOT used if USE_TOUCH=0)
 
 #define PIN_NUM_RST  18  	// GPIO used for RESET control (#16)
-#define PIN_NUM_BCKL 0  	// GPIO used for backlight control
+// #define PIN_NUM_BCKL 0  	// GPIO used for backlight control
 #define PIN_BCKL_ON  1  	// GPIO value for backlight ON
 #define PIN_BCKL_OFF 0  	// GPIO value for backlight OFF
 
