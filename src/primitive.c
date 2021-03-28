@@ -1,4 +1,10 @@
 /*
+
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+
+	Based on:
+	
 	Little Smalltalk, version 3
 	Written by Tim Budd, Oregon State University, July 1988
 
@@ -31,9 +37,8 @@
 #include <math.h>
 #include "process.h"
 #include "env.h"
-// #include "memory.h"
 #include "names.h"
-
+#include "primitive.h"
 
 #ifdef TARGET_ESP32
 
@@ -65,12 +70,16 @@ static object zeroaryPrims(number) int number;
 	switch (number)
 	{
 
+	// Return the number of objects in Smalltalkje
 	case 1:
 		fprintf(stderr, "did primitive 1\n");
+		returnedObject = newInteger(objectCount());
 		break;
 
+	// Return the number of availalbe objects in Smalltalkje
 	case 2:
 		fprintf(stderr, "object count %d context count %d string count: %d\n", objectCount(), classInstCount(globalSymbol("Context")), classInstCount(globalSymbol("String")) );
+		returnedObject = newInteger(ObjectTableMax - objectCount());
 		break;
 
 	case 3: /* return a random number */
@@ -82,11 +91,13 @@ static object zeroaryPrims(number) int number;
 		returnedObject = newInteger(i >> 1);
 		break;
 
+	// TODO: This needs to move to datetime prims... makes prim 4 available
 	case 4: /* return time in seconds */
 		i = (short)time((long *)0);
 		returnedObject = newInteger(i);
 		break;
 
+	// TODO: Prim 5 Unused
 	case 5: /* flip watch - done in interp */
 		break;
 
@@ -94,7 +105,10 @@ static object zeroaryPrims(number) int number;
 		returnedObject = getNextVMBlockToRun();
 		break;
 
+	// TODO: Prim 7 no longer used. Prim 8 available
+
 	case 7: /* reset a block that the VM needs to run */
+	case 8:
 		// VM incr when storing it
 		// if (refCountField(vmBlockToRun) > 0) decr(vmBlockToRun);
 
@@ -131,15 +145,15 @@ object firstarg;
 	returnedObject = firstarg;
 	switch (number)
 	{
-	case 0: /* instance count of class */
+	case 0: /* Prim 10 instance count of class */
 		returnedObject = newInteger(classInstCount(firstarg));
 		break;
 
-	case 1: /* class of object */
+	case 1: /* Prim 11 class of object */
 		returnedObject = getClass(firstarg);
 		break;
 
-	case 2: /* basic size of object */
+	case 2: /* Prim 12 basic size of object */
 		if (isInteger(firstarg))
 			i = 0;
 		else
@@ -152,19 +166,19 @@ object firstarg;
 		returnedObject = newInteger(i);
 		break;
 
-	case 3: /* hash value of object */
+	case 3: /* Prim 13 hash value of object */
 		if (isInteger(firstarg))
 			returnedObject = firstarg;
 		else
 			returnedObject = newInteger(firstarg);
 		break;
 
-	case 4: /* basic print */
+	case 4: /* Prim 14 basic print */
 		printf("%s", charPtr(firstarg));
 		fflush(stdout);
 		break;
 
-	case 5: /* prim 15 Create a string with the Char passed in */
+	case 5: /* Prim 15 Create a string with the Char passed in */
 		returnedObject = nilobj;
 		char c = (char) intValue( basicAt(firstarg, 1) );
 		if (c != 0x0) {
@@ -173,11 +187,13 @@ object firstarg;
 		}
 		break;
 
-	case 6: /* prim 16 - Execute string */
+	// TODO: Given String>>value is available and this prim unused, could delete
+	case 6: /* Prim 16 - Execute string */
 		fprintf(stderr, "primitive 16 execute string %s\n", charPtr(firstarg));
 		doIt(charPtr(firstarg), nilobj);
 		break;
 
+	// TODO: This creates havoc with the interpreter... either sort it out or delete and redo at a later date
 	case 7: /* prim 17 - Execute block (Block forkTask)... WAS Execute saved block with first argument */
 		runBlock(firstarg, nilobj);
 		returnedObject = trueobj;
@@ -189,7 +205,7 @@ object firstarg;
 		// }
 		break;
 
-	case 8: /* change return point - block return */
+	case 8: /* Prim 18 change return point - block return */
 		/* first get previous link pointer */
 		i = intValue(basicAt(processStack, linkPointer));
 		/* then creating context pointer */
@@ -206,7 +222,7 @@ object firstarg;
 		returnedObject = trueobj;
 		break;
 
-	case 9: /* process execute */
+	case 9: /* Prim 19 process execute */
 		/* first save the values we are about to clobber */
 		saveProcessStack = processStack;
 		saveLinkPointer = linkPointer;
@@ -261,67 +277,53 @@ object firstarg, secondarg;
 	switch (number)
 	{
 
-	case 0: /* prim 20 Execute string or block with arg */
-		if (isObjectOfClassName(firstarg, "String"))
-		{
-			doIt(charPtr(firstarg), secondarg);
-		}
-		else if (getClass(firstarg) == globalSymbol("Block"))
-		{
-			runBlock(firstarg, secondarg);
-		}
-		else
-		{
-			fprintf(stderr, "primitive 20 first argument must be a string or block\n");
-			returnedObject = falseobj;
-		}
-
+	case 0: /* prim 20 Free to use */
+		returnedObject = falseobj;
 		break;
 
-	case 1: /* object identity test */
+	case 1: /* Prim 21 object identity test */
 		if (firstarg == secondarg)
 			returnedObject = trueobj;
 		else
 			returnedObject = falseobj;
 		break;
 
-	case 2: /* set class of object */
+	case 2: /* Prim 22 set class of object */
 		decr(classField(firstarg));
 		setClass(firstarg, secondarg);
 		returnedObject = firstarg;
 		break;
 
-	case 3: /* debugging stuff */
+	// TODO: Prim 23 available for use... done need debugging prim
+	case 3: /* Prim 23 debugging stuff */
 		fprintf(stderr, "primitive 23 %d %d\n", firstarg, secondarg);
 		break;
 
-	case 4: /* string cat */
+	case 4: /* Prim 24 string cat */
 		ignore strcpy(buffer, charPtr(firstarg));
 		ignore strcat(buffer, charPtr(secondarg));
 		returnedObject = newStString(buffer);
 		break;
 
-	case 5: /* basicAt: */
-		if (!isInteger(secondarg))
-			sysError("non integer index", "basicAt:");
+	case 5: /* Prim 25 basicAt: */
+		checkInteger(secondarg)
 		returnedObject = basicAt(firstarg, intValue(secondarg));
 		break;
 
-	case 6: /* byteAt: */
-		if (!isInteger(secondarg))
-			sysError("non integer index", "byteAt:");
+	case 6: /* Prim 26 byteAt: */
+		checkInteger(secondarg)
 		i = byteAt(firstarg, intValue(secondarg));
 		if (i < 0)
 			i += 256;
 		returnedObject = newInteger(i);
 		break;
 
-	case 7: /* symbol set */
+	case 7: /* Prim 27 symbol set */
 		nameTableInsert(symbols, strHash(charPtr(firstarg)),
 						firstarg, secondarg);
 		break;
 
-	case 8: /* block start */
+	case 8: /* Prim 28 block start */
 		/* first get previous link */
 		i = intValue(basicAt(processStack, linkPointer));
 		/* change context and byte pointer */
@@ -329,7 +331,7 @@ object firstarg, secondarg;
 		fieldAtPut(processStack, i + 4, secondarg);
 		break;
 
-	case 9: /* duplicate a block, adding a new context to it */
+	case 9: /* Prim 29 duplicate a block, adding a new context to it */
 		returnedObject = newBlock();
 		basicAtPut(returnedObject, 1, secondarg);
 		basicAtPut(returnedObject, 2, basicAt(firstarg, 2));
@@ -344,6 +346,10 @@ object firstarg, secondarg;
 	return (returnedObject);
 }
 
+/*
+ * Primitive 30 - 39 are platform independent 3 argument primitives
+ */
+
 static int trinaryPrims(number, firstarg, secondarg, thirdarg) int number;
 object firstarg, secondarg, thirdarg;
 {
@@ -354,15 +360,16 @@ object firstarg, secondarg, thirdarg;
 	returnedObject = firstarg;
 	switch (number)
 	{
-	case 1: /* basicAt:Put: */
-		if (!isInteger(secondarg))
-			sysError("non integer index", "basicAtPut");
+	// TODO: Prim 30 available
+
+	case 1: /* Prim 31 basicAt:Put: */
+		checkInteger(secondarg)
 		fprintf(stderr, "IN BASICATPUT %d %d %d\n", firstarg,
 				intValue(secondarg), thirdarg);
 		fieldAtPut(firstarg, intValue(secondarg), thirdarg);
 		break;
 
-	case 2: /* basicAt:Put: for bytes */
+	case 2: /* Prim 32 basicAt:Put: for bytes */
 		if (!isInteger(secondarg))
 			sysError("non integer index", "byteAtPut");
 		if (!isInteger(thirdarg))
@@ -370,7 +377,7 @@ object firstarg, secondarg, thirdarg;
 		byteAtPut(firstarg, intValue(secondarg), intValue(thirdarg));
 		break;
 
-	case 3: /* string copyFrom:to: */
+	case 3: /* Prim 33 string copyFrom:to: */
 		bp = charPtr(firstarg);
 		if ((!isInteger(secondarg)) || (!isInteger(thirdarg)))
 			sysError("non integer index", "copyFromTo");
@@ -402,7 +409,11 @@ object firstarg, secondarg, thirdarg;
 	return (returnedObject);
 }
 
-static int intUnary(number, firstarg) int number, firstarg;
+/*
+ * Primitive 50 - 59 are platform independent Integer unary (1 arg) primitives
+ */
+
+static int intUnary(int number, int firstarg)
 {
 	object returnedObject = nilobj;
 
@@ -412,10 +423,12 @@ static int intUnary(number, firstarg) int number, firstarg;
 		returnedObject = newFloat((double)firstarg);
 		break;
 
+	// TODO: This is usused... either implement and use or remove/reuse
 	case 2: /* print - for debugging purposes */
 		fprintf(stderr, "debugging print %d\n", firstarg);
 		break;
 
+	// TODO: This is usused... either implement and use (set timeslice counter) or remove/reuse
 	case 3: /* set time slice - done in interpreter */
 		break;
 
@@ -424,11 +437,11 @@ static int intUnary(number, firstarg) int number, firstarg;
 		returnedObject = nilobj;
 		break;
 
-	case 8:
+	case 8: /* Return an new, uninitialized object of a given size */
 		returnedObject = allocObject(firstarg);
 		break;
 
-	case 9:
+	case 9: /* Return an new, uninitialized byte based object of a given size */
 		returnedObject = allocByte(firstarg);
 		break;
 
@@ -437,6 +450,10 @@ static int intUnary(number, firstarg) int number, firstarg;
 	}
 	return (returnedObject);
 }
+
+/*
+ * Primitive 60 - 79 are platform independent Integer binary (2 arg) primitives
+ */
 
 static object intBinary(number, firstarg, secondarg) register int firstarg, secondarg;
 int number;
@@ -536,6 +553,10 @@ overflow:
 	return (returnedObject);
 }
 
+/*
+ * Primitive 80 - 89 are platform independent String unary (1 arg) primitives
+ */
+
 static int strUnary(number, firstargument) int number;
 char *firstargument;
 {
@@ -576,6 +597,10 @@ char *firstargument;
 
 	return (returnedObject);
 }
+
+/*
+ * Primitive 100 - 109 are platform independent Float unary (1 arg) primitives
+ */
 
 static int floatUnary(number, firstarg) int number;
 double firstarg;
@@ -642,6 +667,10 @@ double firstarg;
 
 	return (returnedObject);
 }
+
+/*
+ * Primitive 110 - 119 are platform independent Float unary (1 arg) primitives
+ */
 
 static object floatBinary(number, first, second) int number;
 double first, second;
@@ -781,18 +810,3 @@ object primitive(register int primitiveNumber, object *arguments)
 
 	return (returnedObject);
 }
-
-extern void runMethodOrBlock(object method, object block, object arg);
-
-void doIt(char *text, object arg)
-{
-	object method;
-
-	method = newMethod();
-	incr(method);
-	setInstanceVariables(nilobj);
-	ignore parse(method, text, false);
-
-	runMethodOrBlock(method, nilobj, arg);
-}
-

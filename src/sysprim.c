@@ -19,6 +19,8 @@
 #include "tty.h"
 #include "datetime.h"
 
+#include "primitive.h"
+
 #ifdef TARGET_ESP32
 #include "esp32wifi.h"
 #include "driver/gpio.h"
@@ -38,21 +40,6 @@
 #endif
 
 #endif
-
-#define getIntArg(i) intValue(arguments[i])
-
-#define checkIntArg(i)                      \
-    if (!isInteger(arguments[i]))           \
-    {                                       \
-        sysError("non integer index", "x"); \
-    }
-
-#define checkArgClass(i, classStr)                                \
-    if (classField(arguments[i]) != findClass(classStr))          \
-    {                                                             \
-        sysError("Argument is not the expected class", classStr); \
-    }
-
 
 #ifdef TARGET_ESP32
 

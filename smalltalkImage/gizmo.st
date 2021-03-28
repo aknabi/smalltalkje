@@ -208,11 +208,6 @@ Methods Gizmo 'keyboard'
         EventHandlerBlocks at: anEventString put: aBlock
 ]
 *
-Methods String 'execute'
-    evalWith: arg
-        <20 self>
-]
-*
 Methods GizmoTerm 'all'
 	initialize
 		i <- 1.

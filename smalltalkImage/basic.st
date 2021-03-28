@@ -65,9 +65,6 @@ Methods Block 'initialization'
 	whileFalse: aBlock
 		[ self value not ] whileTrue: aBlock
 |
-	evalWith: arg
-		<20 self arg>
-|
 	argCount
 		"For debugging... remove when interrupt block is sorted"
 		^ argCount

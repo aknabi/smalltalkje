@@ -153,9 +153,6 @@ Methods Process 'creation'
 	forkTask
 		" fork this process as an indepenent task in the native OS "
 		<151 self>
-|
-	eval
-		<20 self nil>
 ]
 Methods Semaphore 'all'
 	new

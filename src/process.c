@@ -156,6 +156,18 @@ static void taskRunBlockAfter(task_block_arg *taskBlockArg)
 	vTaskDelete(xTaskGetCurrentTaskHandle());
 }
 
+void doIt(char *text, object arg)
+{
+	object method;
+
+	method = newMethod();
+	incr(method);
+	setInstanceVariables(nilobj);
+	ignore parse(method, text, false);
+
+	runMethodOrBlock(method, nilobj, arg);
+}
+
 // prim 152 calls this
 void runBlockAfter(object block, object arg, int ticks)
 {
