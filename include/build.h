@@ -58,7 +58,7 @@
 
 // Define device as an M5StickC
 #define DEVICE_M5STICKC 2
-#define DEVICE_M5STICKC_PLUS // Add the Plus variant
+// #define DEVICE_M5STICKC_PLUS // Add the Plus variant
 
 // Define device as an M5Atom Lite ESP32 Button (with LED)
 #define DEVICE_M5SATOM_LITE 3
@@ -81,5 +81,13 @@
 #else
 #define PLATFORM_NAME_STRING "XXXX"
 #endif
+
+// Supported peripherals and features
+
+// M5 Card Keyboard input supported
+// #define CARD_KB_SUPPORTED
+
+// M5 Card Keyboard input and display output for terminal supported
+// #define DEVICE_TERMINAL_SUPPORTED
 
 #endif // __BUILD_H__

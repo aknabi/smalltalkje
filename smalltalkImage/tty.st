@@ -158,7 +158,7 @@ Methods UndefinedObject 'initial image'
 		gizmo <- Gizmo new. 
 		gizmo setupButtonHandlers.
 		self startWifi.
-		gizmo setupKeyboardHandlers.
+		gizmo setupPeripherals.
 		gizmo deviceName = 'M5StickC' ifTrue: [
 			"TODO: Store blocks because if we inline in on/off methods those block contexts accumluate"
 			ledOnBlock <- [self ledBlinkOn].

@@ -32,13 +32,14 @@ Methods Gizmo 'all'
         	self when: 'LittleButtonClicked' do: [display clear; string: 'LittleButtonClicked' x: 16 y: 16].
         	self when: 'LittleButtonHeld' do: [display clear; string: 'LittleButtonHeld' x: 16 y: 16] ]
 |
-	setupKeyboardHandlers
-		self deviceName = 'M5StickC' ifTrue: [
+	setupPeripherals
+		self hasCardKB ifTrue: [ self runKBTask ].
+		self isTerminal ifTrue: [
 			KeyboardSemaphore <- Semaphore new.
 			gizmoTerm <- GizmoTerm new initialize.
-			self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. gizmoTerm addCharInt: c ].
-			"[ [true] whileTrue: [KeyboardSemaphore wait. KeyboardChar printAscii ] ] fork."
-			gizmo runKBTask ]
+			self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. gizmoTerm addCharInt: c ]
+			"[ [true] whileTrue: [KeyboardSemaphore wait. gizmoTerm addCharInt: c ] ] fork."
+			"gizmo runKBTask" ]
 |
 	setupWifiHandlers
 	    self when: 'WifiConnected' do: [ 
@@ -113,6 +114,12 @@ Methods Gizmo 'configuration'
 		aBoolean
 			ifTrue: [self nvsAt: '_skipODP' put: 100]
 			ifFalse: [self nvsRemoveKey: '_skipODP']
+|
+	hasCardKB
+		^ <200 1>
+|
+	isTerminal
+		^ <200 2>
 |
 	restart
 		<181 0>

@@ -811,6 +811,20 @@ object sysPrimitive(int number, object *arguments)
                 incr(platformNameStStr);
             }
             returnedObject = platformNameStStr;
+        }  else if (funcNum == 1) {
+            // Function 1 return true if gizmo supports a card keyboard
+#ifdef CARD_KB_SUPPORTED
+            returnedObject = trueobj;
+#else
+            returnedObject = falseobj;
+#endif
+        } else if (funcNum == 2) {
+            // Function 2 return true if gizmo supports a card keyboard/display termial
+#ifdef DEVICE_TERMINAL_SUPPORTED
+            returnedObject = trueobj;
+#else
+            returnedObject = falseobj;
+#endif
         }
         break;
 
