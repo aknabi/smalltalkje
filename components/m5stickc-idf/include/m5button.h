@@ -29,6 +29,10 @@ extern "C" {
 
 #define BUTTON_BUTTON_A_GPIO      GPIO_NUM_33
 
+#elif TARGET_DEVICE == DEVICE_M5SATOM_LITE
+
+#define BUTTON_BUTTON_A_GPIO      GPIO_NUM_39
+
 #else
 
 #define BUTTON_BUTTON_A_GPIO      GPIO_NUM_37

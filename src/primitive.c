@@ -97,8 +97,13 @@ static object zeroaryPrims(number) int number;
 		returnedObject = newInteger(i);
 		break;
 
-	// TODO: Prim 5 Unused
+	// Prim 5 True true if the device has a display
 	case 5: /* flip watch - done in interp */
+#ifdef DEVICE_DISPLAY_TYPE
+		returnedObject = trueobj;
+#else
+		returnedObject = falseobj;
+#endif
 		break;
 
 	case 6: /* return a block that the VM needs to run (or nil if non) */

@@ -109,14 +109,14 @@ Methods Scheduler 'all'
 |
 	checkInterruptBlockNEW | interruptBlock |
 		"If we get the arg stuffed into the interrupt block we can use this"
-		(interruptBlock <- <6>) notNil ifTrue: [
+		(interruptBlock <- <6>) ifNotNil: [
 			('interrupt argCount: ', interruptBlock argCount printString) print.
 			interruptBlock execute ]
 |
 	checkInterruptBlock | intQueueObj runBlock queuedBlock arg |
 		"Either a nil, a block, or a block with an argument"
 		intQueueObj <- <6>.
-		intQueueObj notNil ifTrue: [ 
+		intQueueObj ifNotNil: [ 
 			(intQueueObj isMemberOf: Block)
 				ifTrue: [ scheduler critical: intQueueObj ]
 				ifFalse: [ 

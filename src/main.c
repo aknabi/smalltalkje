@@ -21,6 +21,27 @@ extern void initFileSystem();
 extern void writeObjectDataPartition();
 #endif
 
+#ifdef TARGET_ESP32
+
+void app_main(void)
+{
+    uart_input_init();
+
+    ESP_LOGI(TAG, "Fresh free heap size: %d", esp_get_free_heap_size());
+
+    startup();
+
+    // System seems to run smoother with this, not necessary, but need to dig in to details
+    vTaskStartScheduler();
+
+    while (true)
+    {
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+    }
+}
+
+#endif
+
 // Initialize various subsystems (which can be chip/platform dependent)
 noreturn startup()
 {
@@ -29,6 +50,7 @@ noreturn startup()
     initVMBlockToRunQueue();
 
 #ifdef TARGET_ESP32
+
     nvs_init();
 #ifdef WRITE_OBJECT_PARTITION
     int value;
@@ -38,7 +60,9 @@ noreturn startup()
     }
     setupObjectData();
 #endif
+
 #endif
+
     TT_LOG_INFO(TAG, "Pre-smalltalk start free heap size: %d", GET_FREE_HEAP_SIZE());
     launchSmalltalk();
     // #endif //WRITE_OBJECT_PARTITION

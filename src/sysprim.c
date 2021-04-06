@@ -340,6 +340,8 @@ object sysPrimitive(int number, object *arguments)
         // We'd like to return the handle in order to manage the process.
         break;
 
+#ifdef DEVICE_DISPLAY_TYPE
+
     /* prim 153 calls a display function (first arg). E.g. 0 is init display and must be called before displaying */
     // TODO: This should be in Smalltalk initialization as it inits more than the display on some targets
     case 3:
@@ -368,7 +370,8 @@ object sysPrimitive(int number, object *arguments)
 #if TARGET_DEVICE == DEVICE_ESP32_SSD1306
             SSD1306_ClearDisplay();
 #elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
-            TFT_fillScreen(current_paint.backgroundColor);
+            color_t bgColor = *current_paint.backgroundColor;
+            TFT_fillScreen(bgColor);
 #endif
         } else if (funcNum == 3) {
             // Render the buffer to the display
@@ -530,6 +533,8 @@ object sysPrimitive(int number, object *arguments)
         break;
 
 #endif
+
+#endif // DEVICE_DISPLAY_TYPE
 
     // Prim 159 set GPIO pin mode and direction in first arg to mode in second arg
     case 9:

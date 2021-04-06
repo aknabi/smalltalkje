@@ -35,7 +35,8 @@
         "ssd1306_oled.h": "c",
         "time.h": "c",
         "tft.h": "c",
-        "esp_spi_flash.h": "c"
+        "esp_spi_flash.h": "c",
+        "tftspi.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

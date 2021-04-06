@@ -72,12 +72,15 @@
 
 #if TARGET_DEVICE == DEVICE_M5STICKC
 #define PLATFORM_NAME_STRING "M5StickC"
+#define DEVICE_DISPLAY_TYPE "ST7789V"
 #elif TARGET_DEVICE == DEVICE_M5SATOM_LITE
 #define PLATFORM_NAME_STRING "M5AtomLite"
 #elif TARGET_DEVICE == DEVICE_ESP32_SSD1306
 #define PLATFORM_NAME_STRING "ESP32-1306"
+#define DEVICE_DISPLAY_TYPE "SSD1306"
 #elif TARGET_DEVICE == DEVICE_T_WRISTBAND
 #define PLATFORM_NAME_STRING "T-WRBD"
+#define DEVICE_DISPLAY_TYPE "SSD1306"
 #else
 #define PLATFORM_NAME_STRING "XXXX"
 #endif
@@ -85,9 +88,9 @@
 // Supported peripherals and features
 
 // M5 Card Keyboard input supported
-// #define CARD_KB_SUPPORTED
+#define CARD_KB_SUPPORTED
 
 // M5 Card Keyboard input and display output for terminal supported
-// #define DEVICE_TERMINAL_SUPPORTED
+#define DEVICE_TERMINAL_SUPPORTED
 
 #endif // __BUILD_H__

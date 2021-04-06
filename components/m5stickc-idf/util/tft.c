@@ -78,8 +78,8 @@ uint8_t image_debug = 0;
 
 // Added for Smalltalk, default paint is black background, white background, default font
 paint_t current_paint = {
-	.backgroundColor = TFT_BLACK,
-	.foregroundColor = TFT_WHITE,
+	.backgroundColor = &TFT_BLACK,
+	.foregroundColor = &TFT_WHITE,
 	.font = tft_DefaultFont,
 };
 
@@ -309,8 +309,8 @@ void TFT_fillRect(int16_t x, int16_t y, int16_t w, int16_t h, color_t color) {
 
 //==================================
 void TFT_fillScreen(color_t color) {
-	color_t bgColor = (&color == 0) ? current_paint.backgroundColor : color;
-	TFT_pushColorRep(0, 0, _width-1, _height-1, bgColor, (uint32_t)(_height*_width));
+	// color_t bgColor = (&color == NULL) ? current_paint.backgroundColor : color;
+	TFT_pushColorRep(0, 0, _width-1, _height-1, color, (uint32_t)(_height*_width));
 }
 
 //==================================

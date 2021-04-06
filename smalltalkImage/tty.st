@@ -148,7 +148,7 @@ Methods UndefinedObject 'initial image'
 		scheduler <- Scheduler new.
 		" create the initial system process "
 		" note the delayed recursive call "
-		aBlock <- [ files do: [:f | f notNil ifTrue: [ f open ]].
+		aBlock <- [ files do: [:f | f ifNotNil: [ f open ]].
 				   systemProcess <- aBlock newProcess.
 				   self startupM5.
 				   scheduler run ].

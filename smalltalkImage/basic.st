@@ -31,7 +31,8 @@ Methods Block 'initialization'
 |
 	blockContext: ctx
 		context <- ctx
-|
+]
+Methods Block 'evaluating'
 	value
 		^ (self checkArgumentCount: 0)
 			ifTrue: [ context returnToBlock: bytePointer ]
@@ -53,7 +54,8 @@ Methods Block 'initialization'
 				  context at: argLoc + 1 put: y.
 				  context at: argLoc + 2 put: z.
 				  context returnToBlock: bytePointer ]
-|
+]
+Methods Block 'controlling'
 	whileTrue: aBlock
 		( self value ) ifTrue:
 			[ aBlock value.
@@ -64,11 +66,13 @@ Methods Block 'initialization'
 |
 	whileFalse: aBlock
 		[ self value not ] whileTrue: aBlock
-|
+]
+Methods Block 'debugging'
 	argCount
 		"For debugging... remove when interrupt block is sorted"
 		^ argCount
 ]
+*
 Methods Boolean 'all'
 	ifTrue: trueBlock
 		^ self ifTrue: trueBlock ifFalse: []
@@ -86,6 +90,7 @@ Methods Boolean 'all'
 	or: aBlock
 		^ self ifTrue: [ true ] ifFalse: aBlock
 ]
+*
 Methods Class 'creation'
 	new		| newObject |
 		newObject <- self new: instanceSize.
@@ -109,7 +114,8 @@ Methods Class 'creation'
 		superClass <- Object.
 		instanceSize <- 0.
 		methods <- Dictionary new
-|
+]
+Methods Class 'accessing'
 	methods
 		^ methods
 |
@@ -307,6 +313,12 @@ Methods Object 'all'
 	hash
 		^ <13 self>
 |
+	ifNil: aBlock
+		^ self
+|
+	ifNotNil: aBlock
+		^ aBlock value
+|
 	isMemberOf: aClass
 		^ self class == aClass
 |
@@ -345,7 +357,7 @@ Methods Object 'all'
 ]
 Methods Smalltalk 'all'
 	perform: message withArguments: args ifError: aBlock
-			| receiver method |
+		| receiver method |
 		receiver <- args at: 1 ifAbsent: [ ^ aBlock value ].
 		method <- receiver class methodNamed: message.
 		^ method notNil
@@ -413,6 +425,12 @@ Methods Symbol 'all'
 		^ <87 self>
 ]
 Methods UndefinedObject 'all'
+	ifNil: aBlock
+		^ aBlock value
+|
+	ifNotNil: aBlock
+		^ self
+|
 	isNil
 		^ true
 |

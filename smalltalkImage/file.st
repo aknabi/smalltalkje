@@ -37,7 +37,7 @@ Methods File 'all'
 		mode <- m
 |
 	open
-		number notNil ifTrue: [ self close ].
+		number ifNotNil: [ self close ].
 		self getNumber.
 		<120 number name mode> isNil
 			ifTrue: [ smalltalk error: 
@@ -46,7 +46,7 @@ Methods File 'all'
 |
 	close
 		" close file, take entry out of global variable "
-		number isNil ifTrue: [ ^ nil ].
+		number ifNil: [ ^ nil ].
 		files at: number put: nil.
 		<121 number>.
 		number <- nil.

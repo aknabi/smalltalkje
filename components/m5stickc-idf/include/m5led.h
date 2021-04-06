@@ -27,6 +27,10 @@ extern "C" {
 
 #define M5LED_GPIO          GPIO_NUM_10
 
+#elif TARGET_DEVICE == DEVICE_M5SATOM_LITE
+
+#define M5LED_GPIO          GPIO_NUM_27
+
 #elif TARGET_DEVICE == DEVICE_T_WRISTBAND
 
 #define M5LED_GPIO          GPIO_NUM_4

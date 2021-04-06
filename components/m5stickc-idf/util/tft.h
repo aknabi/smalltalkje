@@ -38,9 +38,9 @@ typedef struct {
 // ==== Added for Smalltalk ===================================================================
 //==========================================================================================
 typedef struct {
-	color_t 	backgroundColor;
-	color_t 	foregroundColor;
-	Font 	    font;
+	color_t 	*backgroundColor;
+	color_t 	*foregroundColor;
+	Font 	    *font;
 } paint_t;
 
 

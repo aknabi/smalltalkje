@@ -963,9 +963,9 @@ void TFT_display_init()
 	// Clear screen
     _tft_setRotation(PORTRAIT);
 
-	if (tft_disp_type == DISP_TYPE_ST7789V) {
-    	TFT_setclipwin(40, 52, 279, 186);
-	}
+	// if (tft_disp_type == DISP_TYPE_ST7789V) {
+    // 	TFT_setclipwin(40, 52, 279, 186);
+	// }
 
 	TFT_pushColorRep(0, 0, _width-1, _height-1, (color_t){0,0,0}, (uint32_t)(_height*_width));
 

@@ -37,14 +37,14 @@ Methods HttpRequest 'all'
 		H <- self
 |
 	getWeather: urlEncodedCity
-		(url <- self getWeatherUrl) isNil ifTrue: [^ nil].
+		(url <- self getWeatherUrl) ifNil: [^ nil].
 		method <- 0.
 		B <- [:r | R <- r. '=== HTTP POST DEMO DONE content size: ', r contentLength print ].
 		H <- self
 |
 	getWeatherUrl | appId |
 		appId <- gizmo nvsStringAtKey: 'weatherAppId'.
-		appId isNil ifTrue: [^ nil].
+		appId ifNil: [^ nil].
 		^ 'http://api.openweathermap.org/data/2.5/weather?units=metric&q=', city, '&appid=', appId
 |
 	demoPost

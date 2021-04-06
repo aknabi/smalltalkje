@@ -8,16 +8,19 @@
 *
 *  Usually create a global gizmo object with an instance
 *
-Class Gizmo Object display
-Class HttpRequest Object url method contentType body
-Class HttpResponse Object statusCode contentLength content
+Class Gizmo Object display wifiConnectBlocks
 Class GizmoTerm Object y input i
 *
 Methods Gizmo 'all'
 	new
 		display <- Display new.
         EventHandlerBlocks <- Dictionary new.
+		wifiConnectBlocks <- List new.
 |
+    when: anEventString do: aBlock
+        EventHandlerBlocks at: anEventString put: aBlock
+]
+Methods Gizmo 'device setup'
     setupButtonHandlers
 		self deviceName = 'T-WRBD' ifTrue: [
 			DisplayUpdateBlock <- [ 
@@ -36,15 +39,22 @@ Methods Gizmo 'all'
 		self hasCardKB ifTrue: [ self runKBTask ].
 		self isTerminal ifTrue: [
 			KeyboardSemaphore <- Semaphore new.
-			gizmoTerm <- GizmoTerm new initialize.
-			self when: 'KeyboardChar' do: [:c |  KeyboardChar <- c. gizmoTerm addCharInt: c ]
+			gizmoTerm <- GizmoTerm new initialize
 			"[ [true] whileTrue: [KeyboardSemaphore wait. gizmoTerm addCharInt: c ] ] fork."
 			"gizmo runKBTask" ]
 |
 	setupWifiHandlers
-	    self when: 'WifiConnected' do: [ 
-			display clear; string: 'Wifi Connected' x: 16 y: 16.
-			[ display clear. self setupDate; setupWeather. DisplayUpdateBlock value] runAfter: 100 ]
+		self onWifiConnect: [display clear; string: 'Wifi Connected' x: 16 y: 16].
+		self onWifiConnect: [self setupDate; setupWeather].
+		self onWifiConnect: [DisplayUpdateBlock value].
+	    self when: 'WifiConnected' do: [[ wifiConnectBlocks do: [:block | block value] ] runAfter: 100 ].
+]
+Methods Gizmo 'event listening'
+	onWifiConnect: aBlock
+		wifiConnectBlocks add: aBlock
+|
+	onKeyboardCharacter: aBlock
+		self when: 'KeyboardChar' do: aBlock.
 |
     displayLoop
 		(1 to: 10) do: [:x | self afterDelay: 1000 do: [display clear; string: 'Big Click ', x asString x: 16 y: 16]].
@@ -56,32 +66,18 @@ Methods Gizmo 'all'
     display: aString atY: yPos delay: milliseconds
         display clear; string: aString x: 16 y: yPos.
         self delayTaskFor: milliseconds.
-|
+]
+Methods Gizmo 'wifi'
 	wifiOn
 		<170 0>
 |
 	wifiConnect
 		<170 2>
-|
-	updateDisplayWeather
-		weather updateSync.
-		display string: 'Temp:' x: 16 y: 40; string: weather temp x: 60 y: 40; string: weather desc x: 16 y: 54.
-|
-	setupWeather
-		city <- self nvsStringAtKey: 'weatherCity'.
-		city isNil ifTrue: [city <- 'Amsterdam'].
-		weather <- Weather new city: city.
-		"weatherUpdateBlock <- [self weatherUpdateLoop]."
-		"weatherUpdateBlock value"
-|
-	weatherUpdateLoop | s |
-		self updateDisplayWeather.
-		weatherUpdateBlock runAfter: 10000
-|
+||
 	wifiAutoconnect | ssids savedSSID savedPass found |
 		found <- false.
 		savedSSID <- self nvsStringAtKey: 'ssid'.
-		savedSSID notNil ifTrue: [
+		savedSSID ifNotNil: [
 			ssids <- self wifiScan.
 			(found <- ssids includes: savedSSID)
 				ifTrue: [
@@ -96,6 +92,24 @@ Methods Gizmo 'all'
 |
 	wifiSSID: ssid password: password
 		<170 1 ssid password>
+]
+Methods Gizmo 'Weather'
+	updateDisplayWeather
+		weather updateSync.
+		display string: 'Temp:' x: 16 y: 40; 
+			string: weather temp x: 60 y: 40; 
+			string: weather desc x: 16 y: 54.
+|
+	setupWeather
+		city <- self nvsStringAtKey: 'weatherCity'.
+		city ifNil: [city <- 'Amsterdam'].
+		weather <- Weather new city: city.
+		"weatherUpdateBlock <- [self weatherUpdateLoop]."
+		"weatherUpdateBlock value"
+|
+	weatherUpdateLoop | s |
+		self updateDisplayWeather.
+		weatherUpdateBlock runAfter: 10000
 ]
 *
 Methods Gizmo 'NVS'
@@ -118,6 +132,9 @@ Methods Gizmo 'configuration'
 	hasCardKB
 		^ <200 1>
 |
+	hasDisplay
+		^ <5>
+|
 	isTerminal
 		^ <200 2>
 |
@@ -134,15 +151,6 @@ Methods Gizmo 'gpio-i2c'
 |
 	gpioAt: pin put: anInteger
 		<160 pin anInteger>
-|
-    initializeLED
-        <159 10 2>
-|
-    ledOn
-        self gpioAt: 10 put: 0
-|
-    ledOff
-        self gpioAt: 10 put: 1
 ]
 *
 Methods Gizmo 'keyboard'
@@ -167,7 +175,8 @@ Methods Gizmo 'keyboard'
 					ifTrue: [c <- 0]
 					ifFalse: [ c = 13 ifTrue: [ c <- 10 ] ] ].
 		^ c
-|
+]
+Methods Gizmo 'accessing'
 	freeHeap
 		^ <170 100>
 |
@@ -176,14 +185,25 @@ Methods Gizmo 'keyboard'
 |
 	display
 		^ display
-|
+]
+Methods Gizmo 'tasks'
     delayTaskFor: milliseconds
         <152 nil milliseconds>
 |
     afterDelay: milliseconds do: aBlock 
         <152 aBlock milliseconds>
+]
+Methods Gizmo 'LED support'
+    initializeLED
+        <159 10 2>
 |
-    blinkLED
+    ledOn
+        self gpioAt: 10 put: 0
+|
+    ledOff
+        self gpioAt: 10 put: 1
+|
+   blinkLED
         self ledOn. [self ledOff] runAfter: 1000
 |
 	blinkAndRun: aBlock
@@ -203,9 +223,6 @@ Methods Gizmo 'keyboard'
 				[self ledOff. 
 					self blinkTimes: numberOfBlinks count: i period: milliseconds] 
 						runAfter: milliseconds ] runAfter: 10 ]
-|
-    when: anEventString do: aBlock
-        EventHandlerBlocks at: anEventString put: aBlock
 ]
 *
 Methods GizmoTerm 'all'
@@ -213,6 +230,7 @@ Methods GizmoTerm 'all'
 		i <- 1.
 		y <- 4.
 		input <- ByteArray new: 64.
+		gizmo onKeyboardCharacter: [:char | KeyboardChar <- char. self addCharInt: char ]
 |
 	newLine | res |
 		y <- y + 12.

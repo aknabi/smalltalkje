@@ -253,7 +253,7 @@ Methods Integer 'all'
 		^ (self isShortInteger and: [value isShortInteger])
 			ifTrue: [ r <- <60 self value>.
 				  "primitive will return nil on overflow"
-				  r notNil ifTrue: [ r ]
+				  r ifNotNil: [ r ]
 				ifFalse: [ self asLongInteger + value asLongInteger ]]
 			ifFalse: [ super + value ]
 |
@@ -261,7 +261,7 @@ Methods Integer 'all'
 		^ (self isShortInteger and: [value isShortInteger])
 			ifTrue: [ r <- <61 self value>.
 				  "primitive will return nil on overflow"
-				r notNil ifTrue: [ r ]
+				r ifNotNil: [ r ]
 				ifFalse: [ self asLongInteger - value asLongInteger ]]
 			ifFalse: [ super - value ]
 |
@@ -284,7 +284,7 @@ Methods Integer 'all'
 		^ (self isShortInteger and: [value isShortInteger])
 			ifTrue: [ r <- <68 self value>.
 				  "primitive will return nil on overflow"
-				  r notNil ifTrue: [ r ]
+				  r ifNotNil: [ r ]
 				  ifFalse: [ self asLongInteger * value asLongInteger ]]
 			ifFalse: [ super * value ]
 |

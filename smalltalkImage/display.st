@@ -25,6 +25,7 @@ Methods Display 'all'
 		<153 2>.
 |
 	transfer
+		"Moves rendering memory to display memory"
 		<153 3>.
 |
 	backlightOn: aBoolean
@@ -33,9 +34,6 @@ Methods Display 'all'
 	string: aString x: x y: y
 		<156 0 aString x y>.
 		self transfer.
-|
-	string: aString at: aPoint
-		self string: aString x: aPoint x y: aPoint y.
 |
 	setFont: aFont | fontIndex |
 		fontIndex <- aFont asInteger.
@@ -244,4 +242,8 @@ Methods Color 'all'
 |
 	pink
 		^ self red: 255 green: 192 blue: 202
+]
+Methods String 'display'
+	displayAt: aPoint
+		gizmo display string: self x: aPoint x y: aPoint y
 ]
