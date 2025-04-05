@@ -1,24 +1,46 @@
 /*
-	Little Smalltalk, version 2
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+	Based on Little Smalltalk, version 2
 	Written by Tim Budd, Oregon State University, July 1987
 
 	Improved incorporating suggestions by 
 		Steve Crawley, Cambridge University, October 1987
 		Steven Pemberton, CWI, Amsterdam, Oct 1987
 
-	memory management module
-
-	This is a rather simple, straightforward, reference counting scheme.
-	There are no provisions for detecting cycles, nor any attempt made
-	at compaction.  Free lists of various sizes are maintained.
-	At present only objects up to 255 bytes can be allocated, 
-	which mostly only limits the size of method (in text) you can create.
-
-	reference counts are not stored as part of an object image, but
-	are instead recreated when the object is read back in.
-	This is accomplished using a mark-sweep algorithm, similar
-	to those used in garbage collection.
-
+	Memory Management Module
+	
+	This module implements the memory management system for Smalltalkje,
+	handling object allocation, reference counting, and memory reclamation.
+	
+	Core features:
+	
+	1. Reference Counting:
+	   - Uses a simple reference counting approach for memory management
+	   - When an object's reference count drops to zero, it's reclaimed
+	   - No cycle detection (potential memory leak if circular references exist)
+	   - Reference counts are not stored in image files but reconstructed on load
+	
+	2. Object Allocation:
+	   - Uses free lists of various sizes for efficient memory reuse
+	   - Can allocate normal objects or byte objects (for strings, etc.)
+	   - Handles object size up to FREELISTMAX (2048) elements
+	   - Tries to reuse existing objects before allocating new memory
+	
+	3. Object Memory Structure:
+	   - Objects are referenced by indexes into an object table
+	   - The object table stores metadata (class, size, reference count)
+	   - Actual object data is stored in separately allocated memory
+	   - Integers are represented directly in the object reference (not in the table)
+	
+	4. Memory Optimization:
+	   - Uses block allocation for small objects to reduce malloc overhead
+	   - Free lists allow reuse of previously allocated objects
+	   - Special handling for byte objects and strings
+	
+	ESP32 Extensions:
+	- Support for objects in both RAM and ROM (flash memory)
+	- Special handling to avoid modifying ROM-based objects
 */
 
 #include <stdio.h>
@@ -71,12 +93,30 @@ static object objectFreeList[FREELISTMAX]; /* free list of objects */
 #ifndef mBlockAlloc
 
 #define MemoryBlockSize 2048
-/* the current memory block being hacked up */
-static object *memoryBlock;		  /* malloc'ed chunck of memory */
-static int currentMemoryPosition; /* last used position in above */
+/* Memory Block Allocation System
+ * Rather than individually allocating small blocks of memory with malloc,
+ * which has high overhead, this system:
+ * 1. Allocates large chunks (MemoryBlockSize) at once
+ * 2. Subdivides these chunks as needed for small object allocations
+ * 3. Only calls malloc when the current chunk is exhausted
+ * This significantly improves allocation performance and reduces fragmentation.
+ */
+static object *memoryBlock;		  /* Current malloc'ed chunk of memory being used */
+static int currentMemoryPosition; /* Current position (offset) within memoryBlock */
 #endif
 
-/* initialize the memory management module */
+/**
+ * Initializes the memory management subsystem
+ * 
+ * This function prepares the memory manager for use by:
+ * 1. Allocating the object table if needed (when obtalloc is defined)
+ * 2. Clearing all free list pointers
+ * 3. Setting all reference counts to zero
+ * 4. Building the initial free lists
+ * 5. Setting up the nil object (index 0 with reference count 1)
+ * 
+ * This must be called before any other memory operations are performed.
+ */
 noreturn initMemoryManager(void)
 {
 	int i;
@@ -114,7 +154,17 @@ noreturn initMemoryManager(void)
 	setObjTableSize(nilobj, 0);
 }
 
-/* setFreeLists - initialise the free lists */
+/**
+ * Initializes the free lists of unused objects
+ * 
+ * This function builds lists of available objects for each size by:
+ * 1. Scanning the object table for objects with zero reference counts
+ * 2. Organizing them into lists by size for quick allocation
+ * 3. Cleaning any instance variables in the free objects
+ * 
+ * The free lists allow fast reuse of previously allocated objects
+ * without requiring new memory allocation.
+ */
 noreturn setFreeLists(void)
 {
 	int i, size;
@@ -147,10 +197,21 @@ noreturn setFreeLists(void)
 	}
 }
 
-/*
-  mBlockAlloc - rip out a block (array) of object of the given size from
-	the current malloc block 
-*/
+/**
+ * Allocates a block of memory for object storage
+ * 
+ * This function manages memory allocation in large blocks:
+ * 1. When the current memory block is full, allocates a new large block
+ * 2. Carves out a section of the current block for the requested object
+ * 3. Returns a pointer to the newly allocated memory region
+ * 
+ * This approach reduces malloc overhead by amortizing it across many
+ * small allocations, significantly improving allocation performance
+ * and reducing memory fragmentation.
+ *
+ * @param memorySize The size of memory block needed (in object units)
+ * @return Pointer to the allocated memory block
+ */
 #ifndef mBlockAlloc
 
 object *mBlockAlloc(int memorySize)
@@ -178,7 +239,22 @@ object *mBlockAlloc(int memorySize)
 #endif
 
 /* MOT: Check if "normal exec" (vs image building) requires any logic */
-/* allocate a new memory object */
+/**
+ * Allocates a new object with the specified size
+ * 
+ * This function finds or creates space for a new object by:
+ * 1. First checking the free list for an object of the exact size
+ * 2. If not found, trying to use a size 0 object and expanding it
+ * 3. If still not found, looking for a larger object to shrink
+ * 4. If still not found, looking for a smaller object to expand
+ * 5. If all strategies fail, reports an "out of objects" error
+ * 
+ * The function handles all the object table bookkeeping for the new object,
+ * setting its reference count, class, and size appropriately.
+ *
+ * @param memorySize The size of the object to allocate (in object units)
+ * @return The newly allocated object reference (shifted left by 1)
+ */
 object allocObject(memorySize) int memorySize;
 {
 	int i;
@@ -256,6 +332,20 @@ object allocObject(memorySize) int memorySize;
 	return (position << 1);
 }
 
+/**
+ * Allocates a byte object (for strings, ByteArrays, etc.)
+ * 
+ * This function creates an object for storing bytes by:
+ * 1. Calculating how many object units are needed to store the bytes
+ * 2. Allocating a normal object of that size
+ * 3. Setting a negative size field to indicate it's a byte object
+ * 
+ * Byte objects store raw bytes rather than object references,
+ * and are used for strings, byte arrays, and other binary data.
+ *
+ * @param size The number of bytes to allocate space for
+ * @return A newly allocated byte object
+ */
 object allocByte(size) int size;
 {
 	object newObj;
@@ -266,6 +356,19 @@ object allocByte(size) int size;
 	return newObj;
 }
 
+/**
+ * Allocates a string object containing the specified C string
+ * 
+ * This function creates a string object by:
+ * 1. Allocating a byte object large enough for the string plus null terminator
+ * 2. Copying the string content into the byte object
+ * 
+ * This is a convenience function for creating String objects directly
+ * from C strings without manual byte object management.
+ *
+ * @param str The C string to copy into the new string object
+ * @return A newly allocated string object containing a copy of the input string
+ */
 object allocStr(str) register char *str;
 {
 	register object newSym;
@@ -305,7 +408,21 @@ void decr(z)
 }
 #endif
 
-/* do the real work in the decr procedure */
+/**
+ * Handles object deallocation when reference count reaches zero
+ * 
+ * This function reclaims an unreferenced object by:
+ * 1. Verifying the reference count is not negative (error if it is)
+ * 2. Decrementing the reference count of the object's class
+ * 3. Adding the object to the appropriate free list for its size
+ * 4. Decrementing the reference count of all instance variables
+ * 5. Clearing all instance variables to nilobj
+ * 
+ * This is the core of the reference counting system, responsible for
+ * cascading deallocation of objects that are no longer referenced.
+ *
+ * @param z The object reference to deallocate (shifted left by 1)
+ */
 void sysDecr(object z)
 {
 	register struct objectStruct *p;
@@ -454,14 +571,21 @@ void byteAtPut(object z, int i, int x)
 }
 #endif
 
-/*
-Written by Steven Pemberton:
-The following routine assures that objects read in are really referenced,
-eliminating junk that may be in the object file but not referenced.
-It is essentially a marking garbage collector algorithm using the 
-reference counts as the mark
-*/
-
+/**
+ * Marks an object and all objects it references as being in use
+ * 
+ * This function implements a mark phase of a mark-sweep algorithm by:
+ * 1. Incrementing the reference count of the visited object
+ * 2. If this is the first visit (count was 0), recursively visiting:
+ *    a. The object's class
+ *    b. All objects referenced by this object's instance variables
+ * 
+ * Written by Steven Pemberton, this function is used during image loading
+ * to rebuild reference counts, ensuring only reachable objects are retained.
+ * It essentially performs a depth-first traversal of the object graph.
+ *
+ * @param x The object to visit and mark as in use
+ */
 void visit(register object x)
 {
 	int i, s;
@@ -484,6 +608,15 @@ void visit(register object x)
 	}
 }
 
+/**
+ * Counts the number of live objects in the system
+ * 
+ * This function counts objects with non-zero reference counts,
+ * which indicates they are in use by the Smalltalk system.
+ * Useful for diagnostic and monitoring purposes.
+ *
+ * @return The total count of live objects
+ */
 int objectCount()
 {
 	register int i, j;
@@ -494,6 +627,16 @@ int objectCount()
 	return j;
 }
 
+/**
+ * Counts the number of instances of a specific class
+ * 
+ * This function counts live objects (reference count > 0) 
+ * that belong to the specified class. Useful for diagnostic
+ * purposes and memory usage analysis.
+ *
+ * @param aClass The class object whose instances should be counted
+ * @return The number of instances of the specified class
+ */
 int classInstCount(object aClass)
 {
 	register int i, j;
@@ -504,6 +647,16 @@ int classInstCount(object aClass)
 	return j;
 }
 
+/**
+ * Determines the maximum size of objects in the free lists
+ * 
+ * This function scans through the free lists to find the largest
+ * size bucket that contains at least one free object. This provides
+ * information about the largest object that can be allocated without
+ * requiring new memory allocation.
+ *
+ * @return The size of the largest available free object
+ */
 int maxObjectSize()
 {
 	int max = 0;
@@ -511,4 +664,3 @@ int maxObjectSize()
 		if (objectFreeList[i] != nilobj) max = i;
 	return max;
 }
-

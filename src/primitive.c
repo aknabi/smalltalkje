@@ -1,5 +1,4 @@
 /*
-
 	Smalltalkje, version 1
 	Written by Abdul Nabi, code krafters, March 2021
 
@@ -8,25 +7,39 @@
 	Little Smalltalk, version 3
 	Written by Tim Budd, Oregon State University, July 1988
 
-	Primitive processor
-
-	primitives are how actions are ultimately executed in the Smalltalk
-	system.
-	unlike ST-80, Little Smalltalk primitives cannot fail (although
-	they can return nil, and methods can take this as an indication
-	of failure).  In this respect primitives in Little Smalltalk are
-	much more like traditional system calls.
-
-	Primitives are combined into groups of 10 according to
-	argument count and type, and in some cases type checking is performed.
-
-	IMPORTANT NOTE:
-		The technique used to tell if an arithmetic operation
-		has overflowed in intBinary() depends upon integers
-		being 16 bits.  If this is not true, other techniques
-		may be required.
-
-	system specific I/O primitives are found in a different file.
+	Primitive Implementation Module
+	
+	This module implements the primitive operations that form the bridge between
+	the Smalltalk environment and the underlying C implementation. Primitives
+	allow Smalltalk code to perform operations that cannot be expressed in
+	Smalltalk itself, such as:
+	
+	1. Basic arithmetic and comparison operations
+	2. Object allocation and manipulation
+	3. System operations (time, random numbers, etc.)
+	4. String and character operations
+	5. Floating-point mathematics
+	
+	Unlike Smalltalk-80, Little Smalltalk primitives cannot fail with a doesNotUnderstand:
+	message (although they can return nil to indicate failure). In this respect,
+	primitives in Little Smalltalk are more like traditional system calls.
+	
+	The primitives are organized into groups of 10 according to argument count and type:
+	- 0-9:    Zero-argument primitives (system operations)
+	- 10-19:  One-argument object primitives
+	- 20-29:  Two-argument object primitives
+	- 30-39:  Three-argument object primitives
+	- 50-59:  Integer unary primitives
+	- 60-79:  Integer binary primitives
+	- 80-89:  String unary primitives
+	- 100-109: Float unary primitives
+	- 110-119: Float binary primitives
+	- 120-139: File I/O primitives (implemented in ioPrimitive.c)
+	- 150+:    System-specific primitives (implemented in sysPrimitive.c)
+	
+	IMPORTANT NOTE: The integer overflow detection technique used in intBinary()
+	depends on integers being within certain size limits. Proper overflow checking
+	is performed using the longCanBeInt() macro.
 */
 
 #include "build.h"
@@ -60,6 +73,15 @@ extern void setInstanceVariables(OBJ);
 extern boolean parse(OBJ X char *X boolean);
 extern void flushCache(OBJ X OBJ);
 
+/**
+ * Zero-argument primitive operations (primitives 0-9)
+ * 
+ * These primitives don't take any Smalltalk arguments and generally
+ * provide system-level operations and information.
+ * 
+ * @param number The primitive number within the zero-argument group
+ * @return The result object of the primitive operation
+ */
 static object zeroaryPrims(number) int number;
 {
 	short i;
@@ -69,36 +91,39 @@ static object zeroaryPrims(number) int number;
 	returnedObject = nilobj;
 	switch (number)
 	{
-
-	// Return the number of objects in Smalltalkje
-	case 1:
+	case 1: /* Primitive 1: Return the number of objects in Smalltalkje */
 		fprintf(stderr, "did primitive 1\n");
 		returnedObject = newInteger(objectCount());
 		break;
 
-	// Return the number of availalbe objects in Smalltalkje
-	case 2:
-		fprintf(stderr, "object count %d context count %d string count: %d\n", objectCount(), classInstCount(globalSymbol("Context")), classInstCount(globalSymbol("String")) );
+	case 2: /* Primitive 2: Return the number of available objects in Smalltalkje */
+		fprintf(stderr, "object count %d context count %d string count: %d\n", 
+			objectCount(), 
+			classInstCount(globalSymbol("Context")), 
+			classInstCount(globalSymbol("String")) );
 		returnedObject = newInteger(ObjectTableMax - objectCount());
 		break;
 
-	case 3: /* return a random number */
-		/* this is hacked because of the representation */
-		/* of integers as shorts */
+	case 3: /* Primitive 3: Return a random number */
+		/* Note: This implementation is adjusted for the representation
+		 * of integers in Smalltalkje. We strip off lower bits with >> 8,
+		 * ensure the value is positive, and then further shift to fit
+		 * within the tagged integer range. */
 		i = rand() >> 8; /* strip off lower bits */
 		if (i < 0)
 			i = -i;
 		returnedObject = newInteger(i >> 1);
 		break;
 
-	// TODO: This needs to move to datetime prims... makes prim 4 available
-	case 4: /* return time in seconds */
+	case 4: /* Primitive 4: Return current time in seconds */
+		/* TODO: This needs to move to datetime primitives */
 		i = (short)time((long *)0);
 		returnedObject = newInteger(i);
 		break;
 
-	// Prim 5 True true if the device has a display
-	case 5: /* flip watch - done in interp */
+	case 5: /* Primitive 5: Return true if the device has a display */
+		/* This was originally for flipping the watch flag, but is now used
+		 * to determine if the current device has a display capability */
 #ifdef DEVICE_DISPLAY_TYPE
 		returnedObject = trueobj;
 #else
@@ -106,29 +131,24 @@ static object zeroaryPrims(number) int number;
 #endif
 		break;
 
-	case 6: /* return a block that the VM needs to run (or nil if non) */
+	case 6: /* Primitive 6: Return a queued block for VM to execute (or nil if none) */
+		/* This is part of the event-driven execution system, allowing
+		 * the VM to get blocks that have been queued by asynchronous events */
 		returnedObject = getNextVMBlockToRun();
 		break;
 
-	// TODO: Prim 7 no longer used. Prim 8 available
-
-	case 7: /* reset a block that the VM needs to run */
-	case 8:
-		// VM incr when storing it
-		// if (refCountField(vmBlockToRun) > 0) decr(vmBlockToRun);
-
-		// if (vmBlockToRun != nilobj) {
-		// 	decr(vmBlockToRun);
-		// 	vmBlockToRun = nilobj;
-		// }
-
+	case 7: /* Primitive 7: Reset a block that the VM needs to run (now deprecated) */
+	case 8: /* Primitive 8: Available for future use */
+		/* These primitives used to manage the vmBlockToRun variable,
+		 * but this functionality has been replaced by the queue system */
 		returnedObject = trueobj;
 		break;
 
-	case 9:
+	case 9: /* Primitive 9: Exit the system immediately */
 		exit(0);
+		break;
 
-	default: /* unknown primitive */
+	default: /* Unknown primitive */
 		sysError("unknown primitive", "zeroargPrims");
 		break;
 	}
@@ -141,6 +161,16 @@ extern void runBlock(object block, object arg);
 
 char *primString = { 0x0, 0x0 };
 
+/**
+ * One-argument primitive operations (primitives 10-19)
+ * 
+ * These primitives take a single Smalltalk object as an argument
+ * and perform various operations on it.
+ * 
+ * @param number The primitive number within the unary group (0-9)
+ * @param firstarg The Smalltalk object argument
+ * @return The result object of the primitive operation
+ */
 static int unaryPrims(number, firstarg) int number;
 object firstarg;
 {
@@ -271,6 +301,17 @@ object firstarg;
 	return (returnedObject);
 }
 
+/**
+ * Two-argument primitive operations (primitives 20-29)
+ * 
+ * These primitives take two Smalltalk objects as arguments
+ * and perform various operations on them.
+ * 
+ * @param number The primitive number within the binary group (0-9)
+ * @param firstarg The first Smalltalk object argument
+ * @param secondarg The second Smalltalk object argument
+ * @return The result object of the primitive operation
+ */
 static int binaryPrims(number, firstarg, secondarg) int number;
 object firstarg, secondarg;
 {
@@ -351,10 +392,18 @@ object firstarg, secondarg;
 	return (returnedObject);
 }
 
-/*
- * Primitive 30 - 39 are platform independent 3 argument primitives
+/**
+ * Three-argument primitive operations (primitives 30-39)
+ * 
+ * These primitives take three Smalltalk objects as arguments
+ * and perform various operations on them.
+ * 
+ * @param number The primitive number within the trinary group (0-9)
+ * @param firstarg The first Smalltalk object argument
+ * @param secondarg The second Smalltalk object argument
+ * @param thirdarg The third Smalltalk object argument
+ * @return The result object of the primitive operation
  */
-
 static int trinaryPrims(number, firstarg, secondarg, thirdarg) int number;
 object firstarg, secondarg, thirdarg;
 {
@@ -414,10 +463,17 @@ object firstarg, secondarg, thirdarg;
 	return (returnedObject);
 }
 
-/*
- * Primitive 50 - 59 are platform independent Integer unary (1 arg) primitives
+/**
+ * Integer unary primitive operations (primitives 50-59)
+ * 
+ * These primitives take a single integer value as an argument
+ * and perform various operations on it. The integer is already
+ * extracted from its Smalltalk representation.
+ * 
+ * @param number The primitive number within the integer unary group (0-9)
+ * @param firstarg The C integer value extracted from a Smalltalk integer
+ * @return The result object of the primitive operation
  */
-
 static int intUnary(int number, int firstarg)
 {
 	object returnedObject = nilobj;
@@ -456,10 +512,21 @@ static int intUnary(int number, int firstarg)
 	return (returnedObject);
 }
 
-/*
- * Primitive 60 - 79 are platform independent Integer binary (2 arg) primitives
+/**
+ * Integer binary primitive operations (primitives 60-79)
+ * 
+ * These primitives take two integer values as arguments
+ * and perform various operations on them. The integers are already
+ * extracted from their Smalltalk representations.
+ * 
+ * This includes arithmetic operations (+, -, *, /), comparisons,
+ * bit operations, and shifts.
+ * 
+ * @param number The primitive number within the integer binary group (0-19)
+ * @param firstarg The first C integer value
+ * @param secondarg The second C integer value
+ * @return The result object of the primitive operation
  */
-
 static object intBinary(number, firstarg, secondarg) register int firstarg, secondarg;
 int number;
 {
@@ -558,10 +625,17 @@ overflow:
 	return (returnedObject);
 }
 
-/*
- * Primitive 80 - 89 are platform independent String unary (1 arg) primitives
+/**
+ * String unary primitive operations (primitives 80-89)
+ * 
+ * These primitives take a single string (char*) as an argument
+ * and perform various operations on it. The string pointer is
+ * already extracted from the Smalltalk ByteArray/String object.
+ * 
+ * @param number The primitive number within the string unary group (0-9)
+ * @param firstargument The C string pointer extracted from a Smalltalk string
+ * @return The result object of the primitive operation
  */
-
 static int strUnary(number, firstargument) int number;
 char *firstargument;
 {
@@ -603,10 +677,17 @@ char *firstargument;
 	return (returnedObject);
 }
 
-/*
- * Primitive 100 - 109 are platform independent Float unary (1 arg) primitives
+/**
+ * Float unary primitive operations (primitives 100-109)
+ * 
+ * These primitives take a single floating-point value as an argument
+ * and perform various operations on it. The float value is already
+ * extracted from its Smalltalk representation.
+ * 
+ * @param number The primitive number within the float unary group (0-9)
+ * @param firstarg The C double value extracted from a Smalltalk float
+ * @return The result object of the primitive operation
  */
-
 static int floatUnary(number, firstarg) int number;
 double firstarg;
 {
@@ -673,10 +754,20 @@ double firstarg;
 	return (returnedObject);
 }
 
-/*
- * Primitive 110 - 119 are platform independent Float unary (1 arg) primitives
+/**
+ * Float binary primitive operations (primitives 110-119)
+ * 
+ * These primitives take two floating-point values as arguments
+ * and perform various operations on them. The float values are already
+ * extracted from their Smalltalk representations.
+ * 
+ * This includes arithmetic operations (+, -, *, /), and comparisons.
+ * 
+ * @param number The primitive number within the float binary group (0-9)
+ * @param first The first C double value
+ * @param second The second C double value
+ * @return The result object of the primitive operation
  */
-
 static object floatBinary(number, first, second) int number;
 double first, second;
 {
@@ -731,9 +822,30 @@ double first, second;
 	return (returnedObject);
 }
 
-/* primitive -
-	the main driver for the primitive handler
-*/
+/**
+ * Main primitive dispatch function
+ * 
+ * This is the entry point for all primitive operations in the system.
+ * It takes a primitive number and an array of arguments, determines
+ * which primitive handler to call, and returns the result.
+ * 
+ * The primitive number determines which group of primitives to invoke:
+ * - 0-9:    Zero-argument primitives
+ * - 10-19:  One-argument object primitives
+ * - 20-29:  Two-argument object primitives
+ * - 30-39:  Three-argument object primitives
+ * - 50-59:  Integer unary primitives
+ * - 60-79:  Integer binary primitives
+ * - 80-89:  String unary primitives
+ * - 100-109: Float unary primitives
+ * - 110-119: Float binary primitives
+ * - 120-139: File I/O primitives (implemented in ioPrimitive.c)
+ * - 150+:    System-specific primitives (implemented in sysPrimitive.c)
+ * 
+ * @param primitiveNumber The number of the primitive to execute
+ * @param arguments Array of Smalltalk object arguments
+ * @return The result object of the primitive operation
+ */
 object primitive(register int primitiveNumber, object *arguments)
 {
 	register int primitiveGroup = primitiveNumber / 10;

@@ -1,26 +1,42 @@
 /*
-	Little Smalltalk, version 2
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+	Based on Little Smalltalk, version 2
 	Written by Tim Budd, Oregon State University, July 1987
 
-	Method parser - parses the textual description of a method,
-	generating bytecodes and literals.
-
-	This parser is based around a simple minded recursive descent
-	parser.
-	It is used both by the module that builds the initial virtual image,
-	and by a primitive when invoked from a running Smalltalk system.
-
-	The latter case could, if the bytecode interpreter were fast enough,
-	be replaced by a parser written in Smalltalk.  This would be preferable,
-	but not if it slowed down the system too terribly.
-
-	To use the parser the routine setInstanceVariables must first be
-	called with a class object.  This places the appropriate instance
-	variables into the memory buffers, so that references to them
-	can be correctly encoded.
-
-	As this is recursive descent, you should read it SDRAWKCAB !
-		(from bottom to top)
+	Method Parser Module
+	
+	This module implements a recursive descent parser for Smalltalk methods,
+	translating source code into bytecodes and literals. Key capabilities:
+	
+	1. Parsing and Code Generation:
+	   - Parses Smalltalk method syntax (unary, binary, keyword)
+	   - Generates bytecodes representing executable instructions
+	   - Builds literal tables for constants (numbers, strings, symbols)
+	
+	2. Variable Resolution:
+	   - Handles references to self, super
+	   - Correctly encodes references to temporaries, arguments, and instance variables
+	   - Resolves global variable lookup at runtime
+	
+	3. Method Structure Processing:
+	   - Handles method selector patterns
+	   - Processes temporary variable declarations
+	   - Supports return statements (^)
+	   - Implements blocks and optimized blocks
+	
+	4. Key Optimizations:
+	   - Special handling for common control structures (ifTrue:ifFalse:, whileTrue:)
+	   - Specialized bytecodes for common unary and binary messages
+	
+	Usage: To parse a method, first call setInstanceVariables() with the class object
+	to properly encode instance variable references, then call parse() with the
+	method object and source text.
+	
+	This is a recursive descent parser - the grammar rules are implemented in a
+	top-down manner where each function corresponds to a non-terminal in the
+	grammar. Functions call each other to parse nested constructs, following the
+	syntactic structure of the language.
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,6 +94,17 @@ void compilError(char *selector, char *str1, char *str2);
 void parsePrimitive(void);
 void sysDecr(object z);
 
+/**
+ * Initializes the instance variable table for parsing methods
+ * 
+ * This function builds a mapping of instance variable names for a given class.
+ * It recursively processes the class hierarchy from top to bottom, so that
+ * instance variables in superclasses appear first in the table. This mapping
+ * is used during parsing to correctly encode instance variable references
+ * in the bytecode.
+ * 
+ * @param aClass The class whose instance variables should be processed
+ */
 void setInstanceVariables(object aClass)
 {
 	int i, limit;
@@ -98,6 +125,14 @@ void setInstanceVariables(object aClass)
 	}
 }
 
+/**
+ * Generates a single bytecode value
+ * 
+ * This low-level function appends a single byte to the bytecode array.
+ * It performs bounds checking to ensure we don't exceed code size limits.
+ * 
+ * @param value The bytecode value to append (0-255)
+ */
 void genCode(int value)
 {
 	if (codeTop >= codeLimit)
@@ -107,6 +142,17 @@ void genCode(int value)
 		codeArray[codeTop++] = value;
 }
 
+/**
+ * Generates a bytecode instruction
+ * 
+ * Bytecode instructions in Smalltalkje consist of a high nibble (opcode)
+ * and a low nibble (operand). This function handles the encoding and
+ * packing of these values, and also handles the extension mechanism for
+ * operands larger than 15.
+ * 
+ * @param high The high nibble (opcode) of the instruction
+ * @param low The low nibble (operand) of the instruction
+ */
 void genInstruction(int high, int low)
 {
 	if (low >= 16)
@@ -118,6 +164,16 @@ void genInstruction(int high, int low)
 		genCode(high * 16 + low);
 }
 
+/**
+ * Adds a literal to the literal table
+ * 
+ * This function adds a literal object (like a number, string, or symbol)
+ * to the method's literal table and returns the index of the literal.
+ * It handles reference counting by incrementing the object's reference count.
+ * 
+ * @param aLiteral The literal object to add
+ * @return The index of the literal in the literal table
+ */
 int genLiteral(object aLiteral)
 {
 	if (literalTop >= literalLimit)
@@ -130,6 +186,15 @@ int genLiteral(object aLiteral)
 	return (literalTop - 1);
 }
 
+/**
+ * Generates bytecode to push an integer onto the stack
+ * 
+ * This function optimizes integer pushing by using special bytecodes
+ * for common small integers (-1, 0, 1, 2). For other integers, it creates
+ * a literal Integer object and generates code to push it.
+ * 
+ * @param val The integer value to push
+ */
 void genInteger(val) /* generate an integer push */
 	int val;
 {
@@ -144,6 +209,24 @@ void genInteger(val) /* generate an integer push */
 char *glbsyms[] = {"currentInterpreter", "nil", "true", "false",
 				   0};
 
+/**
+ * Processes a name reference in the code
+ * 
+ * This function handles references to variables by name. It determines the
+ * variable's type (self/super, temporary, argument, instance variable, or global)
+ * and generates the appropriate bytecode to push its value onto the stack.
+ * 
+ * The function searches for the name in various scopes, in order:
+ * 1. Self/super (special variables)
+ * 2. Temporary variables
+ * 3. Method arguments
+ * 4. Instance variables
+ * 5. Global constants (nil, true, false, etc.)
+ * 6. Global variables (looked up at runtime)
+ * 
+ * @param name The name to process
+ * @return true if the name was 'super', false otherwise
+ */
 boolean nameTerm(char *name)
 {
 	int i;
@@ -208,6 +291,16 @@ boolean nameTerm(char *name)
 	return (isSuper);
 }
 
+/**
+ * Parses a literal array expression (#( ... ))
+ * 
+ * This function handles literal array expressions in Smalltalk code.
+ * It parses the array contents (which can include nested arrays, numbers,
+ * symbols, strings, etc.) and creates an Array object containing these
+ * elements. The array is added to the literal table.
+ * 
+ * @return The index of the array in the literal table
+ */
 int parseArray()
 {
 	int i, size, base;
@@ -305,6 +398,19 @@ int parseArray()
 	return (genLiteral(newLit));
 }
 
+/**
+ * Parses a term (basic expression unit)
+ * 
+ * This function handles the parsing of basic expression elements, including:
+ * - Variable references
+ * - Literals (numbers, characters, symbols, strings)
+ * - Array literals
+ * - Parenthesized expressions
+ * - Blocks
+ * - Primitives
+ * 
+ * @return true if the term was 'super', false otherwise
+ */
 boolean term()
 {
 	boolean superTerm = false; /* true if term is pseudo var super */
@@ -378,6 +484,16 @@ boolean term()
 	return (superTerm);
 }
 
+/**
+ * Parses a primitive expression (< n ... >)
+ * 
+ * This function handles primitive expressions, which directly invoke
+ * native code implemented in C. It parses the primitive number and arguments,
+ * and generates the appropriate bytecode.
+ * 
+ * Primitives are a low-level escape mechanism that allows Smalltalk code
+ * to access functionality that cannot be implemented in Smalltalk itself.
+ */
 void parsePrimitive()
 {
 	int primitiveNumber, argumentCount;
@@ -397,6 +513,17 @@ void parsePrimitive()
 	ignore nextToken();
 }
 
+/**
+ * Generates bytecode for a message send
+ * 
+ * This function generates the bytecode for sending a message to an object.
+ * It includes optimizations for common unary and binary messages, and
+ * handles sending messages to 'super' differently from normal message sends.
+ * 
+ * @param toSuper Whether the message is being sent to 'super'
+ * @param argumentCount The number of arguments to the message
+ * @param messagesym The message selector (as a symbol)
+ */
 void genMessage(toSuper, argumentCount, messagesym)
 	boolean toSuper;
 int argumentCount;
@@ -434,6 +561,16 @@ object messagesym;
 	}
 }
 
+/**
+ * Parses a sequence of unary messages
+ * 
+ * This function handles chains of unary messages (messages with no arguments)
+ * sent to the same receiver. It also performs warning checks for unary message
+ * names that conflict with variable names.
+ * 
+ * @param superReceiver Whether the initial receiver is 'super'
+ * @return Whether the final receiver is 'super'
+ */
 boolean unaryContinuation(boolean superReceiver)
 {
 	int i;
@@ -469,6 +606,15 @@ boolean unaryContinuation(boolean superReceiver)
 	return (superReceiver);
 }
 
+/**
+ * Parses a sequence of binary messages
+ * 
+ * This function handles chains of binary messages (messages with one argument).
+ * It ensures correct precedence by parsing unary messages within each argument.
+ * 
+ * @param superReceiver Whether the initial receiver is 'super'
+ * @return Whether the final receiver is 'super'
+ */
 boolean binaryContinuation(boolean superReceiver)
 {
 	boolean superTerm;
@@ -487,6 +633,18 @@ boolean binaryContinuation(boolean superReceiver)
 	return (superReceiver);
 }
 
+/**
+ * Optimizes control flow constructs with blocks
+ * 
+ * This function implements special optimizations for control structures
+ * like ifTrue:/ifFalse:, whileTrue:, and:, or:. Instead of using general
+ * message sending, it generates specialized bytecode sequences that are
+ * more efficient.
+ * 
+ * @param instruction The special instruction to generate (BranchIfTrue, etc.)
+ * @param dopop Whether to pop the result after the branch
+ * @return The location in the code array where the branch target was stored
+ */
 int optimizeBlock(int instruction, boolean dopop)
 {
 	int location;
@@ -519,6 +677,16 @@ int optimizeBlock(int instruction, boolean dopop)
 	return (location);
 }
 
+/**
+ * Parses a sequence of keyword messages
+ * 
+ * This function handles keyword messages (messages with named arguments).
+ * It includes special optimizations for control structures and ensures
+ * correct message precedence.
+ * 
+ * @param superReceiver Whether the initial receiver is 'super'
+ * @return Whether the final receiver is 'super'
+ */
 boolean keyContinuation(boolean superReceiver)
 {
 	int i, j, argumentCount;
@@ -590,6 +758,15 @@ boolean keyContinuation(boolean superReceiver)
 	return (superReceiver);
 }
 
+/**
+ * Parses message continuations (all types)
+ * 
+ * This function handles all types of message sends (unary, binary, keyword)
+ * and cascaded message sends (using semicolons). It ensures the correct
+ * precedence: unary > binary > keyword.
+ * 
+ * @param superReceiver Whether the initial receiver is 'super'
+ */
 void continuation(boolean superReceiver)
 {
 	superReceiver = keyContinuation(superReceiver);
@@ -603,6 +780,13 @@ void continuation(boolean superReceiver)
 	}
 }
 
+/**
+ * Parses an expression
+ * 
+ * This function parses a complete Smalltalk expression, which can be
+ * either an assignment or a normal expression (term + continuations).
+ * It's a key entry point for the recursive descent parser.
+ */
 void expression()
 {
 	boolean superTerm;
@@ -631,6 +815,15 @@ void expression()
 	}
 }
 
+/**
+ * Processes a variable assignment
+ * 
+ * This function handles assignments to variables (name <- value).
+ * It resolves the variable type (temporary, instance, or global)
+ * and generates appropriate bytecode for the assignment.
+ * 
+ * @param name The name of the variable being assigned to
+ */
 void assignment(name) char *name;
 {
 	int i;
@@ -665,6 +858,13 @@ void assignment(name) char *name;
 	}
 }
 
+/**
+ * Parses a statement
+ * 
+ * This function handles individual statements in a method body.
+ * A statement is either a return statement (^ expression) or
+ * a normal expression.
+ */
 void statement()
 {
 
@@ -687,6 +887,13 @@ void statement()
 	}
 }
 
+/**
+ * Parses a method or block body
+ * 
+ * This function parses a sequence of statements that form the body
+ * of a method or block. It handles statement separators (periods)
+ * and ensures the final result is left on the stack.
+ */
 void body()
 {
 	/* empty blocks are same as nil */
@@ -721,6 +928,13 @@ void body()
 	}
 }
 
+/**
+ * Parses a block expression
+ * 
+ * This function handles block expressions in Smalltalk ([ ... ]).
+ * It supports blocks with arguments ([:arg1 :arg2 | ...]) and
+ * creates a proper Block object with bytecode for the block body.
+ */
 void block()
 {
 	int saveTemporary, argumentCount, fixLocation;
@@ -782,6 +996,13 @@ void block()
 	blockstat = savebstat;
 }
 
+/**
+ * Parses temporary variable declarations
+ * 
+ * This function processes temporary variable declarations in a method,
+ * which appear between vertical bars (| temp1 temp2 |). It builds
+ * a table of temporary variable names for use during parsing.
+ */
 void temporaries()
 {
 	object tempsym;
@@ -812,6 +1033,16 @@ void temporaries()
 	}
 }
 
+/**
+ * Parses a method's message pattern
+ * 
+ * This function processes the message pattern (selector) of a method,
+ * which determines the method's name and arguments. It handles all
+ * three types of message patterns:
+ * - Unary: methodName
+ * - Binary: + argument
+ * - Keyword: key1: arg1 key2: arg2
+ */
 void messagePattern()
 {
 	object argsym;
@@ -852,6 +1083,18 @@ void messagePattern()
 		compilError(selector, "illegal message selector", tokenString);
 }
 
+/**
+ * Main entry point for the method parser
+ * 
+ * This function parses a complete Smalltalk method and fills in the
+ * method object with the resulting bytecodes, literals, and metadata.
+ * It coordinates the entire parsing process from selector to body.
+ * 
+ * @param method The Method object to populate
+ * @param text The source code text of the method
+ * @param savetext Whether to save the source text in the method object
+ * @return true if parsing succeeded, false if there was an error
+ */
 boolean parse(object method, char *text, boolean savetext)
 {
 	int i;

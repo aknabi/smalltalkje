@@ -1,50 +1,147 @@
-# smalltalkje
-## An embedded smalltalk (based on Tim Budd's Little Smalltalk)
-**(currently with ESP32 DevKit, SSD1306 OLED, M5StickC, Lilygo T-Wristband, Mac support)**
+# Smalltalkje
 
-Based on:
+## An Embedded Smalltalk Implementation for ESP32 Devices
 
-Little Smalltalk version 3
-Written by Tim Budd, Oregon State University, July 1988
+Smalltalkje is a lightweight Smalltalk implementation designed specifically for embedded systems, particularly the ESP32 microcontroller platform. It provides a complete Smalltalk environment that can run on resource-constrained devices, bringing object-oriented programming and interactive development to the IoT and embedded world.
 
-Using an M5StickC library for esp-idf from Pablo Bacho
+**(Currently supporting ESP32 DevKit, SSD1306 OLED, M5StickC, Lilygo T-Wristband, and Mac for development)**
 
-https://github.com/pablobacho/m5stickc-idf-example
+## Overview
 
-Using an SSD1306 I2C OLED driver written by Limor Fried/Ladyada for Adafruit Industries.
+Smalltalkje is based on Tim Budd's Little Smalltalk version 3 (Oregon State University, July 1988), but has been significantly modified and enhanced to operate effectively on embedded systems with limited memory and processing power. The implementation features:
 
-https://simple-circuit.com/  
+- Memory-efficient object representation
+- Split memory model with objects in both RAM and Flash
+- Support for various ESP32-based development boards
+- Optimized bytecode interpreter
+- Seamless integration with ESP32 peripherals
+- WiFi connectivity
+- Display support for several screen types
 
-Links to main resources used in development (besides Stackoverflow):
-- ESP-IDF repo
-- M5Stick repo
+## Architecture
 
-This is a very early project. Right now builds in VisualStudio Code wiht PlatformIO plugin the and runs (on the Mac at least).
-Also builds with XCode to run basic VM on the Mac for testing and image creation.
+The system is structured around several key components:
 
-Publishing so that folks can take a look. 
+### Memory Manager
+Manages Smalltalk objects in memory using a reference counting system. The implementation supports two memory modes:
+- **Traditional Mode**: All objects loaded into RAM (like standard Smalltalk)
+- **Split Memory Mode**: Frequently accessed objects in RAM, with immutable objects (Strings, Symbols, ByteArrays) stored in Flash memory
 
-It's written in C (no C++) for the esp-idf (not arduino)... this was done to keep it as lean and mean as possible (as Smalltalk needs the memory).
+### Image System
+The Smalltalk environment persists as an image that consists of:
+- `objectTable`: Object metadata (class, size, etc.) loaded into RAM
+- `objectData`: The actual object content, which can be stored in RAM or Flash
+- `systemImage`: A traditional Smalltalk image file
 
-A ESP32 or image building target can be built (the image builder is in a directory smalltalkImage)... building this compiles the Smalltalk source files to create the objectTable, objectData and systemImage files.
+### Bytecode Interpreter
+The heart of the Smalltalk VM that executes the bytecode instructions. It includes:
+- Method caching for performance
+- Time-sliced execution
+- Support for primitives (native C functions)
+- Context management for method activation
 
-A SPIFFS partition is created with an exported files uploaded after the image is built. 
+### ESP32 Integration
+Components that bridge the Smalltalk environment with ESP32 capabilities:
+- WiFi connectivity
+- Display drivers
+- GPIO control
+- Non-volatile storage (NVS)
 
-The objectTable file is the export of the built image object table... on the ESP32 these entries are loaded into RAM on init
+## Hardware Support
 
-The objectData file is the export of the object data (pointed to by the object table)... on the ESP32 these entries are either loaded into RAM on init, or optionally ByteArrays, Symbols and Strings are copied to a FLASH addressable memory partition and the object table points to those freeing up RAM. RAM vs. Flash is chosen via a #define and copying the objectData file to the addressable Flash requires an extra step... more details to follow.
+Smalltalkje currently supports:
+- ESP32 DevKit (with optional SSD1306 OLED displays)
+- M5StickC
+- Lilygo T-Wristband
+- Mac OS (primarily for development and image creation)
 
-The systemImage file is the "standard" Smalltalk image file we're all used to. Via a #define this can be loaded into RAM and run like a normal Smalltalk system... this was the safe way to run while getting the above files working and keeping for a while... writing an image is supported (but not testing and supported on SPIFFS yet)... we'll see where that goes.
+Future support is planned for:
+- M5Atom/Lite
+- M5Stack
+- Other ESP32 variants
 
-However, don't start playing with the code yet... getting some more basic graphics and command line sorted then
-will document with more details and clear guides.
+## Build & Installation
 
-Will also link to the various other bits of code used for reference (the info is in the copyright files in the source for now).
+### Prerequisites
+- Visual Studio Code with PlatformIO plugin
+- ESP-IDF (for ESP32 targets)
+- Xcode (for Mac targets)
 
-An OLED display class has been added (very early work... all this will change)... is supports a I2C SSD1306 OLED display (the cheap ones you find on AliExpress or Adafruit)... you can configure the I2C pins the OLED is connected to on the ESP32 dev board.
+### Building for ESP32
+1. Clone the repository
+2. Open in VS Code with PlatformIO
+3. Select the appropriate board target in platformio.ini
+4. Build and upload to your device
 
-There's also intial support for the M5StickC (and will add M5Atom/Lite, M5Stack support next)... these is actually the "real" targets for this project (the ESP32 dev board allowed be to use JTAG debugging, which the M5 doesn't have... but now getting to a point where it's not needed). I'll try to keep the ESP32 dev support going... will be doable for the core, but color displays and other features may just be stubbed on the ESP32 dev and left as a porting effort for anyone using other peripherals.
+The build process compiles the Smalltalk source files to create:
+- `objectTable`
+- `objectData`
+- `systemImage`
 
-Again... this is just a commit after getting the M5Stick drawing basic graphics and things will be fast moving from here for a bit.
+These files are then uploaded to the SPIFFS partition on the ESP32.
 
-For getting started and more detailed developer documentation refer to the [Smalltalkje Wiki](https://github.com/aknabi/smalltalkje/wiki) - Currently in progress so very light and incomplete
+### Building for Mac (Development)
+The Mac build is primarily used for testing and image creation:
+1. Open the Xcode project
+2. Select the appropriate build target
+3. Build and run
+
+## Key Features and Components
+
+### Memory Optimization
+- ByteArrays, Symbols, and Strings can be stored in Flash memory to conserve RAM
+- Object table designed for efficient access
+- Reference counting for memory management
+
+### ESP32 Integration
+- WiFi connectivity API for network operations
+- HTTP client capabilities
+- Filesystem access using SPIFFS
+- Non-volatile storage for persisting settings
+
+### Display Support
+- SSD1306 OLED display driver
+- M5StickC built-in display support
+- Graphics primitives for drawing
+
+### Development Environment
+- Interactive Smalltalk shell over UART
+- Ability to file-in Smalltalk code
+- Support for image saving and loading
+
+## Implementation Notes
+
+The system is written in C (not C++) for the ESP-IDF framework (not Arduino) to maximize performance and minimize resource usage. This approach is critical for running Smalltalk, which traditionally requires significant memory, on resource-constrained devices.
+
+The ESP32's multiple cores and sufficient RAM make it possible to run a complete Smalltalk environment while still having resources available for interfacing with the physical world.
+
+## Credits
+
+- Based on Little Smalltalk v3 by Tim Budd
+- M5StickC library for ESP-IDF from Pablo Bacho (https://github.com/pablobacho/m5stickc-idf-example)
+- SSD1306 I2C OLED driver based on work by Limor Fried/Ladyada for Adafruit Industries
+- Additional resources from the ESP-IDF and M5Stack repositories
+
+## License
+
+[Original license information should be preserved here]
+
+## Documentation and Development Status
+
+The Smalltalkje codebase is well-documented to facilitate understanding and contributions:
+
+- **Source Code Documentation**: Extensive comments throughout the code explain:
+  - Memory management system and reference counting
+  - Bytecode interpreter operation and instruction set
+  - Object representation and manipulation
+  - ESP32-specific features and optimizations
+  - Split RAM/ROM memory model 
+
+- **Header Files**: Clear interface documentation for all major subsystems
+  - Object memory access and manipulation (memory.h)
+  - Bytecode instruction set definitions (interp.h)
+  - Network functionality (esp32wifi.h)
+
+This project is under active development. While the core functionality is working, examples and tutorials are still being improved. The codebase is structured to allow for relatively easy addition of new device support and feature enhancements.
+
+For more detailed documentation and getting started guides, please refer to the [Smalltalkje Wiki](https://github.com/aknabi/smalltalkje/wiki).

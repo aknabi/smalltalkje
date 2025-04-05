@@ -38,5 +38,6 @@
         "esp_spi_flash.h": "c",
         "tftspi.h": "c"
     },
-    "C_Cpp.errorSquiggles": "Disabled"
+    "C_Cpp.errorSquiggles": "Disabled",
+    "idf.pythonInstallPath": "/usr/local/bin/python"
 }

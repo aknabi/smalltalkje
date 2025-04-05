@@ -2,7 +2,22 @@
 	Smalltalkje, version 1
 	Written by Abdul Nabi, code krafters, March 2021
 
-	ESP32 system primitives
+	System Primitives Implementation
+    
+    This module implements system-level primitives for Smalltalkje, with a focus
+    on ESP32-specific functionality. It provides Smalltalk code access to hardware
+    features and system capabilities through primitive functions.
+    
+    The implementation supports:
+    - Task and process management for FreeRTOS
+    - GPIO manipulation
+    - Display control for various ESP32 devices (M5StickC, SSD1306)
+    - I2C communication and interrupt handling
+    - Date and time operations
+    - HTTP and network functionality
+    - Non-volatile storage (NVS) operations
+    - System information and platform details
+    
     TODO: Structure this so that the target (e.g. ESP32, nRF53, Dialog) code
     is in a target file and the prim definitions are here calling those.
 */
@@ -32,10 +47,14 @@
 #elif TARGET_DEVICE == DEVICE_M5STICKC || TARGET_DEVICE == DEVICE_T_WRISTBAND
 #include "tft.h"
 
-#define I2C_PORT_1_CLK_SPEED 100000 /*!< I2C port 1 is GPIO 0/26 and with the CardKB Hat needs to run slow (400K works) */
+/** I2C port 1 clock speed (100 KHz) - needs to be slow for CardKB Hat */
+#define I2C_PORT_1_CLK_SPEED 100000
 
-#define I2C_PORT_1_SDA_GPIO_PIN 0 /*!< Assign SDA I2C port 1 to GPIO 0 (on the M5StickC 8-pin connector) */
-#define I2C_PORT_1_SCL_GPIO_PIN 26 /*!< Assign SCL I2C port 1 to GPIO 0 (on the M5StickC 8-pin connector) */
+/** SDA GPIO pin for I2C port 1 (on the M5StickC 8-pin connector) */
+#define I2C_PORT_1_SDA_GPIO_PIN 0
+
+/** SCL GPIO pin for I2C port 1 (on the M5StickC 8-pin connector) */
+#define I2C_PORT_1_SCL_GPIO_PIN 26
 
 #endif
 
@@ -47,25 +66,44 @@
  * I2C Interrupt Support Code
  */
 
-#define CARD_KB_I2C_PORT I2C_NUM_1     /*!< for now just play with the Card KB */
-#define RW_TEST_LENGTH 32       /*!< Data length for r/w test, [0,DATA_LENGTH] */
+/** I2C port used for the CardKB keyboard */
+#define CARD_KB_I2C_PORT I2C_NUM_1
 
+/** Maximum data length for I2C read/write test operations */
+#define RW_TEST_LENGTH 32
+
+/** Queue for I2C events */
 static xQueueHandle i2c_event_queue = NULL;
+
+/** Interrupt handle for I2C slave */
 intr_handle_t i2c_slave_intr_handle;
 
-SemaphoreHandle_t print_mux = NULL; /*!< So printing doesn't step over each other during interrupt handling */
+/** Mutex for print operations during interrupt handling */
+SemaphoreHandle_t print_mux = NULL;
 
+/** Structure for I2C queue messages */
 struct i2CQueueMessage{
 	int portNumber;
 } xMessage;
 
+/**
+ * I2C interrupt handler
+ * 
+ * This function is called when an I2C interrupt occurs. It creates a message
+ * with the I2C port number and sends it to the event queue for processing.
+ * It also frees the interrupt handler to allow for re-registration.
+ * 
+ * @param args Interrupt handler arguments (unused)
+ */
 void IRAM_ATTR i2c_interrupt(void *args){
 	ets_printf("i2c_interrupt has been triggered\n");
 	
+	// Create a message with the I2C port number
 	struct i2CQueueMessage *message;
 	message = (struct i2CQueueMessage*) malloc(sizeof(struct i2CQueueMessage));
 	message->portNumber = CARD_KB_I2C_PORT;
-		
+	
+	// Free the interrupt handler	
 	if(i2c_isr_free(i2c_slave_intr_handle) == ESP_OK) {
 		i2c_slave_intr_handle = NULL;
 		ets_printf("Free-ed interrupt handler\n");
@@ -73,17 +111,30 @@ void IRAM_ATTR i2c_interrupt(void *args){
 		ets_printf("Failed to free interrupt handler\n");
 	}
 
+	// Send the message to the event queue
 	BaseType_t ret = xQueueSendFromISR(i2c_event_queue, &message, NULL);
 	if(ret != pdTRUE){
 		ets_printf("Could not send event to queue (%d)\n", ret);
 	}
 }
 
+/** Tag for ESP logging related to I2C operations */
 const char* TAG = "I2C";
 
+/**
+ * Install and configure the I2C port 1 driver
+ * 
+ * This function configures and installs the I2C driver for port 1, which
+ * is used for the CardKB keyboard. It sets up the GPIO pins, clock speed,
+ * and other parameters.
+ * 
+ * @return ESP_OK on success, or an error code on failure
+ */
 esp_err_t installI2CPort1Driver()
 {
     esp_err_t e;
+    
+    // Configure I2C parameters
     i2c_config_t conf;
     conf.mode = I2C_MODE_MASTER;
     conf.sda_io_num = I2C_PORT_1_SDA_GPIO_PIN;
@@ -91,8 +142,11 @@ esp_err_t installI2CPort1Driver()
     conf.sda_pullup_en = GPIO_PULLUP_DISABLE;
     conf.scl_pullup_en = GPIO_PULLUP_DISABLE;
     conf.master.clk_speed = I2C_PORT_1_CLK_SPEED;
+    
+    // Set I2C parameters
     e = i2c_param_config(I2C_NUM_1, &conf);
     if(e == ESP_OK) {
+        // Install I2C driver
         e = i2c_driver_install(I2C_NUM_1, I2C_MODE_MASTER, 0, 0, 0);
         if(e != ESP_OK) {
             ESP_LOGE(TAG, "Error during I2C 1 driver install: %s", esp_err_to_name(e));
@@ -104,10 +158,21 @@ esp_err_t installI2CPort1Driver()
     return e;
 }
 
+/**
+ * Set up I2C interrupt handling
+ * 
+ * This function configures I2C interrupt handling for the CardKB keyboard.
+ * It creates an event queue and mutex, deletes any existing I2C driver,
+ * registers an interrupt handler, and reinstalls the I2C driver.
+ * 
+ * @param i2c_addr The I2C address to monitor (unused)
+ * @return ESP_OK on success, or an error code on failure
+ */
 esp_err_t setupI2CInterrupt(i2c_port_t i2c_addr)
 {
     esp_err_t e;
 
+    // Create event queue and mutex if they don't exist
     if (i2c_event_queue == NULL) {
         i2c_event_queue = xQueueCreate(5, sizeof(uint32_t *));
     }
@@ -115,30 +180,49 @@ esp_err_t setupI2CInterrupt(i2c_port_t i2c_addr)
         print_mux = xSemaphoreCreateMutex();
     }
 
+    // Delete any existing I2C driver
     e = i2c_driver_delete(CARD_KB_I2C_PORT);
     ets_printf("i2c_driver_delete returned: %s\n", esp_err_to_name(e));
 
-    // We could use the i2c address as the ESP_OK or ESP_ERR_INVALID_ARG returned
+    // Register the I2C interrupt handler
     e = i2c_isr_register(CARD_KB_I2C_PORT, &i2c_interrupt, NULL, 0, &i2c_slave_intr_handle);
     ets_printf("i2c_isr_register returned: %s\n", esp_err_to_name(e));
 
+    // Install the I2C driver
     e = installI2CPort1Driver();
     ets_printf("installI2CPort1Driver returned: %s\n", esp_err_to_name(e));
 
     return e;
 }
 
+/**
+ * Forward declaration for i2cReadByte function
+ */
 esp_err_t i2cReadByte(uint8_t i2c_addr, uint8_t *data_byte);
 
+/**
+ * Task to read data from the CardKB keyboard
+ * 
+ * This function runs as a FreeRTOS task that continuously polls the
+ * CardKB keyboard for input. When a key is pressed, it queues a block
+ * to be executed by the Smalltalk VM with the key code as an argument.
+ * 
+ * @param arg Task argument (unused)
+ */
 static void read_card_kb_task(void *arg) {
+    // Create event queue if it doesn't exist
     if (i2c_event_queue == NULL) {
         i2c_event_queue = xQueueCreate(5, sizeof(uint8_t *));
     }
+    
     uint8_t dataByte = 0;
-    uint8_t kbPort = 95;
+    uint8_t kbPort = 95;  // I2C address of the CardKB keyboard
 
     while(1) {
+        // Read a byte from the keyboard
         esp_err_t e = i2cReadByte(kbPort, &dataByte);
+        
+        // If successful and a key was pressed, queue a block to handle it
         if (e == ESP_OK && dataByte > 0) {
             object kbBlock = nameTableLookup(globalSymbol("EventHandlerBlocks"), "KeyboardChar");
             if (kbBlock != nilobj)
@@ -146,143 +230,182 @@ static void read_card_kb_task(void *arg) {
                 queueBlock(kbBlock, newInteger((int)dataByte));
             }
         }
-		
-		vTaskDelay(portTICK_RATE_MS * 2 / 1000);
-	}
-	
-	vTaskDelete(NULL);
-
+        
+        // Short delay before checking again
+        vTaskDelay(portTICK_RATE_MS * 2 / 1000);
+    }
+    
+    vTaskDelete(NULL);
 }
 
-static void i2c_handle_interrupt_task(void *arg){
-	
-	xSemaphoreTake(print_mux, portMAX_DELAY);
-	ESP_LOGI(TAG, "Starting i2c_handle_interrupt task");
-	ESP_LOGI(TAG, "Waiting for i2c events in the event queue");
-	xSemaphoreGive(print_mux);
-	
-	while(1){
-		xSemaphoreTake(print_mux, portMAX_DELAY);
-		struct QueueMessage *message;
-		BaseType_t ret = xQueueReceive(i2c_event_queue, &(message), 1000 / portTICK_RATE_MS);
-		if(ret){
-			ESP_LOGI(TAG, "Found new I2C event to handle");
-			ESP_LOGI(TAG, "Resetting queue");
-		
-			free(message);
-		
-			int size;
-			uint8_t *data = (uint8_t *)malloc(RW_TEST_LENGTH);
-			
-			// This is the data length
-			int data_length = 0;
-			size = i2c_slave_read_buffer(CARD_KB_I2C_PORT, &data, 16, 1000 / portTICK_RATE_MS);
-			
-			if(size){
-				data_length = atoi((char*)data);
-				ESP_LOGI(TAG, "Master told me that there are a few bytes comming up");
-				printf("%d bytes to be precise", size);
-				disp_buf(data, size);
-			}else{
-				ESP_LOGW(TAG, "i2c_slave_read_buffer returned -1");
-			}
-						
-			size = i2c_slave_read_buffer(CARD_KB_I2C_PORT, &data, data_length, 1000 / portTICK_RATE_MS);
-			
-			if(size != data_length){
-				ESP_LOGW(TAG, "I2C expected data length vs read data length does not match");
-			}else{
-				disp_buf(data, size);
-			}
-			
-			ESP_LOGI(TAG, "Registering interrupt again");
-			
-			esp_err_t isr_register_ret = i2c_isr_register(CARD_KB_I2C_PORT, i2c_interrupt, NULL, 0,&i2c_slave_intr_handle);
-		
-			if(isr_register_ret == ESP_OK){
-				ESP_LOGI(TAG, "Registered interrupt handler");
-			}else{
-				ESP_LOGW(TAG, "Failed to register interrupt handler");
-			}			
-		}else{
-			ESP_LOGW(TAG, "Failed to get queued event");
-			printf("xQueueReceive() returned %d\n", ret);
-		}
-		
-		xSemaphoreGive(print_mux);
-		
-		vTaskDelay(portTICK_RATE_MS / 1000);
-	}
-	
-	vSemaphoreDelete(print_mux);	
-	vTaskDelete(NULL);
-}
-
-/*
- * I2C Read/Setup Support Code
+/**
+ * Task to handle I2C interrupt events
+ * 
+ * This function runs as a FreeRTOS task that processes I2C interrupt events
+ * from the event queue. When an interrupt occurs, it reads data from the I2C
+ * slave device and re-registers the interrupt handler.
+ * 
+ * @param arg Task argument (unused)
  */
+static void i2c_handle_interrupt_task(void *arg){
+    // Log task startup
+    xSemaphoreTake(print_mux, portMAX_DELAY);
+    ESP_LOGI(TAG, "Starting i2c_handle_interrupt task");
+    ESP_LOGI(TAG, "Waiting for i2c events in the event queue");
+    xSemaphoreGive(print_mux);
+    
+    while(1){
+        xSemaphoreTake(print_mux, portMAX_DELAY);
+        
+        // Wait for a message from the event queue
+        struct QueueMessage *message;
+        BaseType_t ret = xQueueReceive(i2c_event_queue, &(message), 1000 / portTICK_RATE_MS);
+        
+        if(ret){
+            ESP_LOGI(TAG, "Found new I2C event to handle");
+            ESP_LOGI(TAG, "Resetting queue");
+            
+            free(message);
+            
+            // Allocate buffer for I2C data
+            int size;
+            uint8_t *data = (uint8_t *)malloc(RW_TEST_LENGTH);
+            
+            // Read the data length first
+            int data_length = 0;
+            size = i2c_slave_read_buffer(CARD_KB_I2C_PORT, &data, 16, 1000 / portTICK_RATE_MS);
+            
+            if(size){
+                data_length = atoi((char*)data);
+                ESP_LOGI(TAG, "Master told me that there are a few bytes comming up");
+                printf("%d bytes to be precise", size);
+                disp_buf(data, size);
+            } else {
+                ESP_LOGW(TAG, "i2c_slave_read_buffer returned -1");
+            }
+            
+            // Read the actual data
+            size = i2c_slave_read_buffer(CARD_KB_I2C_PORT, &data, data_length, 1000 / portTICK_RATE_MS);
+            
+            if(size != data_length){
+                ESP_LOGW(TAG, "I2C expected data length vs read data length does not match");
+            } else {
+                disp_buf(data, size);
+            }
+            
+            // Re-register the interrupt handler
+            ESP_LOGI(TAG, "Registering interrupt again");
+            esp_err_t isr_register_ret = i2c_isr_register(CARD_KB_I2C_PORT, i2c_interrupt, NULL, 0, &i2c_slave_intr_handle);
+            
+            if(isr_register_ret == ESP_OK){
+                ESP_LOGI(TAG, "Registered interrupt handler");
+            } else {
+                ESP_LOGW(TAG, "Failed to register interrupt handler");
+            }            
+        } else {
+            ESP_LOGW(TAG, "Failed to get queued event");
+            printf("xQueueReceive() returned %d\n", ret);
+        }
+        
+        xSemaphoreGive(print_mux);
+        vTaskDelay(portTICK_RATE_MS / 1000);
+    }
+    
+    vSemaphoreDelete(print_mux);    
+    vTaskDelete(NULL);
+}
 
+/**
+ * Read a single byte from an I2C device
+ * 
+ * This function reads a single byte from an I2C device at the specified address.
+ * It creates an I2C command that starts communication, reads a byte, and stops.
+ * 
+ * @param i2c_addr The I2C address of the device to read from
+ * @param data_byte Pointer to store the read byte
+ * @return ESP_OK on success, or an error code on failure
+ */
 esp_err_t i2cReadByte(uint8_t i2c_addr, uint8_t *data_byte)
 {
     esp_err_t e;
     i2c_cmd_handle_t cmd;
 
-    // i2cInit(uint8_t i2c_num, int8_t sda, int8_t scl, uint32_t frequency);
-
+    // Create an I2C command link
     cmd = i2c_cmd_link_create();
 
-    // i2c_master_start(cmd);
-    // i2c_master_write_byte(cmd, (i2c_addr << 1) | I2C_MASTER_WRITE, true);
-    // i2c_master_write_byte(cmd, 0x02, true);
-
+    // Build the I2C command to read a byte
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (i2c_addr << 1) | I2C_MASTER_READ, true);
     i2c_master_read_byte(cmd, data_byte, I2C_MASTER_LAST_NACK);
     i2c_master_stop(cmd);
+    
+    // Execute the I2C command
     e = i2c_master_cmd_begin(I2C_NUM_1, cmd, 50/portTICK_PERIOD_MS);
 
+    // Check for errors
     if (e != ESP_OK) {
         ESP_LOGE("ESP32", "error reading I2C byte addr %d (%s)", i2c_addr, esp_err_to_name(e));
-    } else {
-        // ESP_LOGE("ESP32", "Reading I2C char (%c)", *data_byte);
     }
+    
+    // Clean up
     i2c_cmd_link_delete(cmd);
 
     return e;
 }
 
+/** Counter for task control */
 int counter = 0;
 
+/** Array of button handler processes */
 object buttonProcesses[4] = {nilobj, nilobj, nilobj, nilobj};
 
+/**
+ * Add a button handler process
+ * 
+ * This function registers a Smalltalk process as a handler for a specific button.
+ * The button is identified by an index (1-4), and the handler process is stored
+ * in the buttonProcesses array.
+ * 
+ * @param arguments Array of Smalltalk objects as arguments:
+ *        - arguments[1]: Button index (Integer)
+ *        - arguments[2]: Handler process
+ */
 void addButtonHandlerProcess(object *arguments)
 {
     sysWarn("start adding handler...", "addButtonHandlerProcess");
     checkIntArg(1);
     object handerProcess = arguments[2];
+    
+    // Check if button index is valid
     if (getIntArg(1) > 3)
         return;
+        
     sysWarn("now adding handler...", "addButtonHandlerProcess");
     fprintf(stderr, "Button object handler process: %d", handerProcess);
+    
+    // Store the handler process
     buttonProcesses[getIntArg(1) - 1] = handerProcess;
-    // Store a ref to the button handler process outside of Smalltalk
-    // incr(handerProcess);
 }
 
+/** Type definition for primitive functions */
 typedef void (*primFunc_t)(object *);
+
+/** External declaration for runSmalltalkProcess function */
 extern void runSmalltalkProcess(void *process);
 
+/** Array of M5 primitive functions */
 primFunc_t m5PrimitiveFunctions[] = {&addButtonHandlerProcess};
 
+/**
+ * Run a Smalltalk process as a FreeRTOS task
+ * 
+ * This function executes a Smalltalk process in a FreeRTOS task.
+ * When the process completes, the task is automatically deleted.
+ * 
+ * @param process Pointer to the Smalltalk process to run
+ */
 void runTask(void *process)
 {
-    // if (counter == 0) {
-    //     while (counter++ < 10) {
-    //         printf( "in runTask with loop number: %d", counter );
-    //         vTaskDelay( 5000 / portTICK_PERIOD_MS );
-    //     }
-    //     counter = 0;
-    // }
     runSmalltalkProcess(process);
     /* delete a task when finish */
     vTaskDelete(NULL);
@@ -290,9 +413,15 @@ void runTask(void *process)
 
 #endif
 
+/** External declaration for runBlockAfter function */
 extern void runBlockAfter(object block, object arg, int ticks);
 
+#endif
+
+/** Global object for platform name string */
 object platformNameStStr = nilobj;
+
+/** Global object for current time string */
 object currentTimeStStr = nilobj;
 
 object sysPrimitive(int number, object *arguments)
@@ -825,4 +954,3 @@ object sysPrimitive(int number, object *arguments)
     }
     return (returnedObject);
 }
-

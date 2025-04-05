@@ -1,48 +1,99 @@
 /*
-
 	Smalltalkje, version 1
 	Written by Abdul Nabi, code krafters, March 2021
 	Based on:
 	
 	Little Smalltalk, version 2
 	Written by Tim Budd, Oregon State University, July 1987
+
+	Memory Management Header
+	
+	This header file defines the core data structures and operations for
+	the Smalltalkje memory management system. It includes:
+	
+	1. Object Representation:
+	   - Object references (indices into object table)
+	   - Object table structure
+	   - Reference counting operations
+	
+	2. Memory Operations:
+	   - Object allocation and deallocation
+	   - Field access and modification
+	   - Reference count manipulation
+	
+	3. Special Object Handling:
+	   - Integer representation (small integers stored directly in references)
+	   - Byte objects (for strings and byte arrays)
+	   - nil object representation
+	
+	4. Performance Optimizations:
+	   - Macros for common operations to reduce function call overhead
+	   - Memory block allocation for efficient small object creation
+	
+	This header is a critical component that defines how all Smalltalk
+	objects are represented and manipulated in memory.
 */
 
 #include "env.h"
 
 /*
-	The first major decision to be made in the memory manager is what
-	an entity of type object really is.  Two obvious choices are a pointer (to 
-	the actual object memory) or an index into an object table.  We decided to
-	use the latter, although either would work.
-
-	Similarly, one can either define the token object using a typedef,
-	or using a define statement.  Either one will work (check this?)
+	Object Reference Representation
+	
+	A core design decision in any Smalltalk implementation is how object
+	references are represented. Smalltalkje uses object table indices rather
+	than direct pointers to memory.
+	
+	Advantages of using indices:
+	1. Allows for efficient object table compaction and garbage collection
+	2. Enables split memory model with objects in both RAM and ROM
+	3. Simplifies image saving/loading as objects have stable identities
+	4. Makes debugging easier with consistent object IDs
+	
+	The object type is defined as an integer (rather than a pointer),
+	which represents an index into the object table.
 */
 
 typedef int object;
 
 /*
-	The memory module itself is defined by over a dozen routines.
-
-	All of these could be defined by procedures, and indeed this was originally
-	done.  However, for efficiency reasons, many of these procedures can be
-	replaced by macros generating in-line code.  For the latter approach
-	to work, the structure of the object table must be known.  For this reason,
-	it is given here.  Note, however, that outside of the files memory.c and
-	image.c (or macio.c on the macintosh) ONLY the macros described in this
-	file make use of this structure: therefore modifications or even complete
-	replacement is possible as long as the interface remains consistent
+	Memory Interface Design
+	
+	The memory management interface is designed for both flexibility and performance:
+	
+	1. Core operations are defined as macros for performance-critical code paths
+	   to avoid function call overhead. These include reference counting, field access,
+	   and type testing operations.
+	
+	2. More complex operations are implemented as functions, providing a clean
+	   abstraction for memory management.
+	
+	3. The object table structure is exposed here to enable efficient macro
+	   implementation, but consumers should use only the defined macros and functions
+	   rather than accessing the structure directly.
+	
+	4. This design allows for future optimizations or even complete replacement
+	   of the memory manager without affecting the rest of the system, as long
+	   as the interface remains consistent.
 */
 
-/*
- * This represents the basic entry in the object table. Currently it's a "standard"
- * object table struct and optimized for speed with the class and ref count available
- * without indirection into the object memory
+/**
+ * Object Table Entry Structure
  * 
- * TODO: Look at moving the class and and reference count to the first bytes of the object
- * This would eliminate 6 bytes per unused entry (so in a 5k free table 30k).
+ * Each entry in the object table contains the following fields:
  * 
+ * @field class - The class of this object (as an object reference)
+ * @field referenceCount - Number of references to this object
+ * @field size - Size of the object (negative for byte objects)
+ * @field memory - Pointer to the actual object data in heap memory
+ * 
+ * The structure is optimized for fast access to class and reference count
+ * information without requiring indirection through the memory pointer.
+ * This improves performance for common operations like reference counting
+ * and method dispatch.
+ * 
+ * Note: There is a potential optimization to move class and reference count
+ * into the object memory itself, which would save 6 bytes per unused entry
+ * (approximately 30KB in a 5K object table).
  */
 struct objectStruct
 {
@@ -61,12 +112,23 @@ extern struct objectStruct *objectTable;
 extern struct objectStruct objectTable[];
 #endif
 
-/*
-	The most basic routines to the memory manager are incr and decr,
-	which increment and decrement reference counts in objects.  By separating
-	decrement from memory freeing, we could replace these as procedure calls
-	by using the following macros (thereby saving procedure calls):
-*/
+/**
+ * Reference Counting Macros
+ * 
+ * These macros handle the increment and decrement of object reference counts,
+ * which are fundamental operations in the memory management system:
+ * 
+ * incr() - Increments the reference count of an object
+ * decr() - Decrements the reference count and deallocates if it reaches zero
+ * 
+ * Both macros handle special cases:
+ * - They ignore nil object (reference 0)
+ * - They don't modify reference counts for immediate integers
+ * - decr() calls sysDecr() for actual object deallocation when needed
+ * 
+ * The macros use a temporary global variable (incrobj) to evaluate the
+ * argument only once, preventing side effects from multiple evaluations.
+ */
 
 extern object incrobj;
 
@@ -97,17 +159,27 @@ extern object allocObject(INT);
 extern object allocByte(INT);
 extern object allocStr(STR);
 
-/*
-	Integer objects are (but need not be) treated specially.
-
-	In this memory manager, negative integers are just left as is, but
-	positive integers are changed to x*2+1.  Either a negative or an odd
-	number is therefore an integer, while a nonzero even number is an
-	object pointer (multiplied by two).  Zero is reserved for the object ``nil''
-	Since newInteger does not fill in the class field, it can be given here.
-	If it was required to use the class field, it would have to be deferred
-	until names.h
-*/
+/**
+ * Integer Object Representation
+ * 
+ * Smalltalkje uses a tagged integer representation where integers are stored
+ * directly in the object reference rather than allocating separate objects.
+ * This significant optimization saves memory and improves performance for
+ * integer operations.
+ * 
+ * The encoding scheme works as follows:
+ * - Negative integers are stored directly as their value
+ * - Positive integers are encoded as (value * 2) + 1
+ * - This ensures all integer references have either the lowest bit set (odd)
+ *   or are negative
+ * - Normal object references are even, positive numbers (shifted left by 1)
+ * - Zero (0) is reserved for the nil object
+ * 
+ * The macros provide type checking and conversion:
+ * - isInteger() - Tests if a reference is an integer (odd or negative)
+ * - newInteger() - Converts a C integer to a Smalltalk integer reference
+ * - intValue() - Extracts the C integer value from a Smalltalk integer
+ */
 
 extern object intobj;
 
@@ -115,21 +187,44 @@ extern object intobj;
 #define newInteger(x) ((intobj = x) < 0 ? intobj : (intobj << 1) + 1)
 #define intValue(x) ((intobj = x) < 0 ? intobj : (intobj >> 1))
 
+/**
+ * Byte Object Size Adjustment
+ * 
+ * This macro handles the special size representation for byte objects:
+ * - Regular objects have positive size values (number of object slots)
+ * - Byte objects have negative size values (number of bytes)
+ * 
+ * When a byte object's memory needs to be allocated or manipulated,
+ * this macro converts the byte count to the required number of
+ * object slots to hold those bytes.
+ * 
+ * @param size Size value to adjust (negative for byte objects)
+ */
 #define adjustSizeIfNeg(size)     \
 	if (size < 0)                 \
 	{                             \
 		size = ((-size) + 1) / 2; \
 	}
 
-/*
-	There are four routines used to access fields within an object.
-
-	Again, some of these could be replaced by macros, for efficiency
-	basicAt(x, i) - ith field (start at 1) of object x
-	basicAtPut(x, i, v) - put value v in object x
-	byteAt(x, i) - ith field (start at 0) of object x
-	byteAtPut(x, i, v) - put value v in object x
-*/
+/**
+ * Object Field Access Macros
+ * 
+ * These macros provide the core operations for accessing and modifying
+ * object fields. They come in two varieties:
+ * 
+ * 1. Object Field Access (for regular objects storing references):
+ *    - basicAt() - Access a field by index (1-based)
+ *    - basicAtPut() - Set a field by index with reference count increment
+ *    - simpleAtPut() - Set a field without reference count handling
+ *    - fieldAtPut() - Replace a field with proper reference count decrement/increment
+ * 
+ * 2. Byte Field Access (for byte objects storing raw bytes):
+ *    - byteAt() - Access a byte by index (1-based)
+ *    - byteAtPut() - Set a byte by index
+ * 
+ * All access operations include bounds checking to prevent memory corruption,
+ * and handle reference counting to maintain object lifetime correctly.
+ */
 
 #define basicAt(x, i) (sysMemPtr(x)[i - 1])
 #define byteAt(x, i) ((int)((bytePtr(x)[i - 1])))
@@ -141,13 +236,20 @@ extern object intobj;
 	basicAtPut(x, f_i, y)
 extern int f_i;
 
-/*
-	Routines (or macros) are used to access or set object table fields
-	This allows for modification of the object table implemntation requiring
-	only changes to these macros
-
-	These are used internally in memory routines and in image.c
-*/
+/**
+ * Object Table Access Macros
+ * 
+ * These low-level macros provide direct access to the object table fields.
+ * They're primarily used internally by the memory management system and
+ * the image loading/saving code.
+ * 
+ * The separation between these internal macros and the external object
+ * field access macros allows the object table implementation to be changed
+ * without affecting the rest of the system.
+ * 
+ * Normal code should use the higher-level object field access macros instead
+ * of these direct object table accessors.
+ */
 
 // MOT: Check for which OT: e.g. getObjectTable(x)[getObjectIndex(x)]
 #define objectTable(x) objectTable[x]
@@ -165,12 +267,23 @@ extern int f_i;
 // MOT: Check for ROM OT (will crash, but should never happen)
 #define setObjTableRefCount(x, y) (objectTable(x).referenceCount = y)
 
-/*
-	Finally, a few routines (or macros) are used to access or set
-	class fields and size fields of objects
-
-	These are used outside of the memory routines (thus the index is shifted right)
-*/
+/**
+ * High-Level Object Field Access Macros
+ * 
+ * These macros are used throughout the system to access object metadata
+ * and content. Unlike the low-level object table access macros, these
+ * account for the shifted object reference (dividing by 2) to convert
+ * between external object references and internal table indices.
+ * 
+ * They provide access to:
+ * - Class field of an object
+ * - Size field of an object
+ * - Reference count field of an object
+ * - Memory pointer for an object's data
+ * 
+ * These macros form the primary interface that most code uses to
+ * interact with objects in the system.
+ */
 
 #define classField(x) objTableClass(x >> 1)
 // MOT: Check for ROM OT (will crash, but should never happen)

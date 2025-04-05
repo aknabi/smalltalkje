@@ -1,10 +1,20 @@
 
-/* 
-   WiFi station Example
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+/*
+   Smalltalkje ESP32 WiFi Implementation
+   
+   This module provides WiFi connectivity functionality for the Smalltalk
+   environment running on ESP32 devices. It implements:
+   
+   1. WiFi station (client) mode functionality
+   2. Connection management and event handling
+   3. Integration with Smalltalk event system
+   4. Network scanning capabilities
+   5. Support for RTC time synchronization via SNTP
+   
+   Based on ESP-IDF WiFi station example code, which is in the Public Domain
+   (or CC0 licensed, at your option). Unless required by applicable law or
+   agreed to in writing, this software is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -39,20 +49,39 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
+/* Default WiFi credentials - can be changed via Smalltalk API */
 #define WIFI_DEFAULT_SSID   "WIFI_DEFAULT_SSID"
 #define WIFI_DEFAULT_PASS   "WIFI_DEFAULT_PASS"
 
-char wifi_ssid[32] = WIFI_DEFAULT_SSID;
-char wifi_password[64] = WIFI_DEFAULT_PASS;
+/* Global WiFi configuration variables - accessible via setter functions */
+char wifi_ssid[32] = WIFI_DEFAULT_SSID;      /* Current WiFi network SSID */
+char wifi_password[64] = WIFI_DEFAULT_PASS;  /* Current WiFi password */
 
 static const char *TAG = "wifi station";
 
 static int s_retry_num = 0;
 
+/**
+ * WiFi event handler for the ESP32
+ * 
+ * This callback function handles various WiFi and IP events, including:
+ * - WiFi station started: Initiates connection to the configured AP
+ * - WiFi disconnection: Attempts reconnection with backoff
+ * - IP acquisition: Signals successful connection
+ * - Station connected: Triggers Smalltalk event handler blocks and initializes time via SNTP
+ * 
+ * The handler uses an event group to signal connection status to waiting threads
+ * and integrates with the Smalltalk event system by queuing blocks to run
+ * when connection events occur.
+ * 
+ * @param arg Opaque user data
+ * @param event_base The base ID of the event to register the handler for
+ * @param event_id The ID of the event to register the handler for
+ * @param event_data Event data
+ */
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
-
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
@@ -83,6 +112,20 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+/**
+ * Initializes ESP32 WiFi in station mode
+ * 
+ * This function sets up the WiFi subsystem in station (client) mode by:
+ * 1. Creating an event group for synchronization
+ * 2. Initializing the TCP/IP stack (netif)
+ * 3. Creating the default event loop
+ * 4. Setting up a default station interface
+ * 5. Initializing the WiFi driver with default configuration
+ * 6. Setting the operation mode to station
+ * 
+ * After calling this function, the WiFi subsystem is ready to connect,
+ * but no actual connection attempt is made yet.
+ */
 void wifi_init_sta(void)
 {
     s_wifi_event_group = xEventGroupCreate();
@@ -98,11 +141,31 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
 }
 
+/**
+ * Connects to WiFi using the stored SSID and password
+ * 
+ * This is a convenience function that calls wifi_connect_to() with
+ * the currently stored wifi_ssid and wifi_password values.
+ */
 void wifi_connect(void)
 {
     wifi_connect_to(wifi_ssid, wifi_password);
 }
 
+/**
+ * Connects to a specified WiFi network
+ * 
+ * This function attempts to connect to a WiFi access point using the provided
+ * credentials. It:
+ * 1. Registers event handlers for WiFi and IP events
+ * 2. Configures the WiFi station with the provided SSID and password
+ * 3. Starts the WiFi subsystem and initiates connection
+ * 4. Waits for connection success or failure
+ * 5. Triggers Smalltalk event handlers on successful connection
+ * 
+ * @param ssid The SSID (network name) to connect to
+ * @param password The password for the WiFi network
+ */
 void wifi_connect_to(char *ssid, char *password)
 {
     esp_event_handler_t instance_any_id = &wifi_event_handler;
@@ -173,6 +236,14 @@ void wifi_connect_to(char *ssid, char *password)
     vEventGroupDelete(s_wifi_event_group);
 }
 
+/**
+ * Initializes the WiFi subsystem
+ * 
+ * This function prepares the WiFi subsystem for use, initializing it in
+ * station mode, but doesn't actually attempt to connect to any network.
+ * The function is typically called early in the system initialization
+ * process.
+ */
 void wifi_start(void)
 {
     // This has been done at startp, but it's required for ESP32 wifi
@@ -183,11 +254,29 @@ void wifi_start(void)
     // wifi_connect();
 }
 
+/**
+ * Sets the WiFi SSID for future connections
+ * 
+ * Updates the stored SSID to be used in subsequent connection attempts.
+ * This function does not initiate a connection; it only stores the 
+ * provided SSID for later use with wifi_connect().
+ * 
+ * @param ssid The SSID (network name) to store
+ */
 void wifi_set_ssid(char *ssid)
 {
     strcpy(wifi_ssid, ssid);
 }
 
+/**
+ * Sets the WiFi password for future connections
+ * 
+ * Updates the stored password to be used in subsequent connection attempts.
+ * This function does not initiate a connection; it only stores the
+ * provided password for later use with wifi_connect().
+ * 
+ * @param password The password to store
+ */
 void wifi_set_password(char *password)
 {
     strcpy(wifi_password, password);
@@ -197,7 +286,18 @@ void wifi_set_password(char *password)
 
 static void print_auth_mode(int authmode);
 
-/* Initialize Wi-Fi as sta and set scan method */
+/**
+ * Scans for available WiFi networks and returns them as a Smalltalk array
+ * 
+ * This function initiates a WiFi scan to discover nearby access points.
+ * The scan is performed synchronously (blocking until complete) and returns
+ * the results as a Smalltalk Array containing String objects representing
+ * the SSIDs of found networks.
+ * 
+ * The scan is limited to DEFAULT_SCAN_LIST_SIZE (10) networks.
+ * 
+ * @return A Smalltalk Array of String objects representing detected SSIDs
+ */
 object wifi_scan(void)
 {
     uint16_t number = DEFAULT_SCAN_LIST_SIZE;
@@ -223,6 +323,14 @@ object wifi_scan(void)
     return resultArray;
 }
 
+/**
+ * Helper function to print human-readable WiFi authentication mode
+ * 
+ * Translates the numeric authentication mode constants from the ESP-IDF
+ * WiFi library into readable strings for logging purposes.
+ * 
+ * @param authmode The authentication mode constant from ESP-IDF WiFi library
+ */
 static void print_auth_mode(int authmode)
 {
     switch (authmode) {

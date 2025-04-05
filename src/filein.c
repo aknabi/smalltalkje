@@ -4,9 +4,21 @@
 	Little Smalltalk, version 3
 	Written by Tim Budd, Oregon State University, June 1988
 
-	routines used in reading in textual descriptions of classes
+	File Input System
 	
-	(This file has remained unchanged for Smalltalkje)
+	This module provides routines for reading in textual descriptions of classes
+	from files. It handles parsing class declarations, method definitions, and 
+	immediate code evaluation from Smalltalk source files.
+	
+	The implementation supports:
+	- Reading and parsing class declarations 
+	- Finding or creating classes
+	- Reading method definitions
+	- Direct evaluation of Smalltalk code snippets
+	- File inclusion from external sources
+	
+	This system forms the foundation of the Smalltalk image building process
+	by parsing source code that defines the class hierarchy and methods.
 */
 
 #include <stdio.h>
@@ -17,88 +29,117 @@
 #include "names.h"
 #include "lex.h"
 
+/* Forward declarations */
 void setInstanceVariables(object aClass);
 boolean parse(object method, char *text, boolean savetext);
 void sysDecr(object z);
 void givepause(void);
 
+/** Default size for method tables */
 #define MethodTableSize 39
 
-/*
-	the following are switch settings, with default values
-*/
+/** Flag to control whether method source text should be saved */
 boolean savetext = false;
 
-/*
-	we read the input a line at a time, putting lines into the following
-	buffer.  In addition, all methods must also fit into this buffer.
-*/
+/** 
+ * Buffer for text input
+ * 
+ * All input is read a line at a time into this buffer.
+ * The buffer must be large enough to hold entire method definitions.
+ */
 #define TextBufferSize 1024
 static char textBuffer[TextBufferSize];
 
-/*
-	findClass gets a class object,
-	either by finding it already or making it
-	in addition, it makes sure it has a size, by setting
-	the size to zero if it is nil.
-*/
+/**
+ * Find or create a class with the given name
+ * 
+ * This function looks for a class with the specified name in the global symbols.
+ * If not found, it creates a new class. It also ensures the class has a size
+ * field, initializing it to zero if needed.
+ * 
+ * @param name The name of the class to find or create
+ * @return The class object
+ */
 object findClass(name) char *name;
 {
 	object newobj;
 
+	// Look up the class in global symbols
 	newobj = globalSymbol(name);
+	
+	// If not found, create a new class
 	if (newobj == nilobj)
 		newobj = newClass(name);
+	
+	// Ensure the class has a size field
 	if (basicAt(newobj, sizeInClass) == nilobj)
 	{
 		basicAtPut(newobj, sizeInClass, newInteger(0));
 	}
+	
 	return newobj;
 }
 
+/**
+ * Directly execute a string of Smalltalk code
+ * 
+ * This function compiles and executes the given text as Smalltalk code.
+ * It creates a temporary method, process, and stack to run the code,
+ * then executes it until completion.
+ * 
+ * @param text The Smalltalk code to execute
+ */
 void justDoIt(text)
 char *text;
 {
     object process, stack, method;
 
+    // Create a new method to hold the compiled code
     method = newMethod();
     incr(method);
     setInstanceVariables(nilobj);
     ignore parse(method, text, false);
 
+    // Create a process and stack to execute the method
     process = allocObject(processSize);
     incr(process);
     stack = newArray(50);
     incr(stack);
 
-    /* make a process */
+    // Set up the process structure
     basicAtPut(process, stackInProcess, stack);
     basicAtPut(process, stackTopInProcess, newInteger(10));
     basicAtPut(process, linkPtrInProcess, newInteger(2));
 
-    /* put argument on stack */
-    basicAtPut(stack, 1, nilobj);	/* argument */
-    /* now make a linkage area in stack */
-    basicAtPut(stack, 2, nilobj);	/* previous link */
-    basicAtPut(stack, 3, nilobj);	/* context object (nil = stack) */
-    basicAtPut(stack, 4, newInteger(1));	/* return point */
-    basicAtPut(stack, 5, method);	/* method */
-    basicAtPut(stack, 6, newInteger(1));	/* byte offset */
+    // Set up the stack with the method and execution context
+    basicAtPut(stack, 1, nilobj);              // argument
+    basicAtPut(stack, 2, nilobj);              // previous link
+    basicAtPut(stack, 3, nilobj);              // context object (nil = stack)
+    basicAtPut(stack, 4, newInteger(1));       // return point
+    basicAtPut(stack, 5, method);              // method
+    basicAtPut(stack, 6, newInteger(1));       // byte offset
 
-    /* now go execute it */
+    // Execute the code until completion
     while (execute(process, 15000))
-	fprintf(stderr, "..");
+        fprintf(stderr, "..");
 }
 
-/*
-	readAndExecute reads the rest of the current line and executes it
-*/
-
+/**
+ * Read and execute a line of Smalltalk code from a file
+ * 
+ * This function reads the remainder of the current line and stores it
+ * in a global variable for later execution. Instead of directly executing
+ * the code, it stores it in a global variable that Smalltalk code can access.
+ * 
+ * Note: Direct execution with justDoIt() is currently disabled due to
+ * crashing issues during image building.
+ */
 const char *fileInEvalKeyStr = "fileInEvalStr";
 
 static void readAndExecute()
 {
 	char *execLine = toEndOfLine();
+	
 	// TODO: evaluating the text (as we do in image building) crashes, so for now
 	// store in a global and let Smalltalk look for the global to run.
 	// The only issue is that this only allows for a single evaluation line in a filein
@@ -106,34 +147,50 @@ static void readAndExecute()
 	// Broken :(
 	// justDoIt(execLine);
 
-	/* now make name */
+	// Store the code in a global variable
     object nameObj = newSymbol(fileInEvalKeyStr);
-    /* now put in global symbols table */
     nameTableInsert(symbols, strHash(fileInEvalKeyStr), nameObj, newStString(execLine));
 }
 
-/*
-	readClassDeclaration reads a declaration of a class
-*/
+/**
+ * Read a class declaration from the input
+ * 
+ * This function parses a class declaration, which includes:
+ * - The class name
+ * - Optionally, a superclass name
+ * - Optionally, a list of instance variable names
+ * 
+ * It creates or updates the class structure accordingly, setting the
+ * superclass reference, instance variables, and size.
+ */
 static void readClassDeclaration()
 {
 	object classObj, super, vars;
 	int i, size, instanceTop;
 	object instanceVariables[15];
 
+	// Read the class name
 	if (nextToken() != nameconst)
 		sysError("bad file format", "no name in declaration");
+	
+	// Find or create the class
 	classObj = findClass(tokenString);
 	size = 0;
+	
+	// Check for a superclass specification
 	if (nextToken() == nameconst)
-	{ /* read superclass name */
+	{ 
+		// Read superclass name
 		super = findClass(tokenString);
 		basicAtPut(classObj, superClassInClass, super);
 		size = intValue(basicAt(super, sizeInClass));
 		ignore nextToken();
 	}
+	
+	// Check for instance variable declarations
 	if (token == nameconst)
-	{ /* read instance var names */
+	{ 
+		// Read instance variable names
 		instanceTop = 0;
 		while (token == nameconst)
 		{
@@ -141,6 +198,8 @@ static void readClassDeclaration()
 			size++;
 			ignore nextToken();
 		}
+		
+		// Create and populate the variables array
 		vars = newArray(instanceTop);
 		for (i = 0; i < instanceTop; i++)
 		{
@@ -148,12 +207,20 @@ static void readClassDeclaration()
 		}
 		basicAtPut(classObj, variablesInClass, vars);
 	}
+	
+	// Set the class size
 	basicAtPut(classObj, sizeInClass, newInteger(size));
 }
 
-/*
-	readClass reads a class method description
-*/
+/**
+ * Read method definitions for a class
+ * 
+ * This function reads one or more method definitions for a class from the input.
+ * Each method is parsed, compiled, and added to the class's method dictionary.
+ * 
+ * @param fd File to read from
+ * @param printit Whether to print method names as they are compiled
+ */
 static void readMethods(fd, printit)
 	FILE *fd;
 boolean printit;
@@ -162,54 +229,64 @@ boolean printit;
 #define LINEBUFFERSIZE 512
     char *cp = NULL, *eoftest, lineBuffer[LINEBUFFERSIZE];
 
+	// Read the class name
 	if (nextToken() != nameconst)
 		sysError("missing name", "following Method keyword");
+	
+	// Find the class and set up for method compilation
 	classObj = findClass(tokenString);
 	setInstanceVariables(classObj);
 	if (printit)
 		cp = charPtr(basicAt(classObj, nameInClass));
 
-	/* now find or create a method table */
+	// Find or create the class's method table
 	methTable = basicAt(classObj, methodsInClass);
 	if (methTable == nilobj)
-	{ /* must make */
+	{ 
 		methTable = newDictionary(MethodTableSize);
 		basicAtPut(classObj, methodsInClass, methTable);
 	}
 
-	/* now go read the methods */
+	// Read methods until we reach the end marker
 	do
 	{
-		if (lineBuffer[0] == '|') /* get any left over text */
+		// Handle continuation of text from previous line
+		if (lineBuffer[0] == '|') 
 			strcpy(textBuffer, &lineBuffer[1]);
 		else
 			textBuffer[0] = '\0';
+		
+		// Read lines until we hit a method boundary or end marker
 		while ((eoftest = fgets(lineBuffer, LINEBUFFERSIZE, fd)) != NULL)
 		{
 			if ((lineBuffer[0] == '|') || (lineBuffer[0] == ']'))
 				break;
 			ignore strcat(textBuffer, lineBuffer);
 		}
+		
+		// Check for unexpected end of file
 		if (eoftest == NULL)
 		{
 			sysError("unexpected end of file", "while reading method");
 			break;
 		}
 
-		/* now we have a method */
+		// Parse and add the method
 		theMethod = newMethod();
 		if (parse(theMethod, textBuffer, savetext))
 		{
 			selector = basicAt(theMethod, messageInMethod);
 			basicAtPut(theMethod, methodClassInMethod, classObj);
+			
 			if (printit)
 				dspMethod(cp, charPtr(selector));
-			nameTableInsert(methTable, (int)selector,
-							selector, theMethod);
+				
+			// Add the method to the class's method table
+			nameTableInsert(methTable, (int)selector, selector, theMethod);
 		}
 		else
 		{
-			/* get rid of unwanted method */
+			// Clean up if parsing failed
 			incr(theMethod);
 			decr(theMethod);
 			givepause();
@@ -218,25 +295,55 @@ boolean printit;
 	} while (lineBuffer[0] != ']');
 }
 
-/*
-	fileIn reads in a module definition
-*/
+/**
+ * Process a Smalltalk source file
+ * 
+ * This function reads a Smalltalk source file and processes its contents.
+ * It handles various types of input lines:
+ * - Empty lines (ignored)
+ * - Comments (lines starting with '*')
+ * - Code execution directives (lines starting with '!')
+ * - Class declarations (lines starting with "Class")
+ * - Method definitions (lines starting with "Methods")
+ * 
+ * @param fd File to read from
+ * @param printit Whether to print progress information
+ */
 void fileIn(FILE *fd, boolean printit)
 {
 	while (fgets(textBuffer, TextBufferSize, fd) != NULL)
 	{
+		// Initialize lexical analyzer with the current line
 		lexinit(textBuffer);
+		
+		// Process based on the first token
 		if (token == inputend)
-			; /* do nothing, get next line */
+		{
+			// Empty line - skip
+		}
 		else if ((token == binary) && streq(tokenString, "*"))
-			; /* do nothing, its a comment */
+		{
+			// Comment line - skip
+		}
 		else if ((token == binary) && streq(tokenString, "!"))
+		{
+			// Code execution directive
 			readAndExecute();
+		}
 		else if ((token == nameconst) && streq(tokenString, "Class"))
+		{
+			// Class declaration
 			readClassDeclaration();
+		}
 		else if ((token == nameconst) && streq(tokenString, "Methods"))
+		{
+			// Method definitions
 			readMethods(fd, printit);
+		}
 		else
+		{
+			// Unrecognized line
 			sysError("unrecognized line", textBuffer);
+		}
 	}
 }

@@ -1,9 +1,31 @@
 /*
-	Little Smalltalk, version 2
+	Smalltalkje, version 1
+	Written by Abdul Nabi, code krafters, March 2021
+	Based on Little Smalltalk, version 2
 	Written by Tim Budd, Oregon State University, July 1987
 
-	lexical analysis routines for method parser
-	should be called only by parser 
+	Lexical Analyzer Implementation
+	
+	This module implements the lexical analyzer (scanner) for the Smalltalk
+	parser. It's responsible for breaking source code text into tokens that
+	can be processed by the parser. The lexical analyzer handles:
+	
+	1. Token Recognition:
+	   - Identifiers (variable and message names)
+	   - Numbers (integers and floating point)
+	   - Characters (e.g., $a)
+	   - Symbols (e.g., #symbol)
+	   - Strings (e.g., 'Hello')
+	   - Special characters and operators
+	
+	2. Tokenization Features:
+	   - Skipping whitespace and comments
+	   - Handling of special token types like keyword selectors (name:)
+	   - Proper token classification based on Smalltalk syntax rules
+	   - Character pushback for lookahead parsing
+	
+	This module is designed to be called only by the parser and not used
+	directly by other parts of the system.
 */
 
 #include <stdio.h>
@@ -14,22 +36,28 @@
 
 extern double atof();
 
-/* global variables returned by lexical analyser */
+/* Global variables returned by lexical analyzer */
+tokentype token;      /* Current token type */
+char tokenString[80]; /* String representation of the current token */
+int tokenInteger;     /* Integer value (for integer and character tokens) */
+double tokenFloat;    /* Floating point value (for float tokens) */
 
-tokentype token;	  /* token variety */
-char tokenString[80]; /* text of current token */
-int tokenInteger;	  /* integer (or character) value of token */
-double tokenFloat;	  /* floating point value of token */
+/* Local variables used only by lexical analyzer */
+static char *cp;            /* Character pointer to current position in input */
+static char pushBuffer[10]; /* Buffer for pushed-back characters (lookahead) */
+static int pushindex;       /* Index of last pushed-back character */
+static char cc;             /* Current character being processed */
+static long longresult;     /* Accumulator for building integer values */
 
-/* local variables used only by lexical analyser */
-
-static char *cp;			/* character pointer to current line */
-static char pushBuffer[10]; /* pushed back buffer */
-static int pushindex;		/* index of last pushed back char */
-static char cc;				/* current character */
-static long longresult;		/* value used when building int tokens */
-
-/* lexinit - initialize the lexical analysis routines */
+/**
+ * Initialize the lexical analyzer
+ * 
+ * This function sets up the lexical analyzer to scan a new input string.
+ * It resets the internal state, sets the input pointer to the beginning
+ * of the provided string, and fetches the first token.
+ * 
+ * @param str The input string to scan
+ */
 noreturn lexinit(char *str)
 {
 	pushindex = 0;
@@ -38,13 +66,29 @@ noreturn lexinit(char *str)
 	ignore nextToken();
 }
 
-/* pushBack - push one character back into the input */
+/**
+ * Push a character back into the input stream
+ * 
+ * This function pushes a character back into the input, allowing for
+ * lookahead in the parsing process. Characters are pushed onto a small
+ * buffer and will be the next ones retrieved by nextChar().
+ * 
+ * @param c The character to push back
+ */
 static void pushBack(c) char c;
 {
 	pushBuffer[pushindex++] = c;
 }
 
-/* nextChar - retrieve the next char, from buffer or input */
+/**
+ * Get the next character from the input
+ * 
+ * This function retrieves the next character either from the pushback
+ * buffer (if characters have been pushed back) or from the input string.
+ * It updates the current character (cc) and returns it.
+ * 
+ * @return The next character from the input
+ */
 static char nextChar()
 {
 	if (pushindex > 0)
@@ -56,20 +100,45 @@ static char nextChar()
 	return (cc);
 }
 
-/* toEndOfLine - return the rest of the current line */
+/**
+ * Get the remaining text on the current line
+ * 
+ * This function returns a pointer to the rest of the current line
+ * from the current position. It's useful for processing comments
+ * or for error reporting.
+ * 
+ * @return Pointer to the remainder of the current line
+ */
 char* toEndOfLine()
 {
 	return cp;
 }
 
-/* peek - take a peek at the next character */
+/**
+ * Look at the next character without consuming it
+ * 
+ * This function performs a lookahead operation, retrieving the next
+ * character but then pushing it back so it can be read again by
+ * the next call to nextChar().
+ * 
+ * @return The next character in the input stream
+ */
 char peek()
 {
 	pushBack(nextChar());
 	return (cc);
 }
 
-/* isClosing - characters which can close an expression */
+/**
+ * Check if a character is a closing delimiter
+ * 
+ * This function determines if a character is one that can close an
+ * expression, such as a period, right bracket, etc. These characters
+ * have special meaning in the Smalltalk syntax.
+ * 
+ * @param c The character to check
+ * @return true if the character is a closing delimiter, false otherwise
+ */
 static boolean isClosing(c) char c;
 {
 	switch (c)
@@ -85,7 +154,16 @@ static boolean isClosing(c) char c;
 	return (false);
 }
 
-/* isSymbolChar - characters which can be part of symbols */
+/**
+ * Check if a character can be part of a symbol
+ * 
+ * This function determines if a character is valid within a symbol name.
+ * Symbols can contain alphanumeric characters and certain special characters,
+ * but not whitespace or closing delimiters.
+ * 
+ * @param c The character to check
+ * @return true if the character can be part of a symbol, false otherwise
+ */
 static boolean isSymbolChar(c) char c;
 {
 	if (isdigit(c) || isalpha(c))
@@ -95,7 +173,16 @@ static boolean isSymbolChar(c) char c;
 	return (true);
 }
 
-/* singleBinary - binary characters that cannot be continued */
+/**
+ * Check if a character is a single-character binary operator
+ * 
+ * This function identifies characters that are always treated as
+ * single-character binary operators and cannot be combined with
+ * other characters to form multi-character operators.
+ * 
+ * @param c The character to check
+ * @return true if the character is a single-character binary operator
+ */
 static boolean singleBinary(c) char c;
 {
 	switch (c)
@@ -109,7 +196,17 @@ static boolean singleBinary(c) char c;
 	return (false);
 }
 
-/* binarySecond - return true if char can be second char in binary symbol */
+/**
+ * Check if a character can be the second character in a binary operator
+ * 
+ * This function determines if a character can appear as the second
+ * character in a multi-character binary operator. Certain characters
+ * like alphanumerics, spaces, or single binary operators cannot be
+ * the second character in a binary sequence.
+ * 
+ * @param c The character to check
+ * @return true if the character can be the second in a binary operator
+ */
 static boolean binarySecond(c) char c;
 {
 	if (isalpha(c) || isdigit(c) || isspace(c) || isClosing(c) ||
@@ -118,6 +215,26 @@ static boolean binarySecond(c) char c;
 	return (true);
 }
 
+/**
+ * Retrieve the next token from the input
+ * 
+ * This is the main function of the lexical analyzer. It scans the input
+ * and identifies the next token according to Smalltalk syntax rules.
+ * The function updates the global token-related variables (token,
+ * tokenString, tokenInteger, tokenFloat) with information about the
+ * token found.
+ * 
+ * The function handles:
+ * - Skipping whitespace and comments
+ * - Recognizing identifiers and keywords
+ * - Parsing integer and floating point numbers
+ * - Processing character constants
+ * - Handling symbols and arrays
+ * - Processing string literals
+ * - Identifying special characters and operators
+ * 
+ * @return The type of token found (as a tokentype enumeration value)
+ */
 tokentype nextToken()
 {
 	char *tp;
