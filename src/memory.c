@@ -522,25 +522,42 @@ register int i;
 #endif
 
 #ifndef byteAt
+/**
+ * Gets the byte value at a specific index in a byte object
+ * 
+ * This function reads a byte value from a specific position in a byte object.
+ * Byte objects (like strings, ByteArrays) store raw bytes rather than object
+ * references, and have a negative size field to indicate they are byte objects.
+ * 
+ * The function performs bounds checking to ensure the index is valid
+ * and converts the negative size field appropriately.
+ *
+ * @param z The byte object to read from
+ * @param i The index into the byte object (1-based)
+ * @return The byte value at the given index
+ */
 int byteAt(z, i)
 	object z;
 register int i;
 {
 	byte *bp;
 	unsigned char t;
+    
+    // Get absolute size - byte objects have negative size fields
+    int objSize = sizeField(z);
+    int byteSize = objSize < 0 ? -objSize : objSize;
 
 	if (isInteger(z))
 		sysError("indexing integer", "byteAt");
-	else if ((i <= 0) || (i > 2 * -sizeField(z)))
+	else if ((i <= 0) || (i > 2 * byteSize))
 	{
-		fprintf(stderr, "index %d size %d\n", i, sizeField(z));
+		fprintf(stderr, "index %d size %d\n", i, byteSize);
 		sysError("index out of range", "byteAt");
 	}
 	else
 	{
 		bp = bytePtr(z);
 		t = bp[i - 1];
-		fprintf(stderr, "byte at %d returning %d\n", i, (int)t);
 		i = (int)t;
 	}
 	return (i);
@@ -548,19 +565,33 @@ register int i;
 #endif
 
 #ifndef byteAtPut
+/**
+ * Sets the byte value at a specific index in a byte object
+ * 
+ * This function writes a byte value to a specific position in a byte object.
+ * Byte objects (like strings, ByteArrays) store raw bytes rather than object
+ * references, and have a negative size field to indicate they are byte objects.
+ * 
+ * The function performs bounds checking to ensure the index is valid
+ * and converts the negative size field appropriately.
+ *
+ * @param z The byte object to modify
+ * @param i The index into the byte object (1-based)
+ * @param x The byte value to write
+ */
 void byteAtPut(object z, int i, int x)
 {
 	byte *bp;
-
-    // FIX: Just using -sizeField causes ByteArray  crash as sign is inverted... next task, why?
-    int sizeField = sizeField(z);
-    int negSizeField = sizeField < 0 ? -sizeField : sizeField;
+    
+    // Get absolute size - byte objects have negative size fields
+    int objSize = sizeField(z);
+    int byteSize = objSize < 0 ? -objSize : objSize;
 
 	if (isInteger(z))
 		sysError("indexing integer", "byteAtPut");
-	else if ((i <= 0) || (i > 2 * -sizeField(z)))
+	else if ((i <= 0) || (i > 2 * byteSize))
 	{
-		fprintf(stderr, "index %d size %d\n", i, negSizeField);
+		fprintf(stderr, "index %d size %d\n", i, byteSize);
 		sysError("index out of range", "byteAtPut");
 	}
 	else
