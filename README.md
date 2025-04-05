@@ -137,11 +137,14 @@ The Smalltalkje codebase is extensively documented to facilitate understanding a
   - Image loading/saving mechanisms and memory models (image.c)
   - Primitive operations that bridge Smalltalk and C (primitive.c)
   - ESP32-specific features and optimizations (sysprim.c)
+  - Lexical analysis state machine and token processing (lex.c)
   - Split RAM/ROM memory model for resource optimization
 
 - **Key Implementation Components**:
   - **Memory Manager**: Reference counting system with specialized handling for byte objects
   - **Interpreter**: Efficient bytecode execution with method cache and proper context handling
+  - **Lexical Analyzer**: Robust state machine for tokenizing Smalltalk code with detailed documentation
+  - **Parser**: Recursive descent parser with optimizations for common language constructs
   - **Image System**: Flexible image loading mechanisms supporting both RAM and ROM-based objects
   - **Object Creation**: Factory functions for creating and initializing Smalltalk objects
   - **Primitives**: Native functions exposing C capabilities to Smalltalk code
@@ -150,7 +153,8 @@ The Smalltalkje codebase is extensively documented to facilitate understanding a
   - Object memory access and manipulation (memory.h)
   - Bytecode instruction set definitions (interp.h)
   - Network functionality (esp32wifi.h)
-  - Lexical analysis and parsing (lex.h)
+  - Lexical analysis and token types (lex.h)
+  - Parser interfaces and method compilation (parser.h)
 
 This project is under active development. While the core functionality is working, examples and tutorials are still being improved. The codebase is structured to allow for relatively easy addition of new device support and feature enhancements.
 

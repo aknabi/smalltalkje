@@ -636,79 +636,132 @@ boolean binaryContinuation(boolean superReceiver)
 /**
  * Optimizes control flow constructs with blocks
  * 
- * This function implements special optimizations for control structures
+ * This function implements special bytecode optimizations for control structures
  * like ifTrue:/ifFalse:, whileTrue:, and:, or:. Instead of using general
- * message sending, it generates specialized bytecode sequences that are
- * more efficient.
+ * message sending mechanism (which is slower), it generates specialized bytecode
+ * sequences that implement these control structures more efficiently.
  * 
- * @param instruction The special instruction to generate (BranchIfTrue, etc.)
+ * The optimization works by:
+ * 1. Generating a conditional or unconditional branch instruction
+ * 2. Leaving space for the branch target address (filled in later)
+ * 3. Optionally generating code to pop the condition result
+ * 4. Processing the block or expression that follows
+ * 5. Patching the branch target address to point to the instruction after the block
+ * 
+ * This produces much more efficient code than the standard approach of
+ * sending messages to blocks, especially for common control structures.
+ * 
+ * @param instruction The special branch instruction to generate (BranchIfTrue, BranchIfFalse, etc.)
  * @param dopop Whether to pop the result after the branch
- * @return The location in the code array where the branch target was stored
+ * @return The location in the code array where the branch target was stored (for later chaining)
  */
 int optimizeBlock(int instruction, boolean dopop)
 {
-	int location;
-	enum blockstatus savebstat;
+	int location;               /* Location to patch with branch target */
+	enum blockstatus savebstat; /* Saved block status for restoration */
 
+	/* Save current block status */
 	savebstat = blockstat;
+	
+	/* Generate the branch instruction */
 	genInstruction(DoSpecial, instruction);
+	
+	/* Remember location for branch target (to be filled in later) */
 	location = codeTop;
-	genCode(0);
+	genCode(0);                 /* Placeholder for branch target */
+	
+	/* Optionally pop the condition value */
 	if (dopop)
 		genInstruction(DoSpecial, PopTop);
+		
 	ignore nextToken();
+	
+	/* Handle block syntax or normal expression */
 	if (streq(tokenString, "["))
 	{
+		/* Process a block */
 		ignore nextToken();
+		
+		/* Mark this as an optimized block if we weren't in a block already */
 		if (blockstat == NotInBlock)
 			blockstat = OptimizedBlock;
-		body();
+			
+		body();  /* Parse the block body */
+		
+		/* Check for proper block termination */
 		if (!streq(tokenString, "]"))
 			compilError(selector, "missing close", "after block");
+			
 		ignore nextToken();
 	}
 	else
 	{
+		/* Process a normal expression and send 'value' to it */
 		ignore binaryContinuation(term());
 		genMessage(false, 0, newSymbol("value"));
 	}
+	
+	/* Patch the branch target to point to the next instruction */
 	codeArray[location] = codeTop + 1;
+	
+	/* Restore previous block status */
 	blockstat = savebstat;
+	
 	return (location);
 }
 
 /**
  * Parses a sequence of keyword messages
  * 
- * This function handles keyword messages (messages with named arguments).
- * It includes special optimizations for control structures and ensures
- * correct message precedence.
+ * This function handles keyword messages (messages with named arguments like key1:arg1 key2:arg2).
+ * It includes special optimizations for common control structures, converting them directly to
+ * efficient branch instructions rather than using the standard message sending mechanism.
+ * 
+ * The function specifically optimizes:
+ * - ifTrue:/ifFalse: - Conditional branches
+ * - whileTrue: - Loop structures
+ * - and:/or: - Short-circuit boolean operations
+ * 
+ * For regular keyword messages, it builds the selector by concatenating all keywords
+ * and processes each argument (which may itself contain binary and unary messages).
  * 
  * @param superReceiver Whether the initial receiver is 'super'
- * @return Whether the final receiver is 'super'
+ * @return Whether the final receiver is 'super' (always false for keyword messages)
  */
 boolean keyContinuation(boolean superReceiver)
 {
-	int i, j, argumentCount;
+	int i, j;                /* Used for branch patching locations */
+	int argumentCount;       /* Number of arguments in keyword message */
 	boolean sent, superTerm;
-	object messagesym;
-	char pattern[80];
+	object messagesym;       /* Message selector as a symbol */
+	char pattern[80];        /* Buffer to build the complete selector */
 
+	/* First process any binary messages (maintaining precedence) */
 	superReceiver = binaryContinuation(superReceiver);
+	
 	if (token == namecolon)
 	{
+		/* Handle control flow optimizations */
 		if (streq(tokenString, "ifTrue:"))
 		{
+			/* Generate code that branches if condition is false */
 			i = optimizeBlock(BranchIfFalse, false);
+			
+			/* Look for an ifFalse: part to handle full if-then-else */
 			if (streq(tokenString, "ifFalse:"))
 			{
+				/* Patch branch target to skip over the "then" part */
 				codeArray[i] = codeTop + 3;
+				
+				/* Generate unconditional branch after "then" part to skip "else" part */
 				ignore optimizeBlock(Branch, true);
 			}
 		}
 		else if (streq(tokenString, "ifFalse:"))
 		{
+			/* Similar to ifTrue:, but branches if condition is true */
 			i = optimizeBlock(BranchIfTrue, false);
+			
 			if (streq(tokenString, "ifTrue:"))
 			{
 				codeArray[i] = codeTop + 3;
@@ -717,42 +770,68 @@ boolean keyContinuation(boolean superReceiver)
 		}
 		else if (streq(tokenString, "whileTrue:"))
 		{
+			/* Remember start of loop for branch back */
 			j = codeTop;
+			
+			/* Duplicate condition block so we can evaluate it again */
 			genInstruction(DoSpecial, Duplicate);
+			
+			/* Evaluate the condition block */
 			genMessage(false, 0, newSymbol("value"));
+			
+			/* Branch to end if condition is false */
 			i = optimizeBlock(BranchIfFalse, false);
+			
+			/* Pop the condition block (no longer needed) */
 			genInstruction(DoSpecial, PopTop);
+			
+			/* Unconditional branch back to start of loop */
 			genInstruction(DoSpecial, Branch);
 			genCode(j + 1);
+			
+			/* Patch exit branch to point after the loop */
 			codeArray[i] = codeTop + 1;
+			
+			/* Pop the condition block from the original stack position */
 			genInstruction(DoSpecial, PopTop);
 		}
 		else if (streq(tokenString, "and:"))
+			/* Short-circuit AND - only evaluates second block if first is true */
 			ignore optimizeBlock(AndBranch, false);
 		else if (streq(tokenString, "or:"))
+			/* Short-circuit OR - only evaluates second block if first is false */
 			ignore optimizeBlock(OrBranch, false);
 		else
 		{
+			/* Handle standard keyword messages */
 			pattern[0] = '\0';
 			argumentCount = 0;
+			
+			/* Process each keyword:argument pair */
 			while (parseok && (token == namecolon))
 			{
+				/* Build the selector by concatenating all keywords */
 				ignore strcat(pattern, tokenString);
 				argumentCount++;
 				ignore nextToken();
+				
+				/* Parse the argument (which may include unary and binary messages) */
 				superTerm = term();
 				ignore binaryContinuation(superTerm);
 			}
 			sent = false;
 
-			/* check for predefined messages */
+			/* Create symbol for the complete selector */
 			messagesym = newSymbol(pattern);
 
 			if (!sent)
 			{
+				/* Generate standard message send bytecode */
 				genMessage(superReceiver, argumentCount, messagesym);
 			}
 		}
+		
+		/* After any keyword message, receiver is no longer super */
 		superReceiver = false;
 	}
 	return (superReceiver);
@@ -929,69 +1008,120 @@ void body()
 }
 
 /**
- * Parses a block expression
+ * Parses a block expression (closure)
  * 
- * This function handles block expressions in Smalltalk ([ ... ]).
- * It supports blocks with arguments ([:arg1 :arg2 | ...]) and
- * creates a proper Block object with bytecode for the block body.
+ * This function handles Smalltalk block expressions, which are anonymous functions
+ * enclosed in square brackets. Blocks are first-class objects that capture their lexical
+ * environment and can be passed around, stored in variables, and executed later.
+ * 
+ * Block syntax forms:
+ * - Simple block: [ statements ]
+ * - Block with arguments: [:arg1 :arg2 | statements ]
+ * 
+ * Implementation details:
+ * 1. Block arguments are treated as temporaries in the current scope
+ * 2. A Block object is created with metadata about arguments and their locations
+ * 3. Primitive 29 is called to create a runtime closure (captures the context)
+ * 4. The bytecode for the block body is compiled inline but skipped by normal execution
+ * 5. The return instruction is generated to return from the block properly
+ * 
+ * Blocks are central to Smalltalk's design - control structures like if/while are
+ * implemented as regular methods that take blocks as arguments rather than being
+ * hardcoded into the language syntax.
  */
 void block()
 {
-	int saveTemporary, argumentCount, fixLocation;
-	object tempsym, newBlk;
-	enum blockstatus savebstat;
+	int saveTemporary;       /* Save temporary variables to restore after block */
+	int argumentCount;       /* Number of block arguments */
+	int fixLocation;         /* Position to patch for jumping around block code */
+	object tempsym, newBlk;  /* Symbol for temp names and the Block object */
+	enum blockstatus savebstat; /* Block status to restore after parsing */
 
+	/* Save current state */
 	saveTemporary = temporaryTop;
 	savebstat = blockstat;
 	argumentCount = 0;
+	
+	/* Skip the opening '[' */
 	ignore nextToken();
+	/* Process block arguments if present */
 	if ((token == binary) && streq(tokenString, ":"))
 	{
+		/* Each block argument begins with a colon (e.g., [:x :y | ...]) */
 		while (parseok && (token == binary) && streq(tokenString, ":"))
 		{
+			/* After each colon must come an argument name */
 			if (nextToken() != nameconst)
 				compilError(selector, "name must follow colon",
 							"in block argument list");
+							
+			/* Block arguments are implemented as temporaries */
 			if (++temporaryTop > maxTemporary)
 				maxTemporary = temporaryTop;
+				
 			argumentCount++;
+			
 			if (temporaryTop > temporaryLimit)
-				compilError(selector, "too many temporaries in method",
-							"");
+				compilError(selector, "too many temporaries in method", "");
 			else
 			{
+				/* Store argument name in temporary variable table */
 				tempsym = newSymbol(tokenString);
 				temporaryName[temporaryTop] = charPtr(tempsym);
 			}
 			ignore nextToken();
 		}
+		
+		/* Block arguments must be terminated by a vertical bar */
 		if ((token != binary) || !streq(tokenString, "|"))
 			compilError(selector, "block argument list must be terminated",
 						"by |");
 		ignore nextToken();
 	}
+	/* Create a new Block object and initialize its properties */
 	newBlk = newBlock();
+	
+	/* Set argument count and starting position in the block */
 	basicAtPut(newBlk, argumentCountInBlock, newInteger(argumentCount));
-	basicAtPut(newBlk, argumentLocationInBlock,
-			   newInteger(saveTemporary + 1));
+	basicAtPut(newBlk, argumentLocationInBlock, newInteger(saveTemporary + 1));
+	
+	/* Generate code to create a block closure at runtime:
+	   1. Push the block template object as a literal
+	   2. Push the current context
+	   3. Call primitive 29 which creates a BlockClosure
+	      (This captures the lexical environment) */
 	genInstruction(PushLiteral, genLiteral(newBlk));
 	genInstruction(PushConstant, contextConst);
 	genInstruction(DoPrimitive, 2);
 	genCode(29);
+	
+	/* Generate an unconditional branch to skip over the block's bytecode
+	   (The block code itself is not executed when encountered, only when the block is later activated) */
 	genInstruction(DoSpecial, Branch);
-	fixLocation = codeTop;
-	genCode(0);
-	/*genInstruction(DoSpecial, PopTop); */
+	fixLocation = codeTop;       /* Remember this location to patch later */
+	genCode(0);                  /* Placeholder for jump target */
+	
+	/* Store the bytecode position where the block's code begins */
 	basicAtPut(newBlk, bytecountPositionInBlock, newInteger(codeTop + 1));
+	/* Mark that we're now parsing inside a block body (affects return statements) */
 	blockstat = InBlock;
+	
+	/* Parse the block's body (sequence of statements) */
 	body();
-	// if ((token == closing) && streq(tokenString, "]"))
+	
+	/* Verify the block is properly terminated with closing bracket */
 	if ((token == closing) && streq(tokenString, "]"))
 		ignore nextToken();
 	else 
 		compilError(selector, "block not terminated by ]", "");
+		
+	/* Generate return instruction for the block */
 	genInstruction(DoSpecial, StackReturn);
+	
+	/* Patch the branch target to skip over the block's bytecode */
 	codeArray[fixLocation] = codeTop + 1;
+	
+	/* Restore the original temporary variable count and block status */
 	temporaryTop = saveTemporary;
 	blockstat = savebstat;
 }
@@ -1084,15 +1214,27 @@ void messagePattern()
 }
 
 /**
- * Main entry point for the method parser
+ * Main entry point for the Smalltalk method parser
  * 
- * This function parses a complete Smalltalk method and fills in the
- * method object with the resulting bytecodes, literals, and metadata.
- * It coordinates the entire parsing process from selector to body.
+ * This function coordinates the entire parsing process for a method, from the selector
+ * pattern to the method body, and populates the provided Method object with:
+ * - Message selector (method name)
+ * - Bytecodes (executable instructions)
+ * - Literals (constants used in the method)
+ * - Stack and temporary variable size information
+ * - Optionally the source text for debugging
  * 
- * @param method The Method object to populate
- * @param text The source code text of the method
- * @param savetext Whether to save the source text in the method object
+ * The parsing follows Smalltalk's method syntax:
+ * 1. Message pattern (selector with arguments)
+ * 2. Temporary variable declarations
+ * 3. Method body (sequence of statements)
+ * 
+ * If parsing succeeds, a complete Method object is created that can be executed
+ * by the Smalltalk interpreter.
+ * 
+ * @param method The Method object to populate with parsed information
+ * @param text The source code text of the method to parse
+ * @param savetext Whether to store the source text in the Method object (for debugging)
  * @return true if parsing succeeded, false if there was an error
  */
 boolean parse(object method, char *text, boolean savetext)
@@ -1101,45 +1243,60 @@ boolean parse(object method, char *text, boolean savetext)
 	object bytecodes, theLiterals;
 	byte *bp;
 
+	/* Initialize the lexical analyzer with the source text */
 	lexinit(text);
+	
+	/* Initialize parsing state */
 	parseok = true;
 	blockstat = NotInBlock;
 	codeTop = 0;
 	literalTop = temporaryTop = argumentTop = 0;
 	maxTemporary = 0;
 
-	messagePattern();
+	/* Parse method in sequence: pattern, temporaries, body */
+	messagePattern();            /* Method name and arguments */
 	if (parseok)
-		temporaries();
+		temporaries();           /* Temporary variable declarations */
 	if (parseok)
-		body();
+		body();                  /* Method body (statements) */
 	if (parseok)
 	{
-		genInstruction(DoSpecial, PopTop);
-		genInstruction(DoSpecial, SelfReturn);
+		/* All methods implicitly return self if no explicit return */
+		genInstruction(DoSpecial, PopTop);       /* Discard result of last expression */
+		genInstruction(DoSpecial, SelfReturn);   /* Return self */
 	}
 
+	/* Handle parsing failure by returning an invalid method object */
 	if (!parseok)
 	{
 		basicAtPut(method, bytecodesInMethod, nilobj);
 	}
 	else
 	{
+		/* Parsing succeeded - build a complete Method object */
+		
+		/* 1. Create a ByteArray containing the compiled bytecodes */
 		bytecodes = newByteArray(codeTop);
 		bp = bytePtr(bytecodes);
 		for (i = 0; i < codeTop; i++)
 		{
 			bp[i] = codeArray[i];
 		}
+		
+		/* 2. Set the method's name (selector) */
 		basicAtPut(method, messageInMethod, newSymbol(selector));
+		
+		/* 3. Attach the bytecodes to the method */
 		basicAtPut(method, bytecodesInMethod, bytecodes);
+		
+		/* 4. Create and attach the literal table (if any literals exist) */
 		if (literalTop > 0)
 		{
 			theLiterals = newArray(literalTop);
 			for (i = 1; i <= literalTop; i++)
 			{
 				basicAtPut(theLiterals, i, literalArray[i]);
-				decr(literalArray[i]);
+				decr(literalArray[i]);  /* Adjust reference count */
 			}
 			basicAtPut(method, literalsInMethod, theLiterals);
 		}
@@ -1147,14 +1304,18 @@ boolean parse(object method, char *text, boolean savetext)
 		{
 			basicAtPut(method, literalsInMethod, nilobj);
 		}
-		basicAtPut(method, stackSizeInMethod, newInteger(6));
-		basicAtPut(method, temporarySizeInMethod,
-				   newInteger(1 + maxTemporary));
+		
+		/* 5. Set stack and temporary variable size information */
+		basicAtPut(method, stackSizeInMethod, newInteger(6));  /* Default stack size */
+		basicAtPut(method, temporarySizeInMethod, newInteger(1 + maxTemporary));
+		
+		/* 6. Optionally save the source text for debugging */
 		if (savetext)
 		{
 			basicAtPut(method, textInMethod, newStString(text));
 		}
-		return (true);
+		
+		return (true);  /* Parsing succeeded */
 	}
-	return (false);
+	return (false);     /* Parsing failed */
 }

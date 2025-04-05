@@ -173,24 +173,27 @@ noreturn setFreeLists(void)
 
 	objectFreeList[0] = nilobj;
 
-	/*
-		MOT: No need for ROM objects
-		For each object, check if the reference count is 0.
-		if so, adjust size (if byte obj), set the obj class
-		to the OFL[size] (?), set the OFL entry at the obj
-		size to the object and clear the object's inst var
-	 */
+	// Initialize free lists by finding unused objects and organizing them by size
+	// We iterate backward through the object table (optimization for locality)
 	for (z = ObjectTableMax - 1; z > 0; z--)
 	{
+		// Only process objects with zero reference count (unreferenced/unused)
 		if (objTableRefCount(z) == 0)
 		{
-			/* Unreferenced, so do a sort of sysDecr: */
+			// Get this object's entry in the object table
 			p = &objectTable[z];
+			
+			// Get object size (adjusting if it's a byte object with negative size)
 			size = p->size;
-			// TODO: Rename this to adjustSizeIfByte()
-			adjustSizeIfNeg(size);
+			adjustSizeIfNeg(size);  // TODO: Rename this to adjustSizeIfByte()
+			
+			// Add this object to the appropriate free list:
+			// 1. Set its class field to point to the current head of the list
+			// 2. Make this object the new head of the list for its size
 			p->class = objectFreeList[size];
 			objectFreeList[size] = z;
+			
+			// Clear all instance variables to nil (prevents stale references)
 			for (i = size; i > 0;)
 				p->memory[--i] = nilobj;
 		}
@@ -240,20 +243,22 @@ object *mBlockAlloc(int memorySize)
 
 /* MOT: Check if "normal exec" (vs image building) requires any logic */
 /**
- * Allocates a new object with the specified size
+ * Allocates a new object with specified size using a multi-strategy allocation algorithm
  * 
- * This function finds or creates space for a new object by:
- * 1. First checking the free list for an object of the exact size
- * 2. If not found, trying to use a size 0 object and expanding it
- * 3. If still not found, looking for a larger object to shrink
- * 4. If still not found, looking for a smaller object to expand
- * 5. If all strategies fail, reports an "out of objects" error
+ * This function implements a sophisticated allocation strategy with four fallback methods:
  * 
- * The function handles all the object table bookkeeping for the new object,
- * setting its reference count, class, and size appropriately.
+ * 1. First attempt: Look for an exact-sized object in the free list (fastest path)
+ * 2. Second attempt: Use a size-0 object and expand it to needed size
+ * 3. Third attempt: Find a larger object and trim it down to size
+ * 4. Fourth attempt: Find a smaller object, free its memory, and resize it
+ * 
+ * This multi-strategy approach maximizes memory reuse and minimizes fragmentation
+ * while trying to avoid new memory allocations when possible. The function handles
+ * all the object table bookkeeping for the new object, setting its reference count,
+ * class, and size appropriately.
  *
- * @param memorySize The size of the object to allocate (in object units)
- * @return The newly allocated object reference (shifted left by 1)
+ * @param memorySize Size of object to allocate (in object units)
+ * @return Reference to newly allocated object (index shifted left by 1 bit)
  */
 object allocObject(memorySize) int memorySize;
 {
@@ -261,53 +266,62 @@ object allocObject(memorySize) int memorySize;
 	register int position;
 	boolean done;
 
+	// Ensure requested size is within allowed limits
 	if (memorySize >= FREELISTMAX)
 	{
 		fprintf(stderr, "size %d\n", memorySize);
 		sysError("allocation bigger than permitted", "allocObject");
 	}
 
-	/* first try the free lists, this is fastest */
+	// STRATEGY 1: Try to find an exact size match in free list (most efficient)
 	if ((position = objectFreeList[memorySize]) != 0)
 	{
+		// Remove this object from the free list by updating the list head
+		// The class field of free objects is used to store the next free object
 		objectFreeList[memorySize] = objTableClass(position);
 	}
 
-	/* if not there, next try making a size zero object and
-       making it bigger */
+	// STRATEGY 2: Try to repurpose a size-0 object by expanding it
 	else if ((position = objectFreeList[0]) != 0)
 	{
 		objectFreeList[0] = objTableClass(position);
 		setObjTableSize(position, memorySize);
 		setObjTableMemory(position, mBlockAlloc(memorySize));
 	}
-	/* not found, must work a bit harder */
+	
+	// If we get here, we need more elaborate strategies
 	else
 	{
 		done = false;
 
-		/* first try making a bigger object smaller */
+		// STRATEGY 3: Find a larger object and shrink it (no memory allocation needed)
 		for (i = memorySize + 1; i < FREELISTMAX; i++)
 		{
 			if ((position = objectFreeList[i]) != 0)
 			{
+				// Remove from its current free list
 				objectFreeList[i] = objTableClass(position);
-				/* just trim it a bit */
+				
+				// Simply update its size field to the smaller requested size
+				// This may waste some memory but avoids allocation overhead
 				setObjTableSize(position, memorySize);
 				done = true;
 				break;
 			}
 		}
 
-		/* next try making a smaller object bigger */
+		// STRATEGY 4: Find a smaller object and expand it (requires new memory allocation)
 		if (!done)
 		{
 			for (i = 1; i < memorySize; i++)
 			{
 				if ((position = objectFreeList[i]) != 0)
 				{
+					// Remove from its current free list
 					objectFreeList[i] = objTableClass(position);
 					setObjTableSize(position, memorySize);
+					
+					// Free old memory block and allocate a new one of the right size
 #ifdef mBlockAlloc
 					free(objTableMemory(position))
 #endif
@@ -318,17 +332,20 @@ object allocObject(memorySize) int memorySize;
 			}
 		}
 
-		/* if we STILL don't have it then there is nothing more we can do */
+		// If all allocation strategies failed, we're out of objects
 		if (!done)
 		{
 			sysError("out of objects", "alloc");
 		}
 	}
 
-	/* set class and type */
-	setObjTableRefCount(position, 0);
-	setObjTableClass(position, nilobj);
+	// Initialize the newly allocated object with clean state
+	setObjTableRefCount(position, 0);   // New objects start with refcount = 0
+	setObjTableClass(position, nilobj); // Class initially nil, caller will set
 	setObjTableSize(position, memorySize);
+	
+	// Convert table index to object reference (shifted left by 1 bit)
+	// This shift distinguishes object references from small integers
 	return (position << 1);
 }
 
@@ -384,6 +401,15 @@ object allocStr(str) register char *str;
 object incrobj; /* buffer for increment macro */
 #endif
 #ifndef incr
+/**
+ * Increments the reference count of an object
+ * 
+ * This function increases the reference count of an object by one,
+ * indicating that there is one more pointer to this object in the system.
+ * Integers and nil don't have reference counts and are ignored.
+ *
+ * @param z The object reference whose reference count should be incremented
+ */
 void incr(z)
 	object z;
 {
@@ -395,6 +421,16 @@ void incr(z)
 #endif
 
 #ifndef decr
+/**
+ * Decrements the reference count of an object
+ * 
+ * This function decreases the reference count of an object by one,
+ * indicating that there is one fewer pointer to this object in the system.
+ * If the reference count drops to zero, the object is reclaimed by calling sysDecr.
+ * Integers and nil don't have reference counts and are ignored.
+ *
+ * @param z The object reference whose reference count should be decremented
+ */
 void decr(z)
 	object z;
 {
@@ -411,17 +447,17 @@ void decr(z)
 /**
  * Handles object deallocation when reference count reaches zero
  * 
- * This function reclaims an unreferenced object by:
+ * This function reclaims an unreferenced object by placing it on the appropriate free list
+ * and recursively decrementing the reference counts of all objects it references.
+ * 
+ * This is the core of the reference counting system, responsible for:
  * 1. Verifying the reference count is not negative (error if it is)
  * 2. Decrementing the reference count of the object's class
  * 3. Adding the object to the appropriate free list for its size
  * 4. Decrementing the reference count of all instance variables
  * 5. Clearing all instance variables to nilobj
- * 
- * This is the core of the reference counting system, responsible for
- * cascading deallocation of objects that are no longer referenced.
  *
- * @param z The object reference to deallocate (shifted left by 1)
+ * @param z The object reference to deallocate (left-shifted by 1)
  */
 void sysDecr(object z)
 {
@@ -429,31 +465,62 @@ void sysDecr(object z)
 	register int i;
 	int size;
 
-	p =  &objectTable(z >> 1);
+	// Convert object reference to object table index and get pointer to object
+	p = &objectTable(z >> 1);
+	
+	// Sanity check: reference count should never be negative
 	if (p->referenceCount < 0)
 	{
 		fprintf(stderr, "object %d has a negative reference count\n", z);
 		sysError("negative reference count", "");
 	}
+	
+	// Decrement the class's reference count (since we won't be using it anymore)
 	decr(p->class);
+	
+	// Get object size (and adjust if it's a byte object with negative size)
 	size = p->size;
 	adjustSizeIfNeg(size);
+	
+	// Add this object to the appropriate free list by:
+	// 1. Setting its class field to point to the current first object in the free list
+	// 2. Making this object the new first object in the free list
 	p->class = objectFreeList[size];
 	objectFreeList[size] = z >> 1;
+	
+	// For non-empty objects, we need to handle their contents
 	if (size > 0)
 	{
+		// Only decrement instance variables if this is a regular object (positive size)
+		// Byte objects (negative size) don't contain object references to decrement
 		if (p->size > 0)
 			for (i = size; i;)
-				decr(p->memory[--i]);
+				decr(p->memory[--i]);  // Decrement each instance variable's reference count
+		
+		// Clear all instance variables by setting them to nil
+		// (This prevents dangling references and makes debugging easier)
 		for (i = size; i > 0;)
 		{
 			p->memory[--i] = nilobj;
 		}
 	}
+	
+	// Restore the original size (which might have been negative for byte objects)
 	p->size = size;
 }
 
 #ifndef basicAt
+/**
+ * Retrieves an instance variable from an object at a specified index
+ * 
+ * This function provides low-level access to object instance variables.
+ * It performs bounds checking to ensure valid access and converts from
+ * 1-based indexing (used in Smalltalk) to 0-based indexing (used in C).
+ *
+ * @param z The object to access
+ * @param i The 1-based index of the instance variable to retrieve
+ * @return The object reference stored at the specified index
+ */
 object basicAt(z, i)
 	object z;
 register int i;
@@ -473,7 +540,18 @@ register int i;
 #endif
 
 #ifndef simpleAtPut
-
+/**
+ * Sets an instance variable in an object at a specified index without reference counting
+ * 
+ * This function provides low-level modification of object instance variables.
+ * Unlike basicAtPut, it doesn't handle reference counting, making it suitable
+ * for internal operations where reference counts are managed separately.
+ * It performs bounds checking to ensure valid access.
+ *
+ * @param z The object to modify
+ * @param i The 1-based index of the instance variable to set
+ * @param v The object reference to store at the specified index
+ */
 void simpleAtPut(z, i, v)
 	object z,
 	v;
@@ -495,14 +573,24 @@ int i;
 #endif
 
 #ifndef basicAtPut
-
+/**
+ * Sets an instance variable in an object at a specified index with reference counting
+ * 
+ * This function updates an instance variable and properly handles reference counting
+ * by incrementing the reference count of the stored object. It's the standard way
+ * to update object fields when the previous value has already been decremented elsewhere.
+ *
+ * @param z The object to modify
+ * @param i The 1-based index of the instance variable to set
+ * @param v The object reference to store at the specified index (will have ref count incremented)
+ */
 void basicAtPut(z, i, v)
 	object z,
 	v;
 register int i;
 {
 	simpleAtPut(z, i, v);
-	incr(v);
+	incr(v);  // Increment reference count of the stored object
 }
 #endif
 
@@ -511,13 +599,28 @@ int f_i;
 #endif
 
 #ifndef fieldAtPut
+/**
+ * Replaces an instance variable with full reference count management
+ * 
+ * This function provides complete reference count management when replacing
+ * an instance variable. It:
+ * 1. Decrements the reference count of the current value (which may free it)
+ * 2. Sets the new value and increments its reference count
+ *
+ * This is the safest way to replace fields in an object because it properly
+ * handles reference counting for both the old and new values.
+ *
+ * @param z The object to modify
+ * @param i The 1-based index of the instance variable to replace
+ * @param v The new object reference to store (will have ref count incremented)
+ */
 void fieldAtPut(z, i, v)
 	object z,
 	v;
 register int i;
 {
-	decr(basicAt(z, i));
-	basicAtPut(z, i, v);
+	decr(basicAt(z, i));  // Decrement reference count of current value
+	basicAtPut(z, i, v);  // Store new value and increment its reference count
 }
 #endif
 
@@ -605,15 +708,17 @@ void byteAtPut(object z, int i, int x)
 /**
  * Marks an object and all objects it references as being in use
  * 
- * This function implements a mark phase of a mark-sweep algorithm by:
- * 1. Incrementing the reference count of the visited object
- * 2. If this is the first visit (count was 0), recursively visiting:
+ * This function implements a depth-first traversal of the object graph, incrementing
+ * reference counts to mark live objects during image loading.
+ * 
+ * Written by Steven Pemberton, this function is used during image loading to:
+ * 1. Increment the reference count of the visited object
+ * 2. If this is the first visit (count was 0), recursively visit:
  *    a. The object's class
  *    b. All objects referenced by this object's instance variables
  * 
- * Written by Steven Pemberton, this function is used during image loading
- * to rebuild reference counts, ensuring only reachable objects are retained.
- * It essentially performs a depth-first traversal of the object graph.
+ * This rebuilds reference counts after loading an image file, ensuring
+ * only reachable objects are retained in memory.
  *
  * @param x The object to visit and mark as in use
  */
@@ -622,20 +727,32 @@ void visit(register object x)
 	int i, s;
 	object *p;
 
+	// Skip nil objects and small integers (they aren't in the object table)
 	if (x && !isInteger(x))
 	{		
+		// Increment the reference count of this object
 		if (++(refCountField(x)) == 1)
 		{
-			/* first time we've visited it, so: */
+			// First visit to this object (count was 0 before increment)
+			// We need to recursively visit all objects it references
+			
+			// First, visit the object's class
 			visit(classField(x));
+			
+			// Get object size
 			s = sizeField(x);
+			
+			// For regular objects (size > 0), visit all instance variables
 			if (s > 0)
 			{
 				p = sysMemPtr(x);
 				for (i = s; i; --i)
-					visit(*p++);
+					visit(*p++);  // Visit each referenced object
 			}
+			// Note: Byte objects (size < 0) don't contain object references
 		}
+		// If count was already > 0, this object was already visited,
+		// so we don't need to visit its references again (prevents infinite recursion)
 	}
 }
 
