@@ -152,26 +152,42 @@ static object basicShallowCopy(object obj)
  * @param obj The object to copy
  * @return A shallow copy of the object
  */
+/**
+ * Create a shallow copy of an object with recursive copying of instance variables
+ * 
+ * Unlike a basic shallow copy, this function:
+ * 1. Creates a new object with the same class as the original
+ * 2. Copies primitive instance variables (integers) directly
+ * 3. Recursively creates shallow copies of non-primitive instance variables
+ * 
+ * This creates a deeper copy than a basic shallow copy, but not a full deep copy.
+ * It's useful for creating independent copies of compound objects while still
+ * sharing some internal structures.
+ *
+ * @param obj The object to copy
+ * @return A new object with the same structure as the original but with copied instance variables
+ */
 object shallowCopy(object obj)
 {
     object newObj;
     int size = (int)sizeField(obj);
+    
+    // Allocate new object with same size as original
     newObj = allocObject(size);
     setClass(newObj, getClass(obj));
     incr(obj);
+    
+    // Copy all instance variables
     for (int i = 1; i <= size; i++)
     {
-        // basicAtPut(newObj, i, basicAt(obj, i) );
         object instVar = basicAt(obj, i);
+        
+        // For integer values (which are immutable), share the reference
+        // For all other objects, make a shallow copy
         object varCopy = isInteger(instVar) ? instVar : basicShallowCopy(instVar);
         basicAtPut(newObj, i, varCopy);
     }
-    /*
-    printf("Original ");
-    printObject(obj);
-    printf("New ");
-    printObject(newObj);
-    */
+    
     return newObj;
 }
 

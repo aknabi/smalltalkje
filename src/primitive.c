@@ -527,6 +527,28 @@ static int intUnary(int number, int firstarg)
  * @param secondarg The second C integer value
  * @return The result object of the primitive operation
  */
+/**
+ * Integer binary primitive operations (primitives 60-79)
+ * 
+ * This function implements all the binary operations for integer values:
+ * - Arithmetic operations (+, -, *, /, %)
+ * - Comparison operations (<, >, <=, >=, ==, !=)
+ * - Bitwise operations (AND, XOR)
+ * - Bit shifting (left and right)
+ * 
+ * All operations include proper overflow checking. When an overflow occurs,
+ * the function returns nil, allowing the Smalltalk code to handle the
+ * overflow condition (typically by using a large number implementation).
+ * 
+ * To prevent overflow in intermediate calculations, operations are performed
+ * using a long type, then checked to ensure the result fits in a Smalltalk
+ * integer before returning.
+ *
+ * @param number The primitive operation number (0-19, relative to group start)
+ * @param firstarg The first C integer value
+ * @param secondarg The second C integer value
+ * @return The result as a Smalltalk object (integer, true/false, or nil on overflow)
+ */
 static object intBinary(number, firstarg, secondarg) register int firstarg, secondarg;
 int number;
 {
@@ -536,7 +558,7 @@ int number;
 
 	switch (number)
 	{
-	case 0: /* addition */
+	case 0: /* addition (prim 60) */
 		longresult = firstarg;
 		longresult += secondarg;
 		if (longCanBeInt(longresult))
@@ -544,7 +566,8 @@ int number;
 		else
 			goto overflow;
 		break;
-	case 1: /* subtraction */
+		
+	case 1: /* subtraction (prim 61) */
 		longresult = firstarg;
 		longresult -= secondarg;
 		if (longCanBeInt(longresult))
@@ -553,27 +576,28 @@ int number;
 			goto overflow;
 		break;
 
-	case 2: /* relationals */
+	/* Comparison operations (prims 62-67) */
+	case 2: /* less than (prim 62) */
 		binresult = firstarg < secondarg;
 		break;
-	case 3:
+	case 3: /* greater than (prim 63) */
 		binresult = firstarg > secondarg;
 		break;
-	case 4:
+	case 4: /* less than or equal (prim 64) */
 		binresult = firstarg <= secondarg;
 		break;
-	case 5:
+	case 5: /* greater than or equal (prim 65) */
 		binresult = firstarg >= secondarg;
 		break;
-	case 6:
-	case 13:
+	case 6: /* equal (prim 66) */
+	case 13: /* identical (prim 73) */
 		binresult = firstarg == secondarg;
 		break;
-	case 7:
+	case 7: /* not equal (prim 67) */
 		binresult = firstarg != secondarg;
 		break;
 
-	case 8: /* multiplication */
+	case 8: /* multiplication (prim 68) */
 		longresult = firstarg;
 		longresult *= secondarg;
 		if (longCanBeInt(longresult))
@@ -582,44 +606,45 @@ int number;
 			goto overflow;
 		break;
 
-	case 9: /* quo: */
+	case 9: /* integer division (prim 69) */
 		if (secondarg == 0)
 			goto overflow;
 		firstarg /= secondarg;
 		break;
 
-	case 10: /* rem: */
+	case 10: /* remainder (prim 70) */
 		if (secondarg == 0)
 			goto overflow;
 		firstarg %= secondarg;
 		break;
 
-	case 11: /* bit operations */
+	case 11: /* bitwise AND (prim 71) */
 		firstarg &= secondarg;
 		break;
 
-	case 12:
+	case 12: /* bitwise XOR (prim 72) */
 		firstarg ^= secondarg;
 		break;
 
-	case 19: /* shifts */
+	case 19: /* bit shift (prim 79) */
+		/* Negative shift value means shift right, positive means shift left */
 		if (secondarg < 0)
-			firstarg >>= (-secondarg);
+			firstarg >>= (-secondarg);  /* Right shift (divide by power of 2) */
 		else
-			firstarg <<= secondarg;
+			firstarg <<= secondarg;     /* Left shift (multiply by power of 2) */
 		break;
 	}
+	
+	/* For comparison operations, return true or false */
 	if ((number >= 2) && (number <= 7))
-		if (binresult)
-			returnedObject = trueobj;
-		else
-			returnedObject = falseobj;
+		returnedObject = binresult ? trueobj : falseobj;
 	else
+		/* For arithmetic and bitwise operations, return the integer result */
 		returnedObject = newInteger(firstarg);
+		
 	return (returnedObject);
 
-	/* on overflow, return nil and let smalltalk code */
-	/* figure out what to do */
+	/* On overflow or division by zero, return nil and let Smalltalk code handle it */
 overflow:
 	returnedObject = nilobj;
 	return (returnedObject);

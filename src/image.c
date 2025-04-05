@@ -79,14 +79,23 @@ struct
 } dummyObject;
 
 
-/*
-	imageRead - read in an object image
-		we toss out the free lists built initially,
-		reconstruct the linkages, then rebuild the free
-		lists around the new objects.
-		The only objects with nonzero reference counts
-		will be those reachable from either symbols
-*/
+/**
+ * Loads a complete Smalltalk image file
+ * 
+ * This high-level function reads an entire Smalltalk environment from a file.
+ * The process involves:
+ * 1. Reading object table entries (metadata about each object)
+ * 2. Loading the actual object data
+ * 3. Rebuilding reference counts by traversing the object graph
+ * 4. Recreating free lists for memory management
+ * 
+ * After loading, only objects reachable from the symbols table 
+ * will have non-zero reference counts, making the unreachable objects
+ * available for garbage collection.
+ * 
+ * This is the most traditional image loading approach, where all objects
+ * are loaded into RAM (unlike the split RAM/ROM approach for ESP32).
+ */
 /**
  * Utility function for reading data from an image file
  * 

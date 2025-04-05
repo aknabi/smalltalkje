@@ -128,19 +128,29 @@ The ESP32's multiple cores and sufficient RAM make it possible to run a complete
 
 ## Documentation and Development Status
 
-The Smalltalkje codebase is well-documented to facilitate understanding and contributions:
+The Smalltalkje codebase is extensively documented to facilitate understanding and contributions:
 
-- **Source Code Documentation**: Extensive comments throughout the code explain:
-  - Memory management system and reference counting
-  - Bytecode interpreter operation and instruction set
-  - Object representation and manipulation
-  - ESP32-specific features and optimizations
-  - Split RAM/ROM memory model 
+- **Source Code Documentation**: Comprehensive comments throughout the code explain:
+  - Memory management system and reference counting (memory.c)
+  - Bytecode interpreter operation and instruction set (interp.c)
+  - Object representation and manipulation (news.c)
+  - Image loading/saving mechanisms and memory models (image.c)
+  - Primitive operations that bridge Smalltalk and C (primitive.c)
+  - ESP32-specific features and optimizations (sysprim.c)
+  - Split RAM/ROM memory model for resource optimization
+
+- **Key Implementation Components**:
+  - **Memory Manager**: Reference counting system with specialized handling for byte objects
+  - **Interpreter**: Efficient bytecode execution with method cache and proper context handling
+  - **Image System**: Flexible image loading mechanisms supporting both RAM and ROM-based objects
+  - **Object Creation**: Factory functions for creating and initializing Smalltalk objects
+  - **Primitives**: Native functions exposing C capabilities to Smalltalk code
 
 - **Header Files**: Clear interface documentation for all major subsystems
   - Object memory access and manipulation (memory.h)
   - Bytecode instruction set definitions (interp.h)
   - Network functionality (esp32wifi.h)
+  - Lexical analysis and parsing (lex.h)
 
 This project is under active development. While the core functionality is working, examples and tutorials are still being improved. The codebase is structured to allow for relatively easy addition of new device support and feature enhancements.
 
