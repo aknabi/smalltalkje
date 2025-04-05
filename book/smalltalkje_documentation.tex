@@ -1,0 +1,1443 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+% Define colors for code listings
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+% Configure listings for Smalltalk code
+\lstdefinestyle{smalltalk}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codepurple},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codegreen},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single
+}
+
+% Configure listings for C code
+\lstdefinestyle{c}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codepurple},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codegreen},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single,
+    language=C
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Smalltalkje - An Embedded Smalltalk for the ESP32},
+    pdfauthor={Generated from Smalltalkje Documentation},
+    pdfsubject={Smalltalk Programming},
+    pdfkeywords={Smalltalk, ESP32, Embedded Systems, Programming Languages}
+}
+
+% Configure page style with increased headheight
+\setlength{\headheight}{15pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Smalltalkje}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{Smalltalkje - An Embedded Smalltalk for the ESP32}
+
+% Configure chapter and section headings
+\titleformat{\chapter}[display]
+{\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{50pt}{40pt}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    {\Huge\bfseries Smalltalkje\\}
+    \vspace{1.5cm}
+    {\LARGE An Embedded Smalltalk for the ESP32\\}
+    \vspace{2cm}
+    
+    % Placeholder for ESP32 image
+    \fbox{\parbox[c][4cm][c]{6cm}{\centering ESP32 Image}}
+    % \includegraphics[width=0.5\textwidth]{esp32.jpg}
+    
+    \vspace{2cm}
+    {\Large Based on Tim Budd's "A Little Smalltalk"\\}
+    \vspace{1.5cm}
+    {\large \today\\}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\chapter{Introduction}
+
+\section{Overview}
+Smalltalkje is a lightweight Smalltalk implementation specifically designed for embedded systems, particularly the ESP32 microcontroller platform. It brings the power and elegance of object-oriented programming and interactive development to resource-constrained devices, making it ideal for IoT (Internet of Things) and embedded applications.
+
+This implementation is based on Tim Budd's Little Smalltalk version 3 (Oregon State University, July 1988) but has been significantly modified and enhanced to operate effectively on embedded systems with limited memory and processing power.
+
+\section{Key Features}
+\begin{itemize}
+    \item Memory-efficient object representation
+    \item Split memory model with objects in both RAM and Flash
+    \item Support for various ESP32-based development boards
+    \item Optimized bytecode interpreter
+    \item Seamless integration with ESP32 peripherals
+    \item WiFi connectivity
+    \item Display support for several screen types (SSD1306 OLED, M5StickC, etc.)
+\end{itemize}
+
+\section{Supported Hardware}
+Smalltalkje currently supports the following hardware platforms:
+\begin{itemize}
+    \item ESP32 DevKit
+    \item SSD1306 OLED displays
+    \item M5StickC
+    \item Lilygo T-Wristband
+    \item Mac (for development)
+\end{itemize}
+
+\section{Design Philosophy}
+Smalltalkje brings the power of Smalltalk to resource-constrained devices by carefully balancing the following aspects:
+
+\begin{itemize}
+    \item \textbf{Memory Efficiency}: Using techniques like split memory model, reference counting, and optimized object representation to minimize RAM usage.
+    \item \textbf{Execution Speed}: Optimizing the bytecode interpreter and using a method cache for improved performance.
+    \item \textbf{Flexibility}: Maintaining the dynamic nature of Smalltalk while adapting it to embedded constraints.
+    \item \textbf{Platform Integration}: Providing seamless access to ESP32 features like WiFi, GPIO, and displays.
+\end{itemize}
+
+The system is written in C (not C++) for the ESP-IDF framework (not Arduino) to maximize performance and minimize resource usage. This approach is essential for running Smalltalk, which traditionally requires significant memory, on resource-constrained devices.
+
+\chapter{System Architecture}
+
+\section{High-Level Architecture}
+Smalltalkje follows a modular architecture with several interacting subsystems that collectively provide a complete Smalltalk environment. The system divides into distinct layers, each with specific responsibilities.
+
+\begin{figure}[h]
+\centering
+\begin{tcolorbox}[colback=white, colframe=black, width=\textwidth, arc=0mm, boxrule=1pt]
+\begin{verbatim}
++---------------------------------+
+|         Smalltalk Image         |
+| (Objects, Classes, Methods, etc)|
++---------------------------------+
+|       Virtual Machine (VM)      |
+| +-----------------------------+ |
+| |     Bytecode Interpreter    | |
+| +-----------------------------+ |
+| |      Memory Management      | |
+| +-----------------------------+ |
+| |      Primitive Operations   | |
+| +-----------------------------+ |
++---------------------------------+
+|         Platform Support        |
+| (ESP32, Mac, I/O, WiFi, etc)    |
++---------------------------------+
+\end{verbatim}
+\end{tcolorbox}
+\caption{Smalltalkje System Architecture}
+\end{figure}
+
+\section{Key Architectural Components}
+
+\subsection{Memory Management System}
+The memory system in Smalltalkje is designed to operate efficiently on memory-constrained devices:
+
+\begin{itemize}
+    \item \textbf{Object Model}: Objects are referenced via indices into an object table that holds metadata including class, size, reference count, and memory pointer
+    \item \textbf{Reference Counting}: Simple, efficient memory reclamation using reference counting rather than more complex garbage collection
+    \item \textbf{Split Memory Model}: Unique design that allows storing immutable objects in Flash memory while keeping mutable objects in RAM
+    \item \textbf{Efficient Allocation}: Multi-strategy object allocation with size-specific free lists to minimize fragmentation
+    \item \textbf{Byte Objects}: Special handling for strings, byte arrays, and other binary data through negative size values in the object table
+\end{itemize}
+
+\subsection{Image System}
+The image system provides object persistence and efficient loading:
+
+\begin{itemize}
+    \item \textbf{Smart Loading}: Can load objects selectively into RAM or leave them in Flash
+    \item \textbf{Image Formats}: Supports both traditional (all RAM) and split (RAM/Flash) image formats
+    \item \textbf{Object Classification}: Automatically identifies which objects can safely remain in Flash based on class (ByteArray, String, Symbol, Block)
+    \item \textbf{Memory Optimization}: Significantly reduces RAM usage by only copying mutable objects from Flash
+\end{itemize}
+
+\subsection{Virtual Machine Core}
+The VM is the heart of the system, interpreting Smalltalk bytecodes and managing execution:
+
+\begin{itemize}
+    \item \textbf{Bytecode Interpreter}: Executes compiled Smalltalk methods with highly optimized instruction set
+    \item \textbf{Process Management}: Time-sliced cooperative multitasking for Smalltalk processes
+    \item \textbf{Method Cache}: Performance optimization for method lookup using a 211-entry cache
+    \item \textbf{Context Management}: Handles method activation records and returns
+    \item \textbf{Primitives}: Native C implementations of performance-critical operations
+\end{itemize}
+
+\subsection{Compiler and Parser}
+The compilation system converts Smalltalk code to bytecodes:
+
+\begin{itemize}
+    \item \textbf{Lexical Analysis}: Tokenization with state machine-based scanning
+    \item \textbf{Recursive Descent Parser}: Parses method syntax and generates bytecodes
+    \item \textbf{Method Compilation}: Optimizes common control structures and message patterns
+    \item \textbf{Block Closure Support}: First-class functions with lexical scope
+\end{itemize}
+
+\subsection{Platform Integration}
+Smalltalkje integrates closely with the underlying platform:
+
+\begin{itemize}
+    \item \textbf{ESP32 Features}: Direct access to WiFi, HTTP, GPIO, display drivers
+    \item \textbf{Interrupt Handling}: Bridge between ESP32 events and Smalltalk processes
+    \item \textbf{Non-Volatile Storage}: Persistence using ESP32's NVS system
+    \item \textbf{I/O Subsystem}: TTY, file system, and communication interfaces
+\end{itemize}
+
+\chapter{Virtual Machine Architecture}
+
+\section{Object Representation}
+All entities in Smalltalkje are objects with a uniform representation, providing a consistent foundation for the entire system:
+
+\subsection{Object Table}
+The object table is the central registry of all objects with metadata:
+
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Acts as the central registry for all objects in the system
+        \item Provides a level of indirection that simplifies memory management
+        \item Allows objects to be moved in memory without changing references
+        \item Maintains critical metadata for each object
+        \item Enables the split memory model by tracking object location
+    \end{itemize}
+    
+    \item \textbf{Components}:
+    \begin{itemize}
+        \item \textbf{Index}: Object reference divided by 2, serving as the unique identifier
+        \item \textbf{Class reference}: Points to the class object defining the object's behavior
+        \item \textbf{Size}: Number of instance variables or bytes, with negative values indicating byte objects
+        \item \textbf{Reference count}: Tracks how many references exist to this object
+        \item \textbf{Memory pointer}: Points to instance variables or byte data in RAM or Flash
+    \end{itemize}
+\end{itemize}
+
+\subsection{Special Object Types}
+Smalltalkje implements several specialized object types for different purposes:
+
+\begin{itemize}
+    \item \textbf{Regular Objects}:
+    \begin{itemize}
+        \item Store references to other objects as instance variables
+        \item Can mutate state by changing instance variable values
+        \item Reside in RAM to allow modification
+        \item Form the backbone of most Smalltalk programs
+    \end{itemize}
+    
+    \item \textbf{Byte Objects}:
+    \begin{itemize}
+        \item Store raw bytes instead of object references
+        \item Represented with negative size values in the object table
+        \item Used for strings, byte arrays, and other binary data
+        \item Memory-efficient for text and binary storage
+        \item Access optimized for byte-level operations
+    \end{itemize}
+    
+    \item \textbf{Small Integers}:
+    \begin{itemize}
+        \item Encoded directly in object references using tagged pointers
+        \item No object table entry needed, saving memory
+        \item Value stored in the upper 31 bits of the reference
+        \item Lowest bit set to 1 to distinguish from regular object references
+        \item Supports immediate arithmetic without object allocation
+    \end{itemize}
+    
+    \item \textbf{ROM Objects}:
+    \begin{itemize}
+        \item Special objects stored in Flash memory
+        \item Immutable by design (any mutation attempt causes an error)
+        \item Marked with maximum reference count (0x7F) to prevent collection
+        \item Include strings, symbols, byte arrays, and code blocks
+        \item Critical for reducing RAM usage on memory-constrained devices
+    \end{itemize}
+\end{itemize}
+
+\section{Bytecode Instruction Set}
+The VM executes compact bytecode instructions, designed specifically for efficient Smalltalk execution on embedded systems:
+
+\subsection{Instruction Format}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Provides a compact encoding of operations
+        \item Reduces memory footprint of compiled methods
+        \item Enables efficient instruction decoding
+        \item Balances code density with execution speed
+    \end{itemize}
+    
+    \item \textbf{Components}:
+    \begin{itemize}
+        \item \textbf{High nibble} (4 bits): Opcode defining the operation
+        \item \textbf{Low nibble} (4 bits): Operand or parameter for the operation
+        \item Single-byte encoding for most common operations
+    \end{itemize}
+\end{itemize}
+
+\subsection{Extended Format}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Handles operations with operands larger than 15
+        \item Maintains instruction set consistency
+        \item Provides flexibility for complex operations
+    \end{itemize}
+    
+    \item \textbf{Components}:
+    \begin{itemize}
+        \item Extended opcode in the first byte
+        \item Additional byte(s) for larger operand values
+        \item Special handling by the interpreter
+    \end{itemize}
+\end{itemize}
+
+\subsection{Core Instructions}
+The bytecode instruction set includes several categories of operations:
+
+\begin{itemize}
+    \item \textbf{Variable Access/Store}:
+    \begin{itemize}
+        \item Push/retrieve instance variables (object state)
+        \item Push/store temporary variables (method-local)
+        \item Push/store arguments (parameter passing)
+        \item Push literals (constants embedded in methods)
+        \item Direct access to self (the receiver object)
+        \item Special handling for super sends
+    \end{itemize}
+    
+    \item \textbf{Message Sending}:
+    \begin{itemize}
+        \item Unary messages (no arguments): \texttt{object message}
+        \item Binary messages (one argument): \texttt{object + argument}
+        \item Keyword messages (multiple arguments): \texttt{object at: index put: value}
+        \item Special send bytecodes for common operations
+        \item Dynamic binding through method lookup
+    \end{itemize}
+    
+    \item \textbf{Control Flow}:
+    \begin{itemize}
+        \item Conditional branches (for if/else/while)
+        \item Unconditional jumps (for optimization)
+        \item Method returns (normal, block, and non-local)
+        \item Block creation and activation
+    \end{itemize}
+    
+    \item \textbf{Primitive Operations}:
+    \begin{itemize}
+        \item Direct calls to C-implemented operations
+        \item Fast paths for arithmetic, comparison, and I/O
+        \item Escape hatch for performance-critical code
+        \item Interface to platform-specific functionality
+    \end{itemize}
+\end{itemize}
+
+\section{Message Passing System}
+Message passing is the primary mechanism for computation, implementing Smalltalk's pure object-oriented paradigm:
+
+\subsection{Method Lookup}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Dynamically resolves which method to execute for a message
+        \item Implements Smalltalk's inheritance model
+        \item Provides the foundation for polymorphism
+        \item Handles method not found errors
+    \end{itemize}
+    
+    \item \textbf{Process}:
+    \begin{itemize}
+        \item Starts search in the receiver's class
+        \item Traverses the inheritance chain upward
+        \item Returns the first matching method found
+        \item Invokes \texttt{doesNotUnderstand:} if no method is found
+        \item Results cached for performance
+    \end{itemize}
+\end{itemize}
+
+\subsection{Method Cache}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Dramatically improves performance of repeated message sends
+        \item Avoids costly method lookup in the class hierarchy
+        \item Balances memory usage with lookup speed
+    \end{itemize}
+    
+    \item \textbf{Components}:
+    \begin{itemize}
+        \item 211-entry hash table (prime number size)
+        \item Hash based on message selector and receiver class
+        \item Each entry stores selector, receiver class, method class, and method
+        \item Invalidated when methods are modified or classes reorganized
+    \end{itemize}
+\end{itemize}
+
+\subsection{Optimized Messages}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Provides fast paths for common operations
+        \item Reduces overhead for frequently used messages
+        \item Maintains semantics while improving performance
+    \end{itemize}
+    
+    \item \textbf{Implementations}:
+    \begin{itemize}
+        \item Special bytecodes for common unary messages (isNil, notNil)
+        \item Dedicated handling for arithmetic operations
+        \item Inlined implementation of simple collection access
+        \item Short-circuit evaluation for boolean operations
+    \end{itemize}
+\end{itemize}
+
+\subsection{Primitive Messages}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Bridges Smalltalk with native C implementation
+        \item Provides essential functionality impossible in pure Smalltalk
+        \item Optimizes performance-critical operations
+        \item Interfaces with hardware and platform features
+    \end{itemize}
+    
+    \item \textbf{Characteristics}:
+    \begin{itemize}
+        \item Numbered primitives for basic operations
+        \item Class-specific primitives for specialized behavior
+        \item I/O and device control primitives
+        \item Fallback to Smalltalk code if primitive fails
+        \item Error reporting mechanism to Smalltalk
+    \end{itemize}
+\end{itemize}
+
+\section{Memory Management}
+The memory manager employs several strategies for efficiency, crucial for operating in resource-constrained environments:
+
+\subsection{Reference Counting}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Tracks the number of references to each object
+        \item Immediately reclaims memory when no references remain
+        \item Avoids the need for garbage collection pauses
+        \item Provides deterministic resource cleanup
+    \end{itemize}
+    
+    \item \textbf{Operations}:
+    \begin{itemize}
+        \item Incremented when object reference is assigned
+        \item Decremented when reference is overwritten
+        \item Objects freed when count reaches zero
+        \item Recursively processes instance variables
+        \item Special handling for circularities
+    \end{itemize}
+\end{itemize}
+
+\subsection{Free Lists}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Organizes reclaimed objects by size for efficient reuse
+        \item Minimizes memory fragmentation
+        \item Reduces allocation overhead
+        \item Optimizes memory utilization
+    \end{itemize}
+    
+    \item \textbf{Implementation}:
+    \begin{itemize}
+        \item Separate list for each object size (up to 2048 lists)
+        \item Free objects linked through their first instance variable
+        \item Quick lookup by exact size
+        \item Fallback strategies for size mismatches
+        \item Periodically compacted for efficiency
+    \end{itemize}
+\end{itemize}
+
+\subsection{Block Allocation}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Amortizes allocation overhead across multiple objects
+        \item Reduces memory fragmentation
+        \item Improves allocation speed
+        \item Manages memory more efficiently
+    \end{itemize}
+    
+    \item \textbf{Strategy}:
+    \begin{itemize}
+        \item Allocates memory in blocks of 2048 objects
+        \item Distributes new objects from these blocks
+        \item Maintains allocation statistics
+        \item Reuses memory from reclaimed objects
+        \item Handles out-of-memory conditions gracefully
+    \end{itemize}
+\end{itemize}
+
+\subsection{ROM/RAM Split}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Dramatically reduces RAM usage on embedded devices
+        \item Leverages Flash memory for immutable objects
+        \item Preserves RAM for mutable state
+        \item Enables larger programs on constrained devices
+    \end{itemize}
+    
+    \item \textbf{Implementation}:
+    \begin{itemize}
+        \item Immutable objects (strings, symbols, code) stored in ROM
+        \item Only mutable objects copied to RAM during image load
+        \item Object table records whether object is in ROM or RAM
+        \item Write-protection for ROM objects
+        \item Automatic classification during image creation
+    \end{itemize}
+\end{itemize}
+
+\section{Context and Process Model}
+The VM implements a lightweight concurrency model that enables multitasking while maintaining simplicity:
+
+\subsection{Process Objects}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Represents independent threads of execution
+        \item Enables concurrent programming model
+        \item Maintains execution state between time slices
+        \item Supports priority-based scheduling
+    \end{itemize}
+    
+    \item \textbf{Components}:
+    \begin{itemize}
+        \item Priority level (determines scheduling order)
+        \item Link to active context (current execution point)
+        \item State information (running, waiting, suspended)
+        \item Next/previous process links (for scheduler queue)
+        \item Semaphore waiting links (for synchronization)
+    \end{itemize}
+\end{itemize}
+
+\subsection{Context Objects}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Stores method execution state
+        \item Implements the call stack
+        \item Provides lexical scoping for variables
+        \item Enables method returns and continuations
+    \end{itemize}
+    
+    \item \textbf{Components}:
+    \begin{itemize}
+        \item Method reference (which method is executing)
+        \item Sender context (for call chain and returns)
+        \item Instruction pointer (current execution point)
+        \item Stack pointer (top of evaluation stack)
+        \item Arguments array (method parameters)
+        \item Temporary variables array (method-local state)
+        \item Evaluation stack (for expression calculation)
+    \end{itemize}
+\end{itemize}
+
+\subsection{Stack-based Execution}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Provides a workspace for calculating expressions
+        \item Passes values between operations
+        \item Simplifies bytecode implementation
+        \item Models Smalltalk expression evaluation
+    \end{itemize}
+    
+    \item \textbf{Operations}:
+    \begin{itemize}
+        \item Push values onto stack (literals, variables)
+        \item Pop values for storage or as operation arguments
+        \item Duplicate or swap stack elements
+        \item Clear stack entries
+        \item Build arrays from stack elements
+        \item Return stack top as method result
+    \end{itemize}
+\end{itemize}
+
+\subsection{Time-sliced Execution}
+\begin{itemize}
+    \item \textbf{What it does}:
+    \begin{itemize}
+        \item Enables cooperative multitasking
+        \item Provides fair execution time to all processes
+        \item Maintains system responsiveness
+        \item Simulates concurrent execution
+    \end{itemize}
+    
+    \item \textbf{Implementation}:
+    \begin{itemize}
+        \item Each process gets a fixed bytecode execution quota
+        \item Bytecode counter decremented with each instruction
+        \item Process yields when counter reaches zero
+        \item Scheduler selects next process based on priority
+        \item I/O operations and waits can yield immediately
+        \item External interrupts can preempt the current process
+    \end{itemize}
+\end{itemize}
+
+\chapter{Code Organization}
+
+\section{Core Subsystems}
+
+\subsection{Memory Management (memory.c)}
+The memory management subsystem is the foundation of Smalltalkje, responsible for object allocation, tracking, and reclamation through reference counting:
+
+\begin{itemize}
+    \item \texttt{initMemoryManager()}: Initializes the memory system by setting up the object table, clearing free list pointers, zeroing reference counts, and building initial free lists. This must be called before any other memory operations can be performed.
+
+    \item \texttt{allocObject()}: Implements a sophisticated multi-strategy allocation algorithm for efficient object creation:
+    \begin{enumerate}
+        \item First attempts to find an exact-sized object in the free list (fastest path)
+        \item Tries to repurpose a size-0 object by expanding it to the needed size
+        \item Finds a larger object and uses it (potentially wasting some space)
+        \item Locates a smaller object, frees its memory, and resizes it
+    \end{enumerate}
+    This approach maximizes memory reuse while minimizing fragmentation.
+
+    \item \texttt{allocByte()}: Creates specialized objects for storing raw bytes (like strings and byte arrays) rather than object references. These have negative size fields to indicate their special nature.
+
+    \item \texttt{sysDecr()}: The core of the reference counting system that reclaims objects when their reference count reaches zero. It:
+    \begin{enumerate}
+        \item Validates the reference count isn't negative (error detection)
+        \item Decrements the reference count of the object's class
+        \item Adds the object to the appropriate free list
+        \item Recursively decrements the reference count of all instance variables
+        \item Clears all instance variables to prevent dangling references
+    \end{enumerate}
+
+    \item \texttt{visit()}: Rebuilds reference counts during image loading by implementing a depth-first traversal of the object graph. This ensures only reachable objects are retained in memory.
+
+    \item \texttt{mBlockAlloc()}: Manages memory allocation in large blocks (2048 objects at a time) rather than individual malloc calls. This amortizes allocation overhead across many objects and reduces memory fragmentation.
+\end{itemize}
+
+\subsection{Interpreter (interp.c)}
+The interpreter is the heart of the Smalltalk VM, executing bytecodes and implementing the dynamic message dispatch system:
+
+\begin{itemize}
+    \item \texttt{execute()}: The main bytecode execution loop, which operates as a large state machine processing one bytecode at a time. It:
+    \begin{enumerate}
+        \item Extracts execution state from the process object (stack, context, etc.)
+        \item Runs a loop decoding and executing bytecodes until the time slice ends
+        \item Handles message sends, primitive calls, returns, and control flow
+        \item Implements time-sliced cooperative multitasking via bytecode counting
+        \item Saves execution state back to the process when yielding
+    \end{enumerate}
+
+    \item \texttt{findMethod()}: Implements Smalltalk's inheritance-based method lookup by searching for a matching method starting from a class and proceeding up the inheritance hierarchy. This is the core of dynamic dispatch.
+
+    \item \texttt{flushCache()}: Invalidates method cache entries when methods have been recompiled or modified, ensuring the cached version is no longer used.
+
+    \item Method cache optimization: The VM uses a 211-entry cache to significantly improve performance by avoiding repeated method lookups. Each cache entry stores:
+    \begin{itemize}
+        \item The message selector being sent
+        \item The class of the receiver
+        \item The class where the method was found
+        \item The actual method object
+    \end{itemize}
+\end{itemize}
+
+\subsection{Image Management (image.c)}
+The image management subsystem handles object persistence and the unique split memory model of Smalltalkje:
+
+\begin{itemize}
+    \item \texttt{imageRead()}: Loads a complete traditional Smalltalk image where all objects are placed in RAM. It:
+    \begin{enumerate}
+        \item Reads the symbols table reference (root object)
+        \item Processes each object's metadata (index, class, size)
+        \item Allocates memory for and loads each object's data
+        \item Restores reference counts and rebuilds free lists
+    \end{enumerate}
+
+    \item \texttt{readTableWithObjects()}: Implements the memory-optimized split approach where:
+    \begin{enumerate}
+        \item All object table entries are loaded into RAM
+        \item Immutable objects (ByteArray, String, Symbol, Block) point directly to Flash memory
+        \item Mutable objects are copied into RAM
+    \end{enumerate}
+    This critical optimization significantly reduces RAM usage on ESP32 devices by keeping large portions of the image in Flash.
+
+    \item \texttt{writeObjectTable()}: Saves only the metadata for objects (index, class, size, flags) to a file. It identifies and marks ROM-eligible objects (immutable types) via flags, enabling the split memory optimization when the image is later loaded.
+
+    \item \texttt{writeObjectData()}: Writes the actual content of all objects to a separate file. In the split memory approach, this data can be embedded in Flash memory and accessed directly for immutable objects.
+\end{itemize}
+
+\subsection{Parser (parser.c)}
+The parser translates Smalltalk source code into bytecodes, implementing a complete compiler for method definitions:
+
+\begin{itemize}
+    \item \texttt{parse()}: The main entry point that coordinates the entire parsing process from method selector to method body. It populates a Method object with:
+    \begin{itemize}
+        \item Message selector (method name)
+        \item Bytecodes (executable instructions)
+        \item Literals (constants used in the method)
+        \item Stack and temporary variable size information
+        \item Optionally the source text for debugging
+    \end{itemize}
+
+    \item Recursive descent parsing: The parser implements Smalltalk grammar through a set of mutually recursive functions, each handling specific language constructs:
+    \begin{itemize}
+        \item \texttt{messagePattern()}: Parses method selectors (unary, binary, keyword)
+        \item \texttt{temporaries()}: Handles temporary variable declarations
+        \item \texttt{body()}: Processes the sequence of statements in a method
+        \item \texttt{statement()}: Handles individual statements including returns
+        \item \texttt{expression()}: Parses complex expressions including assignments
+        \item \texttt{term()}: Processes basic expression elements (variables, literals, blocks)
+        \item \texttt{block()}: Handles block closure syntax and semantics
+    \end{itemize}
+
+    \item Control flow optimizations: The parser intelligently transforms common control structures into efficient bytecode sequences:
+    \begin{itemize}
+        \item \texttt{ifTrue:}/\texttt{ifFalse:} become conditional branch instructions
+        \item \texttt{whileTrue:} becomes an optimized loop structure
+        \item \texttt{and:}/\texttt{or:} implement short-circuit evaluation
+        \item These optimizations avoid the overhead of message sends for these common patterns
+    \end{itemize}
+
+    \item Variable scoping: The parser correctly resolves variable references across different scopes:
+    \begin{itemize}
+        \item \texttt{self}/\texttt{super} (receiver references)
+        \item Temporary variables (method-local)
+        \item Method arguments
+        \item Instance variables (object state)
+        \item Global variables (looked up at runtime)
+    \end{itemize}
+
+    \item Bytecode generation: The parser produces compact bytecode instructions through:
+    \begin{itemize}
+        \item \texttt{genInstruction()}: Creates instructions with high nibble (opcode) and low nibble (operand)
+        \item \texttt{genLiteral()}: Manages the literal table for constants used in methods
+        \item \texttt{genCode()}: Appends raw bytecodes to the instruction stream
+    \end{itemize}
+
+    \item Block closure handling: The parser implements Smalltalk's powerful block closures (anonymous functions with lexical scope) by:
+    \begin{enumerate}
+        \item Creating a Block object with metadata about arguments
+        \item Generating code to invoke the block creation primitive at runtime
+        \item Compiling the block body inline but skipping it during normal execution
+        \item Handling special block return semantics
+    \end{enumerate}
+\end{itemize}
+
+\subsection{Lexical Analysis (lex.c)}
+The lexical analyzer tokenizes Smalltalk source code, converting raw text into a stream of tokens for the parser to process:
+
+\begin{itemize}
+    \item State machine architecture: The lexer implements a finite state machine with different states for:
+    \begin{itemize}
+        \item Regular token recognition (identifiers, keywords, operators)
+        \item String literal processing (with escape sequences)
+        \item Numeric literal parsing (integers and floating point)
+        \item Comment handling (single and multi-line)
+        \item Special character processing (brackets, parentheses, etc.)
+    \end{itemize}
+
+    \item Token types: The lexer identifies and categorizes different elements of Smalltalk syntax:
+    \begin{itemize}
+        \item \texttt{nameconst}: Identifiers like variable names
+        \item \texttt{namecolon}: Keywords in method selectors (ending with colon)
+        \item \texttt{binary}: Binary operators and other special characters
+        \item \texttt{intconst}: Integer literals
+        \item \texttt{floatconst}: Floating-point literals
+        \item \texttt{charconst}: Character literals
+        \item \texttt{symconst}: Symbol literals (starting with \#)
+        \item \texttt{strconst}: String literals (in single quotes)
+        \item \texttt{arraybegin}: Start of literal arrays (\#( ))
+        \item Miscellaneous tokens for punctuation and syntax elements
+    \end{itemize}
+
+    \item Advanced features:
+    \begin{itemize}
+        \item Look-ahead capability for multi-character operators and tokens
+        \item Proper handling of nested comments
+        \item Support for various numeric formats (decimal, hex, scientific notation)
+        \item Proper string escape sequence processing
+        \item Error detection for malformed tokens
+    \end{itemize}
+
+    \item The lexer maintains state between calls to provide a continuous token stream to the parser, with functions like:
+    \begin{itemize}
+        \item \texttt{nextToken()}: Advances to and returns the next token
+        \item \texttt{lexinit()}: Initializes the lexer with source text
+        \item \texttt{peek()}: Examines the next character without consuming it
+        \item Error reporting with precise location information
+    \end{itemize}
+\end{itemize}
+
+\subsection{ESP32 Integration}
+The ESP32 integration layer bridges the Smalltalk environment with the powerful capabilities of the ESP32 microcontroller:
+
+\begin{itemize}
+    \item \textbf{esp32wifi.c}: Implements complete WiFi networking functionality for Smalltalk:
+    \begin{itemize}
+        \item Network scanning, connection, and management
+        \item IP address and network status handling
+        \item Event-driven connectivity with callbacks to Smalltalk methods
+        \item Support for both station and access point modes
+        \item Integration with FreeRTOS task management and event handling
+    \end{itemize}
+    
+    \item \textbf{esp32http.c}: Provides HTTP client capabilities that allow Smalltalk programs to:
+    \begin{itemize}
+        \item Make GET, POST, PUT, and DELETE requests to web servers
+        \item Handle headers, request bodies, and response parsing
+        \item Process chunked transfer encoding and redirects
+        \item Implement REST API clients and web service integrations
+        \item Support both blocking and non-blocking request patterns
+    \end{itemize}
+
+    \item \textbf{esp32nvs.c}: Implements a non-volatile storage interface that enables:
+    \begin{itemize}
+        \item Persistent storage of Smalltalk objects between reboots
+        \item Key-value style storage in the ESP32's NVS flash partition
+        \item Different namespaces for organizing related data
+        \item Storage of strings, integers, and binary data from Smalltalk
+        \item Recovery of application state after power loss
+    \end{itemize}
+
+    \item \textbf{esp32io.c}: Provides general-purpose I/O control, exposing capabilities like:
+    \begin{itemize}
+        \item GPIO pin manipulation (digital read/write, PWM output)
+        \item Analog-to-digital conversion for sensor readings
+        \item Hardware timers and interrupts with Smalltalk callbacks
+        \item Low-level peripheral control (I2C, SPI, UART configuration)
+        \item Power management and deep sleep functionality
+    \end{itemize}
+\end{itemize}
+
+\subsection{Display Support}
+Smalltalkje includes sophisticated display support for several screen types, enabling graphical user interfaces:
+
+\begin{itemize}
+    \item SSD1306 OLED driver integration:
+    \begin{itemize}
+        \item Full control of monochrome 128x64 and 128x32 OLED displays
+        \item Pixel-level drawing operations and text rendering
+        \item Buffer-based graphics with efficient partial updates
+        \item I2C communication with configurable address and pins
+        \item Low-level display commands for advanced control
+    \end{itemize}
+
+    \item M5StickC display support:
+    \begin{itemize}
+        \item Complete integration with M5StickC's color LCD
+        \item Hardware-accelerated drawing via ESP32's SPI capabilities
+        \item Font rendering with multiple built-in typefaces
+        \item Sprite and bitmap handling for fluid animations
+        \item Touch input integration for interactive applications
+        \item Power-efficient display management
+    \end{itemize}
+
+    \item Graphics primitives for drawing:
+    \begin{itemize}
+        \item Lines, rectangles, circles, and polygons
+        \item Bitmap rendering and scaling
+        \item Text with multiple font options
+        \item Compositing operations (XOR, OR, AND modes)
+        \item Screen buffering for flicker-free updates
+        \item Coordinate transformations and clipping
+    \end{itemize}
+\end{itemize}
+
+\chapter{Smalltalk Class Hierarchy}
+
+Smalltalkje implements a comprehensive class hierarchy that provides all the core functionality of Smalltalk. The class hierarchy is based on Tim Budd's Little Smalltalk, but has been extended and optimized for embedded systems.
+
+\section{Core Classes}
+
+\begin{itemize}
+    \item \textbf{Object}: The root class of the entire class hierarchy. Every class inherits from Object, which provides basic functionality common to all objects:
+    \begin{itemize}
+        \item Identity operations (==, =, hash)
+        \item Type checking (isKindOf:, isMemberOf:)
+        \item Copying (copy, deepCopy, shallowCopy)
+        \item Printing and display (printString, print, display)
+        \item Basic collection protocols (do:, collect:, select:)
+    \end{itemize}
+
+    \item \textbf{Class}: Represents the behavior and structure of objects in the system:
+    \begin{itemize}
+        \item Instance creation (new, new:)
+        \item Method management (addMethod:, removeMethod:)
+        \item Class hierarchy navigation (superClass, subClasses)
+        \item Introspection capabilities (methods, respondsTo:)
+    \end{itemize}
+
+    \item \textbf{Boolean} and its subclasses \textbf{True} and \textbf{False}:
+    \begin{itemize}
+        \item Conditional testing (ifTrue:, ifFalse:, ifTrue:ifFalse:)
+        \item Logical operations (and:, or:, not, xor:)
+    \end{itemize}
+
+    \item \textbf{UndefinedObject}: The class of nil, representing the absence of a value:
+    \begin{itemize}
+        \item Special handling for nil-checking (isNil, ifNil:, ifNotNil:)
+    \end{itemize}
+
+    \item \textbf{Block}: First-class functions with lexical scope:
+    \begin{itemize}
+        \item Evaluation with arguments (value, value:, value:value:, etc.)
+        \item Control structures (whileTrue:, whileFalse:)
+    \end{itemize}
+\end{itemize}
+
+\section{Collection Classes}
+
+A rich hierarchy of collection classes provides flexible data structures:
+
+\begin{description}
+    \item[\textbf{Collection}] Abstract base class for all collections
+    \begin{description}
+        \item[\textbf{IndexedCollection}] Collections with numeric indices
+        \begin{description}
+            \item[\textbf{Array}] Fixed-size ordered collection
+            \item[\textbf{ByteArray}] Array of bytes
+            \item[\textbf{String}] Array of characters (subclass of ByteArray)
+            \item[\textbf{Dictionary}] Key-value mapping
+        \end{description}
+        \item[\textbf{List}] Growable linked list
+        \item[\textbf{Set}] Collection with no duplicates (subclass of List)
+        \item[\textbf{Interval}] Sequence of values with step
+    \end{description}
+\end{description}
+
+\section{Other Important Classes}
+
+\begin{itemize}
+    \item \textbf{Context}: Represents method execution contexts, forming the call stack:
+    \begin{itemize}
+        \item Method arguments and temporary variables storage
+        \item Call stack linkage (sender context)
+        \item Block return handling
+    \end{itemize}
+
+    \item \textbf{Integer}: Fixed-precision integer values:
+    \begin{itemize}
+        \item Arithmetic operations (+, -, *, /, etc.)
+        \item Comparison operations (<, >, <=, >=, etc.)
+        \item Bit manipulation (bitAnd:, bitOr:, bitShift:)
+    \end{itemize}
+
+    \item \textbf{Method}: Represents compiled methods:
+    \begin{itemize}
+        \item Bytecode storage
+        \item Literals table
+        \item Method execution
+        \item Source text storage (optional)
+    \end{itemize}
+
+    \item \textbf{Symbol}: Unique string-like objects used for method selectors and keys:
+    \begin{itemize}
+        \item Identity-based equality (==) for fast comparisons
+        \item Used in the method dictionary
+        \item Special handling in the image system
+    \end{itemize}
+
+    \item \textbf{Link}: Building block for linked data structures:
+    \begin{itemize}
+        \item Key-value storage
+        \item Next link reference
+        \item Used to implement List and Dictionary classes
+    \end{itemize}
+\end{itemize}
+
+\section{ESP32-Specific Classes}
+
+Smalltalkje includes several ESP32-specific classes for interacting with the hardware:
+
+\begin{itemize}
+    \item \textbf{WiFi}: Interface to ESP32 WiFi capabilities
+    \item \textbf{GPIO}: Digital and analog I/O control
+    \item \textbf{HTTP}: Web client functionality
+    \item \textbf{NVS}: Non-volatile storage access
+    \item \textbf{Display}: Interface to connected displays
+    \item \textbf{Timer}: Hardware timer access
+\end{itemize}
+
+\section{Class Implementation}
+
+Classes in Smalltalkje are defined in plain Smalltalk syntax in .st files. For example, this excerpt from basic.st shows the definition of core classes:
+
+\begin{lstlisting}[style=smalltalk]
+Class Object
+Class Block Object context argCount argLoc bytePointer
+Class Boolean Object
+Class    True Boolean
+Class    False Boolean
+Class Class Object name instanceSize methods superClass variables
+Class Context Object linkLocation method arguments temporaries
+Class Integer Object
+\end{lstlisting}
+
+Method definitions follow, organized by classes and protocol categories:
+
+\begin{lstlisting}[style=smalltalk]
+Methods Boolean 'all'
+  ifTrue: trueBlock
+    ^ self ifTrue: trueBlock ifFalse: []
+|
+  ifFalse: falseBlock
+    ^ self ifTrue: [] ifFalse: falseBlock
+|
+  ifFalse: falseBlock ifTrue: trueBlock
+    ^ self ifTrue: trueBlock
+      ifFalse: falseBlock
+|
+  and: aBlock
+    ^ self ifTrue: aBlock ifFalse: [ false ]
+|
+  or: aBlock
+    ^ self ifTrue: [ true ] ifFalse: aBlock
+\end{lstlisting}
+
+\chapter{Smalltalk Syntax}
+
+Smalltalk uses a simple, elegant syntax that enables powerful object-oriented programming. The language is designed to be readable and expressive, with a focus on message passing as the primary computation mechanism.
+
+\section{Basic Syntax Elements}
+
+\begin{itemize}
+    \item \textbf{Comments}: Enclosed between quote marks (*...*)
+    \begin{lstlisting}[style=smalltalk]
+(* This is a comment in Smalltalk *)
+\end{lstlisting}
+
+    \item \textbf{Variables}: Start with a lowercase letter, can contain alphanumeric characters
+    \begin{lstlisting}[style=smalltalk]
+counter
+myVariable
+x1
+\end{lstlisting}
+
+    \item \textbf{Class Names}: Start with an uppercase letter 
+    \begin{lstlisting}[style=smalltalk]
+Object
+Collection
+Array
+\end{lstlisting}
+
+    \item \textbf{Literals}:
+    \begin{itemize}
+        \item \textbf{Numbers}: Integer and floating point
+        \begin{lstlisting}[style=smalltalk]
+42
+3.14159
+\end{lstlisting}
+
+        \item \textbf{Strings}: Enclosed in single quotes
+        \begin{lstlisting}[style=smalltalk]
+'Hello, world!'
+'Embedded Smalltalk'
+\end{lstlisting}
+
+        \item \textbf{Characters}: Preceded by a dollar sign
+        \begin{lstlisting}[style=smalltalk]
+$a
+$5
+$\n
+\end{lstlisting}
+
+        \item \textbf{Symbols}: Preceded by a hash sign
+        \begin{lstlisting}[style=smalltalk]
+#mySymbol
+#at:put:
+\end{lstlisting}
+
+        \item \textbf{Arrays}: Enclosed in hash parentheses
+        \begin{lstlisting}[style=smalltalk]
+#(1 2 3 4)
+#('a' 'b' 'c')
+\end{lstlisting}
+    \end{itemize}
+
+    \item \textbf{Statement Terminator}: Period (.) separates statements
+    \begin{lstlisting}[style=smalltalk]
+x := 1. y := 2. z := x + y.
+\end{lstlisting}
+
+    \item \textbf{Assignment}: Uses := operator
+    \begin{lstlisting}[style=smalltalk]
+counter := 0
+result := 42
+\end{lstlisting}
+
+    \item \textbf{Return}: Uses caret symbol (\textasciicircum) operator
+    \begin{lstlisting}[style=smalltalk]
+^ self size * 2
+^ 'Result: ', value printString
+\end{lstlisting}
+\end{itemize}
+
+\section{Message Sending}
+
+In Smalltalk, all computation happens through message sending. Messages come in three forms:
+
+\begin{itemize}
+    \item \textbf{Unary Messages}: No arguments
+    \begin{lstlisting}[style=smalltalk]
+object size
+collection isEmpty
+number negated
+\end{lstlisting}
+
+    \item \textbf{Binary Messages}: One argument, operator-like syntax
+    \begin{lstlisting}[style=smalltalk]
+3 + 4
+string , ' world'
+a < b
+\end{lstlisting}
+
+    \item \textbf{Keyword Messages}: One or more arguments, named parameters
+    \begin{lstlisting}[style=smalltalk]
+collection at: 1
+dictionary at: #key put: value
+array copyFrom: 1 to: 10
+\end{lstlisting}
+\end{itemize}
+
+Message precedence (from highest to lowest):
+\begin{enumerate}
+    \item Unary messages
+    \item Binary messages
+    \item Keyword messages
+\end{enumerate}
+
+Parentheses can be used to override precedence:
+\begin{lstlisting}[style=smalltalk]
+(3 + 4) squared
+(array at: index) printString
+\end{lstlisting}
+
+\section{Control Structures}
+
+Smalltalk implements control structures as messages sent to objects, primarily blocks (closures):
+
+\begin{itemize}
+    \item \textbf{Conditionals}:
+    \begin{lstlisting}[style=smalltalk]
+(x > 0) ifTrue: [ 'positive' ] ifFalse: [ 'non-positive' ]
+object isNil ifTrue: [ object := self defaultValue ]
+\end{lstlisting}
+
+    \item \textbf{Loops}:
+    \begin{lstlisting}[style=smalltalk]
+[condition] whileTrue: [ actions ]
+[counter < 10] whileTrue: [ counter := counter + 1 ]
+\end{lstlisting}
+
+    \item \textbf{Iteration}:
+    \begin{lstlisting}[style=smalltalk]
+collection do: [:each | each doSomething]
+1 to: 10 do: [:i | sum := sum + i]
+\end{lstlisting}
+\end{itemize}
+
+\section{Block Closures}
+
+Blocks (delimited by square brackets) are anonymous functions with lexical scope:
+
+\begin{lstlisting}[style=smalltalk]
+[:x | x * x]
+[self doSomething]
+[:a :b | a + b]
+\end{lstlisting}
+
+Blocks can be assigned to variables and passed as arguments:
+
+\begin{lstlisting}[style=smalltalk]
+square := [:x | x * x].
+result := square value: 5.   (* 25 *)
+
+adder := [:a :b | a + b].
+sum := adder value: 3 value: 4.   (* 7 *)
+\end{lstlisting}
+
+\section{Class and Method Definition}
+
+Classes are defined using a special syntax:
+
+\begin{lstlisting}[style=smalltalk]
+Class NewClass SuperClass instVar1 instVar2 instVar3
+\end{lstlisting}
+
+Methods are organized in categories and defined as follows:
+
+\begin{lstlisting}[style=smalltalk]
+Methods ClassName 'category'
+  methodName
+    "Method comment"
+    | temp1 temp2 |
+    statements.
+    ^ returnValue
+|
+  anotherMethod: arg1 with: arg2
+    "Method comment"
+    statements.
+    ^ returnValue
+\end{lstlisting}
+
+\section{Common Idioms}
+
+\begin{itemize}
+    \item \textbf{Collection Manipulation}:
+    \begin{lstlisting}[style=smalltalk]
+collection select: [:each | each isEven]
+collection collect: [:each | each asString]
+collection inject: 0 into: [:sum :each | sum + each]
+\end{lstlisting}
+
+    \item \textbf{Error Handling}:
+    \begin{lstlisting}[style=smalltalk]
+self error: 'Invalid input'
+[riskOperation] on: Error do: [:error | handleError]
+\end{lstlisting}
+
+    \item \textbf{Resource Management}:
+    \begin{lstlisting}[style=smalltalk]
+file := File open: 'data.txt'.
+[file processContents] ensure: [file close]
+\end{lstlisting}
+\end{itemize}
+
+\chapter{Memory Optimization Details}
+
+Smalltalkje employs several innovative techniques to minimize RAM usage on embedded devices, which is critical for running on resource-constrained ESP32 systems.
+
+\section{Split Memory Model}
+
+The most significant memory optimization is the split memory approach:
+
+\begin{enumerate}
+    \item \textbf{Object Table}: Always loaded into RAM for fast access to metadata
+    \item \textbf{Object Data}: Selectively distributed between RAM and Flash:
+    \begin{itemize}
+        \item Mutable objects (regular objects) copied to RAM
+        \item Immutable objects (strings, symbols, bytearrays, blocks) kept in Flash
+    \end{itemize}
+\end{enumerate}
+
+\section{ROM-Eligible Objects}
+
+Specific classes are identified as immutable and can safely remain in Flash:
+
+\begin{itemize}
+    \item ByteArray (class 18)
+    \item String (class 34)
+    \item Symbol (class 8)
+    \item Block (class 182)
+\end{itemize}
+
+These objects have their reference count set to the maximum (0x7F) to prevent garbage collection, and their memory pointers point directly to Flash memory regions.
+
+\section{Memory Allocation Strategies}
+
+Object allocation follows a multi-strategy approach for efficiency:
+
+\begin{enumerate}
+    \item \textbf{Free list exact match}: Reuse object of exactly the right size
+    \item \textbf{Zero-size expansion}: Repurpose a size-0 object with new memory
+    \item \textbf{Larger object reuse}: Repurpose larger object (potentially wasting some space)
+    \item \textbf{Smaller object reuse}: Reallocate memory for smaller object
+\end{enumerate}
+
+\section{Block Allocation}
+
+Rather than individual malloc calls for each object, Smalltalkje allocates memory in blocks of 2048 object slots, significantly reducing allocation overhead and fragmentation.
+
+\section{Image Loading Optimization}
+
+The image loading process is optimized to:
+
+\begin{itemize}
+    \item Read object table and object data separately
+    \item Identify ROM-eligible objects during image saving
+    \item Point ROM objects directly to Flash memory
+    \item Only copy mutable objects to RAM
+    \item Rebuild reference counts only for live objects
+\end{itemize}
+
+This approach enables much larger Smalltalk programs to run on the ESP32 than would be possible with a traditional all-RAM image.
+
+\chapter{Building and Using Smalltalkje}
+
+\section{Prerequisites}
+
+To build and use Smalltalkje, you'll need:
+
+\begin{itemize}
+    \item ESP-IDF (Espressif IoT Development Framework)
+    \item ESP32 toolchain
+    \item ESP32 development board (DevKit, M5StickC, etc.)
+    \item USB cable for connecting to the ESP32
+    \item C compiler (GCC)
+\end{itemize}
+
+For development on Mac:
+\begin{itemize}
+    \item Xcode or command-line tools
+    \item CMake
+\end{itemize}
+
+\section{Building for ESP32}
+
+\begin{enumerate}
+    \item Clone the repository:
+    \begin{lstlisting}[style=smalltalk]
+git clone https://github.com/aknabi/smalltalkje.git
+cd smalltalkje
+\end{lstlisting}
+
+    \item Configure the build for your ESP32 board in sdkconfig
+    \begin{lstlisting}[style=smalltalk]
+make menuconfig
+\end{lstlisting}
+
+    \item Build the project:
+    \begin{lstlisting}[style=smalltalk]
+make
+\end{lstlisting}
+
+    \item Flash the build to your ESP32:
+    \begin{lstlisting}[style=smalltalk]
+make flash
+\end{lstlisting}
+
+    \item Monitor serial output:
+    \begin{lstlisting}[style=smalltalk]
+make monitor
+\end{lstlisting}
+\end{enumerate}
+
+\section{Development Workflow}
+
+When developing with Smalltalkje on the ESP32:
+
+\begin{enumerate}
+    \item Write Smalltalk code (.st files) for your application
+    \item Build and load these into the Smalltalk image
+    \item Compile the image into a form optimized for ESP32
+    \item Flash the system with the new image
+    \item Test and debug using the interactive Smalltalk environment
+\end{enumerate}
+
+\section{Interactive Development}
+
+Smalltalkje provides a REPL (Read-Eval-Print Loop) for interactive development:
+
+\begin{lstlisting}[style=smalltalk]
+st> 3 + 4
+7
+st> Collection allSubclasses
+(Array List Set Dictionary IndexedCollection ByteArray String)
+st> 1 to: 10 do: [:i | i print]
+12345678910
+\end{lstlisting}
+
+\section{Building Custom Applications}
+
+To build a custom application:
+
+\begin{enumerate}
+    \item Create your application classes in .st files
+    \item Add them to the image building process (in smalltalkImage/Makefile)
+    \item Define a startup class or method for your application
+    \item Build the image and flash to the ESP32
+\end{enumerate}
+
+Example of a simple application class:
+
+\begin{lstlisting}[style=smalltalk]
+Class WeatherStation Object temperature humidity lastUpdate
+
+Methods WeatherStation 'initialization'
+  initialize
+    temperature := 0.
+    humidity := 0.
+    lastUpdate := nil.
+    ^ self
+|
+  readSensors
+    (* Read values from connected sensors *)
+    temperature := DHT11 readTemperature.
+    humidity := DHT11 readHumidity.
+    lastUpdate := DateTime now.
+    ^ self
+|
+  displayReadings
+    Display clear.
+    Display at: 0 at: 0 print: 'Temp: ', temperature printString, 'C'.
+    Display at: 0 at: 10 print: 'Humidity: ', humidity printString, '%'.
+    Display at: 0 at: 20 print: lastUpdate printString.
+    ^ self
+\end{lstlisting}
+
+\chapter{Conclusion}
+
+Smalltalkje brings the power and elegance of Smalltalk to embedded systems, particularly the ESP32 platform. By carefully optimizing memory usage, implementing a split memory model, and providing seamless integration with the ESP32's capabilities, Smalltalkje enables sophisticated object-oriented applications on resource-constrained devices.
+
+The system provides a complete Smalltalk environment with:
+
+\begin{itemize}
+    \item Full object-oriented programming model
+    \item Rich class library
+    \item Interactive development environment
+    \item Efficient bytecode interpreter
+    \item Memory-optimized object representation
+    \item Deep integration with ESP32 capabilities
+\end{itemize}
+
+Smalltalkje demonstrates that even complex, dynamic languages can be adapted to work effectively on embedded systems, opening up new possibilities for IoT and embedded application development. By combining the flexibility of Smalltalk with the power of the ESP32, developers can create sophisticated applications with less code and faster development cycles than traditional embedded programming approaches.
+
+\end{document}
