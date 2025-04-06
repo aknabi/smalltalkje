@@ -25,6 +25,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
+      - name: Configure Git safe directory
+        run: git config --global --add safe.directory /github/workspace
+
       # Runs a single command using the runners shell
       - name: esp-idf build
         uses: sebastianPsm/esp-idf-ci-action@1
