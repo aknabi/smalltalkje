@@ -2871,3 +2871,7 @@ build/esp-idf/xtensa/CMakeFiles/__idf_xtensa.dir/xt_trax.c.obj
 build/esp-idf/xtensa/CMakeFiles/__idf_xtensa.dir/xtensa_intr_asm.S.obj
 build/esp-idf/xtensa/CMakeFiles/__idf_xtensa.dir/xtensa_intr.c.obj
 build/partition_table/partition-table.bin
+book/smalltalkje_documentation.aux
+book/smalltalkje_documentation.log
+book/smalltalkje_documentation.out
+book/smalltalkje_documentation.toc
