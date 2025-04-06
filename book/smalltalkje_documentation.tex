@@ -149,6 +149,210 @@ Smalltalkje brings the power of Smalltalk to resource-constrained devices by car
 
 The system is written in C (not C++) for the ESP-IDF framework (not Arduino) to maximize performance and minimize resource usage. This approach is essential for running Smalltalk, which traditionally requires significant memory, on resource-constrained devices.
 
+\chapter{About the ESP32 and Constrained Smalltalk}
+
+\section{The ESP32 Platform: Capabilities and Constraints}
+
+The ESP32 represents a significant advancement in microcontroller technology, offering capabilities previously unavailable in such compact and affordable devices. Designed by Espressif Systems, the ESP32 has become a cornerstone of IoT and embedded projects due to its impressive balance of features, performance, and power efficiency.
+
+\subsection{ESP32 Specifications}
+The ESP32 family of microcontrollers provides a powerful platform with the following key specifications:
+
+\begin{itemize}
+    \item \textbf{Processor}: Dual-core Xtensa LX6 microprocessor running at up to 240 MHz
+    \item \textbf{Memory}: 
+        \begin{itemize}
+            \item 520 KB to 8 MB of SRAM (depending on variant)
+            \item 4 MB to 16 MB of Flash memory (externally connected)
+            \item ROM for bootloader and core functions
+        \end{itemize}
+    \item \textbf{Wireless Connectivity}:
+        \begin{itemize}
+            \item WiFi (802.11 b/g/n up to 150 Mbps)
+            \item Bluetooth (both Classic and BLE 4.2)
+        \end{itemize}
+    \item \textbf{Peripherals}:
+        \begin{itemize}
+            \item Up to 34 programmable GPIO pins
+            \item 12-bit ADC (Analog-to-Digital Converter)
+            \item DAC (Digital-to-Analog Converter)
+            \item Multiple SPI, I2C, I2S, UART interfaces
+            \item PWM controllers for motor control
+            \item LED PWM controller
+            \item Hardware accelerated encryption
+            \item Touch sensors
+        \end{itemize}
+    \item \textbf{Power Management}: Multiple power modes with current consumption ranging from 5$\mu$A in deep sleep to around 240mA during full Wi-Fi transmission
+\end{itemize}
+
+\subsection{Constraints and Challenges}
+Despite its impressive specifications, the ESP32 remains a constrained device compared to desktop and server systems, presenting several challenges for running sophisticated environments like Smalltalk:
+
+\begin{itemize}
+    \item \textbf{Memory Constraints}: While generous for a microcontroller, the ESP32's RAM is still limited for running traditional Smalltalk environments that were designed for systems with megabytes or even gigabytes of memory.
+    
+    \item \textbf{Execution Speed}: The ESP32's processors are significantly slower than modern desktop CPUs, requiring careful optimization of the VM for acceptable performance.
+    
+    \item \textbf{Flash Memory Access}: Reading from Flash is slower than RAM access, requiring thoughtful decisions about what data should reside in each memory type.
+    
+    \item \textbf{Power Considerations}: Many ESP32 applications run on battery power, making power consumption a crucial factor that must be addressed through efficient code and judicious use of low-power modes.
+    
+    \item \textbf{Limited UI Capabilities}: Most ESP32 deployments have minimal or no display capabilities, changing how a Smalltalk environment must function compared to its traditionally GUI-centric nature.
+    
+    \item \textbf{Real-time Requirements}: Many embedded applications have real-time constraints that traditional Smalltalk environments weren't designed to address.
+\end{itemize}
+
+\subsection{Running Smalltalk on ESP32}
+Implementing a Smalltalk virtual machine on the ESP32 requires addressing several specific challenges:
+
+\begin{itemize}
+    \item \textbf{Memory Management}: Traditional Smalltalk systems use garbage collection, which can cause unpredictable pauses. On an ESP32, a more deterministic approach is needed, leading to the choice of reference counting in Smalltalkje.
+    
+    \item \textbf{Object Representation}: Classical Smalltalk implementations use memory-intensive object representations. For the ESP32, a more compact representation is necessary, leading to Smalltalkje's specialized object table and split memory model.
+    
+    \item \textbf{Image Size}: Standard Smalltalk images can be multiple megabytes in size. For the ESP32, the image must be carefully optimized to fit within available memory while still providing useful functionality.
+    
+    \item \textbf{Development Environment}: Traditional Smalltalk systems include sophisticated development environments with browsers, debuggers, and inspectors. On the ESP32, a more streamlined approach is needed while still preserving Smalltalk's interactive nature.
+    
+    \item \textbf{Integration with Hardware}: Smalltalk must interface with ESP32's peripheral hardware, requiring well-designed primitive methods that bridge between the high-level Smalltalk environment and low-level hardware access.
+\end{itemize}
+
+Smalltalkje addresses these challenges through its innovative split memory model, reference counting garbage collection, optimized object representation, and careful integration with ESP-IDF, allowing a complete Smalltalk environment to run effectively on ESP32 devices.
+
+\section{Smalltalk on Constrained Devices: A Historical Perspective}
+
+While running Smalltalk on embedded devices like the ESP32 may seem ambitious, there is a rich history of implementing Smalltalk on hardware that was far more constrained than today's microcontrollers. This historical context provides valuable insights and inspiration for modern embedded Smalltalk implementations.
+
+\subsection{Smalltalk-80 and Early Resource Requirements}
+
+Smalltalk-80, the first widely available implementation of Smalltalk, was designed for the Xerox Alto and similar specialized hardware with the following specifications:
+
+\begin{itemize}
+    \item 256 KB to 1 MB of RAM
+    \item 10-20 MHz 16-bit processors
+    \item Specialized hardware support for bit-blit operations
+    \item Custom display hardware
+\end{itemize}
+
+These requirements were substantial for the early 1980s, leading many to view Smalltalk as requiring powerful hardware. However, several projects successfully adapted Smalltalk to run on more constrained systems.
+
+An impressive achievement was from Softsmarts, which created a Smalltalk-80 implementation that ran on an IBM PC AT with an Intel 80286 processor running at 6 MHz with just 640 KB of RAM. This implementation demonstrated that with careful optimization, even the full Smalltalk-80 environment could run on relatively constrained hardware.
+
+\subsection{Smalltalk/V from Digitalk}
+
+Perhaps the most successful early constrained Smalltalk implementation was Smalltalk/V from Digitalk. This groundbreaking product ran on the original IBM PC with:
+
+\begin{itemize}
+    \item Intel 8088 processor at 4.77 MHz
+    \item 256 KB of RAM (though 512 KB was recommended)
+    \item CGA graphics with 320x200 resolution and 4 colors
+    \item MS-DOS operating system
+\end{itemize}
+
+Remarkably, these specifications are in many ways less powerful than a modern ESP32, which offers:
+\begin{itemize}
+    \item Dual-core 32-bit processors at up to 240 MHz (vs. single-core 16-bit at 4.77 MHz)
+    \item Up to 8 MB of RAM (vs. 256 KB)
+    \item More sophisticated peripherals and connectivity options
+\end{itemize}
+
+Smalltalk/V achieved this by:
+\begin{itemize}
+    \item Implementing a more compact object format
+    \item Using a specialized memory manager
+    \item Providing a streamlined class library
+    \item Carefully optimizing the virtual machine for the 8088 processor
+\end{itemize}
+
+Despite these constraints, Smalltalk/V provided a complete object-oriented environment with classes, inheritance, polymorphism, and an integrated development environment with browsers and debuggers. Many developers created sophisticated applications using this constrained environment, demonstrating the inherent efficiency of well-designed Smalltalk systems.
+
+\subsection{Object Technology International's Embedded Smalltalk}
+
+Object Technology International (OTI, later acquired by IBM) was another pioneer in adapting Smalltalk to constrained and embedded environments. In the late 1980s and early 1990s, OTI developed specialized Smalltalk implementations for:
+
+\begin{itemize}
+    \item Real-time embedded systems
+    \item Industrial control applications
+    \item Telecommunications equipment
+\end{itemize}
+
+OTI's work demonstrated that Smalltalk could be adapted for environments with:
+\begin{itemize}
+    \item Hard real-time constraints
+    \item Limited memory resources
+    \item No graphical user interface
+    \item Direct hardware control requirements
+\end{itemize}
+
+These embedded Smalltalk implementations influenced later technologies, including aspects of IBM's VisualAge Micro Edition and eventually Eclipse and Java technologies. The techniques developed by OTI for efficient method dispatch, compact object representation, and deterministic execution are still relevant for modern embedded Smalltalk implementations like Smalltalkje.
+
+\subsection{Tim Budd's Little Smalltalk}
+
+The foundation for Smalltalkje comes from Tim Budd's Little Smalltalk, a project with a remarkable history of its own. Developed by Dr. Timothy A. Budd at Oregon State University, Little Smalltalk was first created in the early 1980s as one of the earliest publicly available Smalltalk implementations.
+
+\subsubsection{History and Evolution}
+
+Little Smalltalk went through several major versions:
+
+\begin{itemize}
+    \item \textbf{Version 1} (1983): The initial version, written in C, provided a simple but complete Smalltalk implementation that could run on Unix systems with modest resources.
+    
+    \item \textbf{Version 2} (1985-1986): Enhanced the implementation with better performance and more complete class libraries.
+    
+    \item \textbf{Version 3} (1987-1988): A complete rewrite that improved the object representation, enhanced the virtual machine, and expanded the class library. This is the version that serves as the foundation for Smalltalkje.
+    
+    \item \textbf{Version 4} (1991-1992): Added additional optimizations and features, though Smalltalkje is based on version 3 rather than this later iteration.
+\end{itemize}
+
+\subsubsection{Technical Overview}
+
+Little Smalltalk was designed with different goals from commercial implementations like Smalltalk-80 or Smalltalk/V:
+
+\begin{itemize}
+    \item \textbf{Educational Focus}: It was created primarily as a teaching tool to help students understand object-oriented programming concepts.
+    
+    \item \textbf{Simplicity}: The implementation prioritized clarity and simplicity over raw performance.
+    
+    \item \textbf{Portability}: Written in standard C, Little Smalltalk was designed to run on a wide variety of platforms.
+    
+    \item \textbf{Minimal Resource Requirements}: It was explicitly designed to run in constrained environments, making it an ideal starting point for an embedded implementation.
+    
+    \item \textbf{Open Source}: Perhaps most importantly for Smalltalkje, Little Smalltalk was released with source code and minimal restrictions, enabling its adaptation for new platforms like the ESP32.
+\end{itemize}
+
+Key technical aspects of Little Smalltalk version 3 include:
+
+\begin{itemize}
+    \item A bytecode interpreter written in C
+    \item Reference counting for memory management
+    \item A simple but complete class hierarchy
+    \item A parser and compiler that allowed for interactive development
+    \item Support for basic Smalltalk concepts like blocks, inheritance, and polymorphism
+\end{itemize}
+
+\subsubsection{From Little Smalltalk to Smalltalkje}
+
+Smalltalkje builds on the strong foundation of Little Smalltalk version 3, extending it with:
+
+\begin{itemize}
+    \item The split memory model for efficient use of Flash and RAM
+    \item Enhanced object representation tailored for the ESP32
+    \item Integration with ESP32 peripherals and networking
+    \item Additional embedded-specific classes and primitives
+    \item Performance optimizations for the ESP32 processor
+\end{itemize}
+
+The choice of Little Smalltalk as a foundation was ideal because:
+
+\begin{itemize}
+    \item Its clean, readable C implementation made it easy to understand and modify
+    \item Its already minimal resource requirements provided a good starting point
+    \item Its open source nature made adaptation legally straightforward
+    \item Its reference counting approach to memory management was well-suited to embedded systems
+\end{itemize}
+
+The Smalltalkje project owes a tremendous debt to Tim Budd for creating and sharing Little Smalltalk. His work made it possible to bring the power and elegance of Smalltalk to a new generation of embedded devices.
+
 \chapter{System Architecture}
 
 \section{High-Level Architecture}
@@ -1049,9 +1253,9 @@ Smalltalk uses a simple, elegant syntax that enables powerful object-oriented pr
 \section{Basic Syntax Elements}
 
 \begin{itemize}
-    \item \textbf{Comments}: Enclosed between quote marks (*...*)
+    \item \textbf{Comments}: Enclosed between quote marks "..."
     \begin{lstlisting}[style=smalltalk]
-(* This is a comment in Smalltalk *)
+"This is a comment in Smalltalk"
 \end{lstlisting}
 
     \item \textbf{Variables}: Start with a lowercase letter, can contain alphanumeric characters
